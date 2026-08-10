@@ -1,0 +1,1028 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aercom SA — Gestión Operativa</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- utils.js, storage.js y modules/dashboard.js deben cargar antes del script
+     principal: éste llama a loadData() y renderDashboard() de forma síncrona
+     durante la inicialización -->
+<script src="js/utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/modules/dashboard.js"></script>
+<script src="js/modules/clientes.js"></script>
+<script src="js/modules/equipos.js"></script>
+<script src="js/modules/facturacion.js"></script>
+<script src="js/modules/cotizaciones.js"></script>
+<script src="js/modules/pedidos.js"></script>
+<script src="js/modules/calendario.js"></script>
+<script src="js/modules/recordatorios.js"></script>
+<script src="js/modules/theme.js"></script>
+<script src="js/modules/reportes.js"></script>
+<script src="js/modules/excel.js"></script>
+<script src="js/modules/drive.js"></script>
+<script src="js/modules/csv.js"></script>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sb-brand" style="padding:12px 16px;justify-content:flex-start">
+    <img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCABrAdcDASIAAhEBAxEB/8QAHQABAAICAwEBAAAAAAAAAAAAAAcIBQYDBAkCAf/EAFIQAAEDAwEEBgYDDAcFBwUAAAECAwQABREGBxIhMQgTQVFhgRQiUnGRoRUykxcjQlRWYnKCkqKx0hYzQ1OUssEkN1VzlRg0RHWzwvBjZIOjw//EABsBAAIDAQEBAAAAAAAAAAAAAAAFAQQGAwIH/8QAOBEAAQMDAQQHBwQCAwEBAAAAAQACAwQFESESMUFRBhNhcZGhsRYigcHR4fAUMjPxUmMVQ1MjQv/aAAwDAQACEQMRAD8AuXSlKEJSlKEJSlKEJSte1jrXTOkY3XX27MRlkZQwDvvL/RQMqPvxjvNQZrXpEXSSVx9JWxuA0cj0qYA46fFKAd1Pnve6rtLbqip1Y3TmdyoVdypqXSR2vIan871Y6bLiwoy5M2SzGYQMrdeWEJSPEngKjvUu27QFmKm2bk5dn0/gQG+sT+2cI+BNVU1DqC+aik+k3y6y7g4OXXOEpT7k8h5AVjKfwdHoxrK7Pdp+eSz1R0kkOkLcd+v55qd770kLq4VosWm4kZPJLkx5TpI7ylO7j4mtIu+2XaNcsg38w0H8GIwhv54KvnUf0prFbaWL9rB8dfVKJbpVy/ukPw09MLNTtW6qnZ9M1LeX88wqa5g+WaxLzzzyt555x0961lR+dcdKttY1v7RhUnSOf+45X6klJBSSCORBwRWRg6gv8Agwb5dI2McGpbiR8AaxtKlzQ7eFDXFuoOFvlj2wbQ7SobmoHJrY/s5raXgfM+t86k3SPSMZcWhjVdk6gEYVKgKKk58W1cQPco1XalUprZSzD3mAd2ivwXWrgPuvJ79fVX00zqKyalt/p9iucafHzhSmlZKDzwpPNJ8CAaylUK0zf7xpq6t3SyT3YcpH4SD6qx7Kk8lJ8DVtNjW0yDr22rZebREvUVIMmMD6qx/eN54lOezmDz7CcvcbQ+lG2w5b5jvWrtt6ZVnq3jD/ACPd9FINKUpOnaUpShCUpShCUpShCUpShCUpShCUpShCUpShCUpShCUpShCUpShCUpShCUpShCUr4deZax1rrbeeW8oCuP0yJ+NMfaCpwVGQuelcHpkT8aY+0FPTIn40x9oKMFGQuelcHpkT8aY+0FPTIn40x9oKMFGQuelcHpkT8aY+0FPTIn40x9oKMFGQuelcHpkT8aY+0FPTIn40x9oKMFGQuelcHpkT8aY+0FfbT7LpIaebcxz3VA0YKMhclKUqFKUpShCUpXXuJmphOm3Nx3JWPvYfWUoz3kgE/Lj4c6kDJUE4GV19Q3u06ftblzvM9mFEb+s44rGT3AcyfAcarxtI2/XK4FyBoxpdujcUmc8kF9Y/NSchA8Tk/omtq1PsW1LrC6fSWqdeh1wf1bLEA9UyO5ALmB78ZPbmugejXA6sAatlhfaTDTj4b3+tPaJtugw6Z+07uOB5arP1zrnPlsLNlveMnz0/NVXmZJkzZTkuZIekyHTvOOvLK1rPeVHia4ani69G26NtqVa9UxJK8eqiTFU0D+slSv4VFOt9Fak0bLQxf7cphLpIZfQrfadx7Kh2+BwfCtLT11NOdmNwJ5bvVZapt9VTjalYQOe/0Wu0pXLEjyJcpqLFYdkSHVbrbTSCpaz3ADiTVs6KmNVxUqWtK7A9Z3ZpEi6OQ7IyoZ3H1Fx79hPAeagfCt0idGy3JR/terJrqu9qIhA+ZVS6W7UkZwX+GqZxWetlGQzA7cD11VcaVYW49GwbhNu1arf7EyIQIPmlXD4VFe0DZrqvRKevu0ND0Eq3RNjKK2snkFZAKSfEDwJrpBcqac7LH6+HquVRbKqnbtSM057/AEWnUpW17NNC3TXt2k2+1yI0ZUZjrnHJG9u43gAOAPE/6VakkbE0vecAKpFE+V4YwZJWqUqav+zlqv8A47Zf/wBv8tR/tN0RO0FdY1uuVwhynn2Ou/2fewhO8QM7wHE4PwqvDXU8ztiN2SrM1vqYGbcjMD4LVaymk77P0zqOFfLa4UyIjgXjOA4n8JB8FDIPvrbNJbHdd6jYTJatjdujL4pduCy1vDvCQCv92u1tE2P3jROmjfLjebbIbDqGuqZCwpSlHHDI48MnyofWUzndSXAk6Y3qWUVU1vXBhAGud3xVsbDc416skK7w1Ex5jCH2888KAOD48a7tRf0X5y5myaIwtW8Ycp9hOTk7u/vgfv48qlCsHUxdTM6PkSvoNLN18DJOYBSlY7UF8s+n4Cp16uUaBHH4bzgTk9wHMnwHGorv/SH0lCdW1ardcroU8nAlLLavcVHe/dr1BSTz/wAbSVFRWwU/8rwPzkplpVd1dJZ/rAU6Kb3O0G6HJ8+q4VlrP0kLE8tKbtpy4wgTgqYdQ+E/HcPyq06z1jRks8x9VUbeqFxwJPI/RTlStf0drPTOrmFOWC7MS1NjLjPFLrY71IOFAeOMVsFLnscx2y4YKYskbI3aYchKVquuNoWk9Gp3L1c0JlFO8mIyOseUOz1RyB7zgeNRTd+knHSsptGlHnUdjkuWGz+ylKv41bgt9TOMxs08PVVKi5UtOdmR4zy3+isBSq3M9JK6heXtJwlozyTNUk49+4f4VuOk+kDpO6vojXmJKsbi8DrHCHWAe4rGCPeUge6uslorIxks8MFcYrzRSHZD/HI9VMFK+I7zMmO3IjutvMuJC23G1BSVJPEEEcCK+6WpolKiW67f9GW+6S7e5Avjq4r62FONMNFCihRSSklwEjhw4UtW33SFyukS3RbVqAvyn0MN5js43lKAGfvvLjV3/jarGdg4VD/k6TOz1gypapWpa92iaV0W3u3ifvSyneRDjgLfUOw7ufVHiogVFU/pKID5EDR63GQeC354Qoj9FKFAfE0QW6pnG1GzTw9VNRc6WndsyP18fRWCpUSaD276a1FcGbbdIb1jlvHdbU64HGFKPJPWAAgnxSB41LZIAyTgVxnppad2zI3BXanqoalu1E7ISlRlrbbbozTj64kd529TEcFNwd1SEHuU4Tu/DJ8K0YdJZzr+Oi09T4XP1vf/AFWPL51ZitdXK3aazT4D1VaW7UcTtlz9ezJ9FYalaNs02o6b10tcWCXodxbRvrhyQAsp7VJIOFD5jtFbzVOWF8LtiQYKuQzRzM24zkJUN9IPanJ0qUac084lF3ebDj8ggK9GbPLAPDfPjyHHtFTJVI9sUtU7anqSQtZWfT1tAk54IwgDyCQPKmllpWVE52xkAZSq+1j6anHVnBccLW7nOm3SUuVc5kia+skqckOFxRPvNdXq2/YT8K+qVtgMDAWDJJOSvnq2/YT8K/CloHBSgeQqeti2xJq7W9jUOsUupjPAORbelRQVoPJbhHEA9iR2Yyeyp6s+mNOWdjqbXYrbDR2hmMhJPiSBknxNJaq+wwPLGjaI8E9o7BPOwPedkHx8FQsJaJwEoJ9wr96tv2E/Cr63bTWnrswWLnY7bMb9l6KhePEZHA+Iqvu3jY/D0/bHdUaWC24LSh6XCUoq6oE430E8d0EjIPLnyopL5FUPDHDZJ+IUVlgmp4zI0hwG/gVBnVt+wn4U6tv2E/Ctq2UWJGpdotltDzYcjuSOskJIyC22CtQPgQnHnVuvue6D/IzT/wD09r+Wu9ddY6N4Y4Ek6rhb7RJWsL2kAA4VG+rb9hPwp1bfsJ+FXj+57oP8jNP/APT2v5afc90H+Rmn/wDp7X8tUfaKL/Aq/wCzM3+Y81Rzq2/YT8K7Fvly7dJTJt8p+G+k5S4w4ptQPvSQamnpSwNMWJdls9jsNrt0l3flPuRYqG1lA9VKSUgcCSo4/NFQhTmlqBUwiTGAeaSVdOaWYx5yRyVnej3tWmalkK0zqV5LlzQ2XIkrASZCU/WSoDhvgccjmM9o4qrbZ7jLtNyZuMB0syWc7ix2ZSUn5E0pJW2LrZS+EgA8O1PqHpB1UIZMCSOPYr+0pUUdIDab/RC2Cy2Z5JvsxGd4cfRGjw3z+ceISPPswc1T076iQRsGpWoqaiOmjMkh0C+Nru1L6LurGjNKuNvX+Y+3HcfxvIhb6gkcO1fHlyHM91SBfdT6b04ykXq+wYJCeCZEhIcVjuTneUfcKoql99Mn0lL7of3+s60LO/vZzvb3POeOayNlsGodQyCq02i5XNxavXcaZU4M/nL5DzNaiSxQhjQXYA3nmfksnH0gnL3EMyTuHId3HtVo5u3jZ3Hd3G582WORUzDXu/vAZ8q7tj207PLrJbjJvZhuuHCRMYW0nPisjdHmagC27Eto80grsjMNJ/Cky2x8klR+VZ6L0ddYuo/2m62VgkcQFuL/APaKrSUFraMdbr3g+gVqO4XZ5yItO4j1KtICCAQQQeRFYPXthhal0hcrPObSpt9hW4ojJbWASlY8QcGuxpK2vWbStptEl8SHoUJmO46M4WpCAkkZ48cVwa+uqbJom9XY4JiwXXEAn6ygk7o8zgedIIwRKAw650WjkIMRMg0xr81SDTtpuF+vMOz2xjr5stwNto5DPaSewAAknsAq4myvZxZdCWtIYbRJuriMSpyk+so9qU+yjPIfHJqO+iRpVtm0ztXSmgZEhZiRFH8FtOCtQ/SVw/U8anqnV7uDnyGBh90b+0/ZIrDbmxxCoePeO7sH3WJ1XqSyaWtSrnfbg1Djg7qSripxWM7qUjio+AqK5HSN0mh9SGbLenmweDm42nPjgrzWA2xbPtput9ZPz0wYv0bHJZt7SpiBut5+tjsUrGT5DsrTPuFbR/8AhsL/ABqKmjoaDqwZ5AXHt3LzW19w60tgjIaOOCcqzGgNbWDW9scnWOQtRZUEPsOo3XGieWR3HsIyDx7jWfmxo82I7Elstvx3kFDja05StJGCCKhXo87O9XaM1NcZl9YYYiSIfVJDchLm8sLBGQO4b3xqb6U1scUMxELst4FOaGWWaAOnbh3EKkO1jS6dH68uNkZ3jFSoOxSrieqWMpBPbjinPbipr6INq6nTV6vSkkKlTEx0k9qW0ZyPNwjyrSeloW/umRN0jfFpa38f813GanTYbaDZdlViirRuOux/SXB27zhK+PkoDyp9capzraza3ux5LO22ka25ybI0bnzW61rx0bYndYu6smRRMuhbQ2wt8BSYyEjk2OQJJUc8+NZudJahQX5j6t1phtTqz3JSMn5CqqXrb9ruepRgfR1raP1A1H6xYHipZIJ8hSagoqip2upOOB+KeXCup6UN64Z4jTO5Wxqv/TBuwEawWJC+KnHJbic9iRuJP7y/hUbJ2zbTArJ1QpXgYUfH/p1r+r9T37W98jzbstEqf1SIjQZaCN4bxKRgdpUs/GnVBZpaeobJIQQOX9JHcb5DU07oowQTjfj6lWT6K8RUfZU2+UkCVNfcSe8AhH8UGsrtm2lwtBWxDLLaJd6lJJjRifVQnl1i8ck55DmoggciRm9MQomhdm0ONLWlDFpt+/JWOWUpKnFD3q3j51TTWOoJ2qdSzr9cFkvSnCpKCchpH4CB4JGB86q0dI24Vb5XfsB8eSt1tY63UccLP3keHM/RcWpb9eNSXVdzvc96bKVw3lnggeykckjwFcdltF1vc0QrPbpVwkYyW47RWQO845DxPCuzo2wTNU6ogWCDwelu7pWRkNoHFaz4BIJx24xV19F6Xs+kbEzaLNGS00gZW4R67y+1az2k/LkMCnNwuLKBoY0ZPAcAEjttskuDi97sDieJKqWrZDtHSwHjpeQR7IeaKvhvVp1zt8+1zFQrnBlQZKRksyGlNrA78KAOPGr/ANa7r7R1k1rZF2y8Rwo4JYkIADrC/aQf9OR7aVwdIX7WJWjHYm9R0aZsZhec9v5ooo6H9oDdnvl+Wn1n5CIjZI7EJ3lY95cH7NZDb/tZc02pemNNvI+l1IBlSRx9ESRkJT/9QjB48gR2kY2tEaBsi2RS+oeVKRbmnHELdABeecX6gIHepSU+6qeT5cmfOkTpjynpMh1TrziualqOSfia90dOy4Vb6l+rQdO38C51tS+3UcdKzR5GvZz81xvuuvvuSH3VuvOrK3HHFFSlqPEkk8ST31s+itnurdYNqfsdqU5FSd0yXlBprPaAo/WI7cZxTZVpNWtNbwrIpS0RTl6WtHNLKcb2O4kkJz+dV17fDi2+CxBgx248ZhAbaabThKEjkAKu3S6fo8RxjLj5KjabT+tzJIcNHiSqY602Yaz0jbzcbtbEKgpIC5EZ0OobJOBvY4pBOBkjHECtMq/t5hR7jaJkCW2HI8lhbTqD2pUkg1QNSC2tTZOdxRTnvwcV7tNwfWNdtjUcu1c7xbWUT29WdHc+xTZ0XdcyoF/To2e+pdvmhSoQUf6h4ZUUj81Qzw7wO81YfV10TZNLXW8L4iFDdfAzjJSkkDzIAqk2z95yPr3TzzRO+m6RiMdv3xPCrPdJ27fRuymVGQvdcuL7UVPfje31fuoI86V3Wja6tjDR+/f46nwTa0Vzm0Ehcf2bvDQeKqOpa3FKccVvLWSpR7yeJrnts6VbZ7Nwgvqjyo6t9p1OMoUORGe2uvU4dFfR9qvb92vl5trE1ENbbMQPJ3kJcwVLO6eBIG5z760NXUMp4XSPGQOCzVFTPqZ2xsOCePLGqiRmy6juja7kzZ7xPQ4d9clMV10LJ/CKwDnPfmsWpKkLUhaVJUkkKSoYII5givQdICUhKQAAMADsqo/SfbiN7WZPozaELXDYVI3RjecweJ8d3dpbbruauUxlmNM700uVmFHCJQ/OuNyi8gEYIzW6ai2l6uv+nLfpl6ctuExHRGWhjPWTMDALh5qyMcOR5nJrS6t70f8AR9os+gLPd/o2P9LTowkuylIBcKV5UkAnkN0gYGKs3KpipmNke3aOdFVtdLNVPdFG/ZBGvcqpzbBfYEX0qbYrpEj4z1r0NxCMd+SMVjq9BJSGXYzrchCFsrQUuJWMpKSOII7sVQCX1Xpj/UDDPWq6sdycnHyrxbLka3ay3GMea6XW2Ch2cOznPku9pW7v2DU1tvUZRS7Dkod4dqc+sn3FOQffV9aodou2KvOr7Pakgn0qa02rHslQ3vlmr40q6R7O3Hzwft8036M7WxJyyPHj8kqi20f/AHh6j/8ANZP/AKqqvTVGtp6A3tI1IgHIF0kH4uE/6156O/yv7l66TfxR959Frlbbsf08jVG0a0Wp5AXG63r5KSMhTbfrFJ8FYCfOtSr9SVJUFJUpKhyIOCK1MrS9ha04J4rJROax4c4ZAO7mvQcAAAAYA5Cqi7btod/vGubjBhXWXDtlukLjMNRnlNhRQd1S1FJG8SoHHcMeJOlQNWaot2DC1Ld46U8gma5ujyzipD2VbHr1rCWm+anEiDaXVl5XWZTImEnJwDxSknmo888OeQgp7fFbSZp3Ajh/S0VTcZbmGwU7SDx1+fJTN0crlebrsviSr0+9IcD7rbDzxKluNJOASTzwd4Z7gK2PaephOzbUpkbvVfRUnOf+UrHnnFZu2woltt7ECDHRHix2w2y0gYShIGABUCdJfaVDfgO6JsUlL61rH0k+2cpSEnPVAjmcgb3cOHacJYI3VlZmMYBOe4ZT2okbRUWJHZIGO84XS6INiLt0vOo3U+rHaTDZPepWFr8wAj9qpd2xnVbmkRA0Y1JVdpkhDaXWVhHUNj1lLKzwSPVCe/1q1To83fSNk2cQLe5qOztXGQtcmU0uWhKwtauCSCc5CQgeVbZrbabo/SKWBcrl1z0hO+0zET1qin2jjgBnvIz2Zwa71jpZa8uazODoMcvlxVehZDFbwxz9nI1ORpn58FFX9Bdvvo/W/wBMBvYz1X0ovf8Ad9Td+daFq29bYNKS0xr/AHrUEJS/6txUgqbc/RWMpJ8M5qz2gtd6b1tGfdsMxTjkcgPsOtlDjeeRIPMHB4jIrI6ssFt1PYJVlurIdjSUFPL1kK7FpPYoHiDXRlzdFLszxDt0wQuclqZNFt08zuz3sgqjV7vF1vk0TbxcJM+SEBsOvrKlBIJIGe7ifjXRrt3q3vWm8zrVIOXoclyOs45lCikn5V1K17NnZGzuWLftbR2t6UpSvS8q9O0DU8PR+k5t+mYUGEYZazguunghA957ewZPZVJL7dLhfb1Ku1ydVImzHS44oDmTwAA7gMADuAFS30r9TruGrIumGHD6NbGw6+kHgp9YyMj81GMfpmtM2FWpm87WLDEkthxht5UhaSMj72hS05/WSmkNqp20lKahw1Iz8PutDeKl1ZVimYdAcfE7z8N3ipf2PbELdFgMXrWkUS5zqQtuAs/emAeW+Pw1d4PAdx51N8ZhiLHQxHZbYZbGEobSEpSO4AcBXJUTdKa73K2bOG2YDjrKJ0xMeS42SD1ZSpRTkcgopAPeMjtrPGSa4VAa928/ALSCKG20znMbuHxPeVsOodrOgLHIVGl6hYefScKbioU+Qe4lAIB8Caxdg22aTv2p4On7TDvEiTMd6ttwx0IbHAkk5XvYABPKqhgADAGKmPoq6clzNcnUbkNz0CDGcDUhSTuF5WEbqT2ndK845U7qLPS00DpHEkgefBIqa91dVUNjaAATy4cVaWon6VF3+j9mBgpVhdxlts8PZSesV/kA86liq09L66h/UllsqVEiLEXIWkHhlxQSPPDZ+PjSe0xdbVsHLXwTq8zdVRvI3nTxUy7E4aIOyjTbKBjfgoeV+k565+ajW1zZLEKE/Mkr6thhtTjq8E7qUjJOBx5CtP2FXJu6bJ9PvNkZZiiMsdymyUH/AC5863CbGamQn4j6d5p9tTax3pUMH5GqtSCKh+1zPqrdKQadmxyGPBaR92LZr+VMf7B3+Sv37sWzX8qY/wBg7/JVWNoeib1oi9OwLnHcMXfIizAk9U+jsIPIKxzTzHu41rQIIyCMVpY7FSyNDmPJB7vostJ0hrInFj2AEdh+quZ92LZr+VMf7B3+Sn3Ytmv5Ux/sHf5Kp3bIM26TEQ7ZDkTZKz6rUdsrWfIVv8vZBqG1aIuOqtRvs2lqKyFtRCOsedUSAlKsHCASR2k+FeJbNRREB8hBO7UZ9F7ivlfMCWRggbzg48crp7TLo3tA2vum2OlyNNlMQIbgSRlGQgKAPYSSfOrlR2W48dthlIQ22kIQkdgAwBVP+jlaRddrVsKk7zcFDkxYxy3RupP7Sk1cOqd9LWOjgbuaPz0V7o+HSNkqHb3H89Voe3+7Gz7Jr26hWHZDaYrf/wCRQSf3So+VUzHAYqyHTAu3V2WxWNKzl+SuUsDuQndGfNw/Dwqt9N7DFsUu1/kSfkk3SGbbq9n/ABAHzSpf6Meil33Vn9JZjR+jrQsFvI4OycZSP1QQr37tR5obS9z1hqOPZLUj746d510jKWGwfWWrwHd2nAq62kNP27S+nYljtbe5HjIxk/WWo8VLV3knJNeb1XiCLqmn3neQXqx28zy9c8e63zP2Wm9JScuFsiuaW1bqpLjMc+IU4CR8Aap/Vv8ApKwHZ2yO5KZSVKiuMyCB7KVjePkCT5VUCo6P4/THHM+gU9I8/qhn/EepU1dEWE09ra7TloyuNACEHu31jPyTVnqqD0ddXQdKa8P0q8liBcWPRnHlcEtL3gUKUexOcgnszk8M1b1taHEJcbUlaFAFKknIIPaKT35jxVbR3EDCddHpGGk2RvBOV+0rr3KdCtsJybcJbESM0MrdecCEJHiTwqNbPtfhak2kwdK6XhiZDX1ipU90lAwlJP3tPMjhjJxz4ClkVPJKC5o0GpKbS1MULmtedToBxWN6W09cfZ/BgoVj0y4oCx3pQhSv8wTVW6s50vIbjui7RNQCUR7hurx2BbasH4gDzqsdbCxAfpBjmVir+T+tOeQU+dDuChdw1Hc1JG+00xHQe0BRWpQ/dTVjKrl0QLxFZuF9sTzqUSJKWpEdJON8I3gsDvIyk47s1Y2s7etr9Y7PZ6BaWxbP6FmO31Kxuqbk1Z9NXO6vqAbiRXHlfqpJxVCQVEZUcqPEnxqw/Sg2hRFwVaIs8lLzq1pVcnG1ZCAk5S1n2iQCe4DHbwrxT2w0zooS93/69As/0hqmzTiNpzs+pW3bGrWu77UtPRUJ3g3MRIX4Ja9c/wCXHnUmdMC7791sNhQr+pZcmOJ/SO4j/Iuu90TdIOtImazms7oeQYsDe5lOcuLHgSAkHwVUa9IG7fS+1m8rSctxFIho9zaRvfvFVSHiouem5g8/w+SgsNNatd8h8vwea0GrfdGq1G2bJre6tG67PcclK8QpWE/upSfOqhttrecQy0MuOKCEDvJOBV9tNW1uzadttoa+pCitR0+O4kJ/0rl0hl2YWx8z6f2u3RqHamfJyGPH+lkKpDtduovW03UFwSvfQqYppB/NbAbH+WrlauuiLHpW63hfKFDdfwOZKUkgDxJGKoWSpRKlqKlk5UT2mq3R2L3nyfD88lZ6TTe6yLvPyHzXYtkN243OJbmAS7LfQwgDtUtQSP41fqBGahQWIbCQlphpLSABgBKRgfIVTzo92n6W2tWdKk7zUMrlufqJO7++UVcmvHSKXMjI+Qz4/wBL30ahxE+TmceH9rWdqt2Nk2cX+5IXuOtwXEtKzycUNxH7yhVHQMAAdlWk6Wd3EPQMS0pXhdxmpynvQ2N8/vblVbq/0fi2acv5n0/Cl/SObbqQz/Eev4FKPRftQuO1ZiStJKLdEdk5xw3jhsef3wnyq29QN0P7T1dovt8Wni++3FbPghO8r5rHwqeaS3uXrKsjlgfninthh6ujB/yJPy+SVRzap/vM1L/5m9/mNXjqje1FSV7StSqQQR9JvjI8FkH5irfR3+V/d81S6Tfws7/ktbrOaN0lqDV1x9CsNuckqBHWun1WmR3rWeA93M9gNYRKVrUG2klbiiEoSBkkngAKvnpKyxNPacgWeEw0y3GYQghtISFKAAUo45kniTzJNOLpcDRMGyMkpLabaK552jhrd/xUebMNiVh0wWbjey3ebsnCklafvDKvzEHmR7SvICt21hrGy6XYKp6pUh/GUxocdTzqvJIwn3qIHjWw0rHSVL55NuYl3kttFSsp49iABvn/AGqxbSdpu0TUqHIFk05e7HbFgpVuQ3TIdT3KWE+qPBPxNRrpDSU+/axhaXdJtMqVvYMtlSSnCCserwPEDhV56pjtB1VLTtruWp4LhL0G5j0fJ4FLOEBPuISQfea0dqq+ta+KFgbgb9+vDKzN3oxC5ks8hfk7t2nHCkmH0a8/991dnvDMHH8V1De0PTR0jrO42DeccRGWnqnVp3S4hSQQrhw7flVxdn+tLHrWyt3C0yU9buj0iKpQ61hXaFD+B5GuxqjSGmdTqaVfrLDnraGG3HEeukdwUMHHhnFU4LzUQTEVOSOWgwrtRY6aohBpcA785JyFX3oiwZjmtrrcUJUIbFvLLqvwS4taSge/CF//AA1Z4kAZJwK6Fjs9psVvTAs9vjQIqSVdWw2EJz2k45nxPGoj287W7dbbTL0zpqYiVdZKCzIkMqyiKg8FesP7TGQAOXM8QAakxfc6rMbd/kOZVyAR2qkxK7dn4nkFX3X09q6a5v1xYILMi4vrbI7U75wfMYNYSgGBgUrbsaGNDRwWCe4vcXHilKUr0vKy+tLkq86vvF1Uoq9KmuuJP5pUd35YrJ7I9QMaX2jWe8y1FMRp1TchXstuJKCo+A3gryrWHm1svOMuJ3VtqKFDuIODXxXJ0TXRdXwIx8F1bM9sol4g5+Ocr0GZcbeaQ8y4lxtaQpC0nIUDxBB7RXBdLfBukF2BcobEyK6MOMvNhaFDxBqm+htqmstHxEwrbOZkwU/UizWy42j9EghSR4A48K3B7pGawU0Es2axNudqlIdUPhvj+NZJ9hqmP9wgjnnC2UfSGkez/wCgIPLGVNjey7ZxCcMw6WtiQ2N8l4FTaQOJJCiU499Z3Sd8st9gOu6fdbegxnjGS40jDSikAncPIpGcZHDINU61ntE1fq5Kmbzd3FRCc+isJDTPmkfW/WJrk0xtK1rpqztWiyXn0SE0pSkNiKyrBUSTxUgk8T31afY6iSPL5Mu7ScBVGX+mjkwyPDewDJPlors1S3bndvpnatfZCVbzbD/ojfHsaAQf3go+ddz7tG0v8pD/AIJj+StBkvOyZLsl9ZcddWpxxR5qUTkn4mrlqtUlJI58hB0xp/SpXe7x1sbY4wRg5OcfUqUej7tKa0ZcnrReVqFlnOBZcAz6M7gDfx2pIAB7sA99WthSo02I1LhyGpEd1IW260sKQsHkQRwIrz9rPaT1lqfSqybBeZMNCjlTIIW0o+KFApz44zU3GzCpd1kZw7yKi2Xs0rOqkGW8OYV53mmn2lNPNodbVwUhaQQfeDWEc0Xo9x3rXNK2Nbmc7xgNE/HdqukHpDa5YSEyIVjlgc1KjuIUf2V4+VdiR0jNXqThizWJs960Or/94pOLLWsPu+qdOvlA8e95hWZgwoUBnqYMSPFb9hlsIT8BUQ9LW7ei6Eg2htxIcnzklac8S22kqPD9LcqI73tr2iXRBbTd2beg8xCjpQT+sreUPIitAnzJc+WuXOlPypDn13XnCtR8zxq/Q2SWKZssrhprjel9wvsUsLoYWnXTO5T30PbUS5qC+LSN0BqI0rx4rX//ADqw1Uh0ltC1fpS2Lttgu3ocVbpeUj0ZpeVkAE5UknkBWY+7RtL/ACkP+CY/kqK+z1FTO6UEYPf9EW+9U1LTtiLXZG/d9V3+k/dvpHaq/ESrLdtitRvDeI6xX+cDyrQtK2C66nvjFms0VUiW8fcltPatZ/BSO/8A1IrYtJaT1ZtR1PJmI3ll57fnXJ5G602Tz5YBVjklPyHGrV7OtD2TQ9mEC0tFTywDJlOD74+rvJ7B3AcB86s1FfHboGwt1eB+EqtT2+S51Dp3aMJznn2D6rr7LNA2vQVi9DiESJr+FTJik4U8odg7kjJwnsye0k1t9KVkZZXyvL3nJK2cUTIWBjBgBcM6LHnQn4UtpLsd9tTbqFDgpKhgg+Rqme1jZ3ddB3lxDjTj9ndWfQ5oTlJSeSFnsWPHnjI8LpVxTI0eZGcjS2GpDDg3VtuICkqHcQeBq5b7g+ieSBkHeFRuVtZXMAJw4bivPyspatRagtLIZtd8ucJocm2JS0IHkDirTX/YXs/ujinGYUu1LUckwX90D3JWFJHkKwQ6OOlN8k36/bnYN9nPx6v/AErRi+Ucjfez8QsybBWxu9wjvBVbbpc7ndXEuXS5TJ60/VMl9Tm77t4nFTT0QLQH9QXu+qRlMWOiK2rs3nFFSseICE/tVI+n9hmz+1OJdehSrqtPEGe/vp80pCUnzFSNAhxIEVEWDFZix2xhDTKAhKfcBwqhcLzFLCYYQdeO5MLdZJopxNM4acN6xeu9ORNW6Tn2CYrcRKbwhwDJbWDlCx7lAHx5VSjVenbvpa9vWe9RFR5LRODg7jqexaD+Ek9/kcHIq+VYvUunbHqWD6DfbZGnsA5Sl1PFJ70qHFJ8QRVG2XM0ZLXDLSmF1tTa0BzThw8+9UOjvPR30Px3nGXm1byHG1FKkEciCOINbJM2ha5lwfQpOq7s4wRulPpBBUO4qGCfM1P9z6O+i5DqnIU+8wAeTaHkOIHu3klXzrpx+jhpkKzI1BenE9zfVIPzQaem8UL8F2/tCzzbJcI8hu48iqycEp7ABUq7HtkF11bKYul6Zet9hB3yVApdlD2UDmEn2/h3ietKbJdCacdbkRbMmXKbOUvzVF5QPeAfVB8QBW9VRrL/ALTS2AY7T8kwoujuy4OqDnsHzK6REGx2NQZZbjQYEYlLaBupbbQnkO4ACqFz5b1wnybhIOXpTy3nD+cpRUf41fe72+LdbXKtk5suxZbKmXkBRTvIUMKGRxGQTyrSPuL7NfybT/inv56qWq4Q0m0ZASTy/tXbvbZq3YEZADc7/wClWfYxavpnanp+EpJUhMsSF9260C5x80gedXZrU9K7OdG6Xuv0pY7MmLM6tTfWde4vCTjIwpRHZW2Vwutc2slDmAgAcV3tFvdRRFryCSeCi/pPXf6N2VyYqFYcuMhuMnjx3c76vkgjzqo9Xr1hpDT2rmI7GoIHpjUZZW0nrVoCVEYJ9UjPDvrW/uL7NfycT/i3v56u2y6wUkOw4HOc8PqqF1tFRWT9Y0jGMa5+ijTofWkKuN+vqk8W2m4bav0jvqH7qKsZWG0jpexaTtzlvsEBMKM66XloC1KysgDOVEnkkfCszSuvqRVTukG4pvbqU0lO2I7xvVXeltdvS9dW60oIKIEHfVx5OOqJI/ZQj41DNXW1Dsw0PqC8v3e72X0mbI3escMl1OcJCRwCgBwA5VjzsW2akEHTg4//AHb389PKO9U1PA2PB0HZ8eKQVtjqqid8ocNT2/DgubYBavonZLY2ynDkloy1nHPrVFY/dKR5VvlcUOMzDhsxIzYbYYbS22gckpSMAfAVGG3bakzo2CbPZ1tvX+S3w7REQeS1D2vZT5nhzRBklbUHYGriStAXx0NMNs6NAC6e3zau3peO5pzT76F3x5GHnUnIhJI5/wDMI5Ds4E9gNWFqUtalrUpa1ElSlHJJPMk99fcl9+VIckyXnHn3VFbjjiipS1HmSTzNcdbehoWUkey3fxPNYOvr5K2Tbdu4Dkv1ClIWlaFKStJBSpJwQRyINZP+kWofygu/+Od/mrF0q2WtdvCpte5u4rJnUeoQMnUF3/xzv81Za8jaDZocaZdpGpIMeV/UOPyXUhfDPD1u7jWe2CaNZ1JqhV2u+41YbNiTMdeIS2pQ4pQSeGOG8rwGDzqQ+kU87d9ktvuy5tundXfXNx6A8HWUskPBA3hzUB1YPjmlk1WxlS2FrQc7+zO5NIaSR9K6dziMajtxvUW6bjaouVrkXy56l1HbLGwk71wQmRJRv7wTu4SoYHHiSeHieFYbWGmJ1gvLEIply0y0JXFeXEW0ZO9j6iFZURk4GQCe6rGaIh2tvZ5prZrc21IVqKxyZLhBwtClbi/2vvqiO4t11Ik61XTpTPsSlNb9ptQjQEKwE9aAFq3fzglxfwPdVRlycJHkN0AJ7wDgHnvyrr7W10TAXe8S0Z5EjJG/G7GO3ioIl6N13puGi/vWO72xpsbwlIBSpod6t07yB+lis7pDU22K+78fTl2v1xDOOsUClYR3ArWMA+BNSfpFzV+nLZrjUe0qS+1bn21tsRZL4Wl1Z3uDackJSQUpAHPPhWH2JMX+Ls4Ztk3TE242K8SytEy0zg3JYPqjeWEqBCcp572RggjiM+pKzbjcXta4ggA8NRk4zvI714jotiRrWOc0EEkcdDgZxuB540UW62ve0D0py1atud8bcKcriynFISpJ7d0YSQe8cK1QAAYAxUh9IGC5a9oSrcvUM29oZiNbipboW5HBz96JAAyAArOMneGcnjUeU1pC10LXNAGRw0Sisa5k7muJODjU5KUpSrCrJSu7Y7XNvV2Ytdua62U/vbie/dSVH5A0rk+eOM4e4BdY6eWQZY0kLa9uenHdN7S7oyWymNNdM2MewocJJA9yt4eQrR6uZtp2fMa804G2S2zd4eVwnl8iTzbUfZVgcewgHwNPLpAm2q5SLbcYrsWZHWUOsuDCkn/5xB5EcaoWqtbUwgE+8N/1TG8UDqWcuA912o+n5wXWpSlNEpSlKUISlKUISlKUISlKUISlckVh+XJbixWHZEh07rbTSCpaz3ADialnQuwXVF6Lcm/uIsUI8dxY35Ch+gOCf1jkd1cJ6qKnGZHYVinpJql2zE3P5zUTRmX5MhuPGZdffcVuttNIKlrPcAOJNTjsw2BzJxauWtiuHF+sm3tr++uD89Q+oPAcfFNTToTZ9pbRjAFmtyBKKd1yY9676+/1jyHgMDwraqzNbfnv92AYHPj9lqaHo8yP36g7R5cPuuraLbAtFuZt1siMxIjKd1tlpISlI91dqlKz5JJyVpAABgJSlKhSlKUoQlKUoQlKUoQlKUoQlKUoQlKUoQlKUoQlKUoQlKUoQlKUoQlKUoQlU92+6Yvlq2jXa4Sokl6HcHy/GlBBUhSSB6mewp+rg9gHZVwqEAjBGRV631zqOQvAznRL7jb210YYTjByvPvqH/7h77M06h/+4e+zNegW4j2E/Cm4j2E/CnPtH/r8/sknsx/t8vuvP3qH/wC4e+zNOof/ALh77M16BbiPYT8KbiPYT8KPaP8A1+f2R7Mf7fL7qgjT1zaiuRGnZzcd05cZQpYQs+KRwPIc+6vwu3IwxCLk0xQreDGV9Xnv3eWav5uI9hPwpuI9hPwqPaIf+Xn9lPs0f/Xy+6oOqXeVPtSFSrkXmU7rThcc3mx3JPMD3VwqVPVK9KUZapG/v9cd4r3va3uefGr/AG4j2E/Cm4j2E/Cj2iA/6vP7IPRon/t8vuqFXS4X267n0pOus/q/qelPOO7vu3icV+2y5X+1oWi13C7QEufXTFedaCveEkZq+m4j2E/Cm4j2E/Co9oG4x1Wnf9lPs27O112vd915/uIlOuKcdbkOLUcqUpKiVHvJPOvnqH/7h77M16BbiPYT8KbiPYT8K9e0f+vz+y8+zH+3y+68/eof/uHvszXctNjvV2kpjWy0T5jqjgJZjqV8TjA86vtuI9hPwr6AAGAABUHpGcaR+f2Ut6MNzrJ5fdQ/sC2UvaRKtQ6gSg3p5vq2mEqChFQeeSOBWeRI4AcATk0qYKUgqamSpkMkh1WipaaOmjEcY0CVqG0fZ1pzXMQJukcszm07rE5jAdb8M/hJ/NPecYPGtvpXiOV8Tg9hwQuksTJWljxkFVC1tsU1ppxTj0ON9Owk8nYSSXMfnNfWB/R3qjZ9txh9TD7a2nUHCm1pKVJPcQeIr0GrG3uwWO9t9XeLRBnpxgekMJXj3ZHCn9P0he0YlbntGn55LO1HRuNxzC7HYdfzzVCaVabX+yzQUSMX4unm2F7pP3uQ6kZ9wXiq46pgxYM0NxW+rTk8N4nu7zT2juEdX+wEd6z9bbZaP95B7v6WHpX2yAp5CSMgqANTFs10Ppe8Nb1xthfOB/4h1P8ABQrtUVLKdu05cKWkfUu2WY+Kho8Odc0GLKnviPBjPy3j/ZsNlxXwGTVzrNsu2fQEtusaUtyllIO8+kvHPf65OK22FDiQmephRWIzfsNNhCfgKSSdImD9jCe84+qexdGpD/JIB3DP0VPtN7HNoN73Viym2sq/tLgvqcfqcV/u1KWlejnbI6kvalvb85QIJjxEdS37io5UfLdqdqUsnvdVLo07I7Pqm1PYaSLVw2j2/RYbS+ldO6YjdRYrPEgpIwpTaPXX+ks+srzNZmlKUue55y45KcMY1g2WjASlKV5XpKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhKUpQhf/9k=" alt="Aercom SA" style="height:34px;width:auto;object-fit:contain;display:block">
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section">Principal</div>
+    <div class="nav-item active" id="nav-dashboard" onclick="showModule('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" id="nav-clientes" onclick="showModule('clientes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Clientes
+    </div>
+    <div class="nav-item" id="nav-pipeline" onclick="showModule('pipeline')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+      Cotizaciones
+    </div>
+    <div class="nav-item" id="nav-calendario" onclick="showModule('calendario')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendario
+    </div>
+    <div class="nav-item" id="nav-pedidos" onclick="showModule('pedidos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+      Pedidos
+    </div>
+    <div class="nav-item" id="nav-equipos" onclick="showModule('equipos')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/><path d="M15.54 8.46a5 5 0 010 7.07M8.46 8.46a5 5 0 000 7.07"/></svg>
+      Equipos
+    </div>
+    <div class="sb-section">Administración</div>
+    <div class="nav-item" id="nav-facturacion" onclick="showModule('facturacion')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Facturación
+    </div>
+    <div class="nav-item" id="nav-recordatorios" onclick="showModule('recordatorios')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Recordatorios
+    </div>
+    <div class="nav-item" id="nav-excel" onclick="showModule('excel')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      Excel / Drive
+    </div>
+  </div>
+  <div class="sb-footer">
+    <button id="btn-drive" class="btn btn-primary" onclick="gdriveAuth()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      <span id="btn-drive-text">Conectar Drive</span>
+    </button>
+    <button id="btn-guardar" class="btn btn-ghost" onclick="saveDataAndMark()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span id="btn-guardar-text">Guardar JSON</span>
+    </button>
+    <button class="btn btn-ghost" onclick="document.getElementById('import-input').click()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Importar JSON
+    </button>
+    <div style="display:flex;gap:5px">
+      <button id="btn-undo" class="btn btn-ghost" onclick="undoAction()" disabled style="flex:1;font-size:11px;opacity:.6" title="Sin acciones para deshacer">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 7v6h6"/><path d="M3 13C4.5 7 9.5 4 15 4c5 0 9 3.5 9 8s-4 8-9 8a9 9 0 01-7-3.5"/></svg>
+        Deshacer
+      </button>
+      <button id="btn-redo" class="btn btn-ghost" onclick="redoAction()" disabled style="flex:1;font-size:11px;opacity:.6" title="Sin acciones para rehacer">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 7v6h-6"/><path d="M21 13C19.5 7 14.5 4 9 4c-5 0-9 3.5-9 8s4 8 9 8a9 9 0 007-3.5"/></svg>
+        Rehacer
+      </button>
+    </div>
+    <input type="file" id="import-input" accept=".json" onchange="importData(event)">
+    <p class="sb-hint" id="sb-saved">Sin cambios pendientes</p>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main id="main">
+
+  <!-- DASHBOARD -->
+  <section id="module-dashboard" class="module active">
+    <div class="page-header">
+      <div>
+        <h2 id="dash-greeting">Buenos días, Matías 👋</h2>
+        <div id="dash-date" class="page-header-sub"></div>
+        <div id="dash-summary" style="font-size:13px;color:var(--t2);margin-top:3px"></div>
+      </div>
+    </div>
+    <div class="page-content">
+      <div id="dash-main"></div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;padding-top:4px">
+          <div style="height:1px;background:var(--border);flex:1"></div>
+          <span style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap">Métricas visuales</span>
+          <div style="height:1px;background:var(--border);flex:1"></div>
+        </div>
+        <div class="charts-grid">
+          <div class="card">
+            <div class="card-header">Cotizaciones por estado</div>
+            <div id="chart1-legend" class="chart-legend-wrap"></div>
+            <div id="chart-cotz-wrap" style="position:relative;height:240px"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">Equipos por tipo</div>
+            <div id="chart-equip-wrap" style="position:relative;height:240px"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">Estado de facturación del mes</div>
+            <div id="chart3-legend" class="chart-legend-wrap"></div>
+            <div id="chart-fact-wrap" style="position:relative;height:240px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section id="module-pipeline" class="module">
+    <div class="page-header">
+      <div>
+        <h2>Pipeline de Cotizaciones</h2>
+        <div id="pipeline-sub" class="page-header-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="openCsvModal('cotizaciones')">↑ Importar CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="openQuoteModal(null,null)">+ Nueva cotización</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="srch-bar">
+        <div class="srch-wrap">
+          <svg class="srch-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="srch-input" id="pipe-q" placeholder="Buscar N°, cliente o descripción…" oninput="applyPipeFilter()">
+        </div>
+        <select class="srch-select" id="pipe-f-est" onchange="applyPipeFilter()">
+          <option value="">Estado: Todos</option>
+          <option>Solicitud</option><option>Cotizar</option><option>Enviar</option>
+          <option>En seguimiento</option><option>Aprobada</option>
+          <option>Facturada</option><option>Ejecutada</option><option>Rechazada</option>
+        </select>
+        <select class="srch-select" id="pipe-f-resp" onchange="applyPipeFilter()">
+          <option value="">Responsable: Todos</option>
+        </select>
+        <button class="srch-clear" id="pipe-clear" onclick="clearPipeFilter()">Limpiar filtros</button>
+        <span class="srch-count" id="pipe-count"></span>
+      </div>
+      <div id="pipeline-kanban" class="kanban-wrap"></div>
+    </div>
+  </section>
+
+  <!-- PEDIDOS -->
+  <section id="module-pedidos" class="module">
+    <div class="page-header">
+      <div>
+        <h2>Pedidos de Servicio</h2>
+        <div id="pedidos-sub" class="page-header-sub"></div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openPedidoModal(null,null,null)">+ Nuevo pedido</button>
+    </div>
+    <div class="page-content">
+      <div class="srch-bar">
+        <div class="srch-wrap">
+          <svg class="srch-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="srch-input" id="ped-q" placeholder="Buscar N° pedido, cliente, equipo, técnico…" oninput="applyPedidosFilter()">
+        </div>
+        <select class="srch-select" id="ped-f-est" onchange="applyPedidosFilter()">
+          <option value="">Estado: Todos</option>
+          <option>Pendiente</option><option>En ejecución</option><option>Realizado</option>
+        </select>
+        <select class="srch-select" id="ped-f-cli" onchange="applyPedidosFilter()">
+          <option value="">Cliente: Todos</option>
+        </select>
+        <button class="srch-clear" id="ped-clear" onclick="clearPedidosFilter()">Limpiar filtros</button>
+        <span class="srch-count" id="ped-count"></span>
+      </div>
+      <div id="ped-list"></div>
+    </div>
+  </section>
+
+  <!-- EQUIPOS -->
+  <section id="module-equipos" class="module">
+    <div class="page-header">
+      <div>
+        <h2>Equipos y Mantenimiento</h2>
+        <div id="equipos-sub" class="page-header-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="openCsvModal('equipos')">↑ Importar CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="openEquipModal(null)">+ Nuevo equipo</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="filters-bar">
+        <span style="font-size:12.5px;color:var(--t2);font-weight:500">Filtrar:</span>
+        <button class="filter-btn active" onclick="setEquipFilter('todos',this)">Todos</button>
+        <button class="filter-btn" onclick="setEquipFilter('rojo',this)" style="color:var(--err)">● Vencidos</button>
+        <button class="filter-btn" onclick="setEquipFilter('amarillo',this)" style="color:#b45309">● Próximos (30d)</button>
+        <button class="filter-btn" onclick="setEquipFilter('verde',this)" style="color:var(--ok)">● Al día</button>
+      </div>
+      <div class="srch-bar">
+        <div class="srch-wrap">
+          <svg class="srch-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="srch-input" id="equip-q" placeholder="Buscar ID de equipo o cliente…" oninput="applyEquipFilter()">
+        </div>
+        <select class="srch-select" id="equip-f-tipo" onchange="applyEquipFilter()">
+          <option value="">Tipo: Todos</option>
+          <option>Grupo Electrógeno</option><option>Electrocompresor</option>
+          <option>Motocompresor</option><option>Motobomba</option><option>Secadora de Aire</option>
+        </select>
+        <select class="srch-select" id="equip-f-est" onchange="applyEquipFilter()">
+          <option value="">Estado: Todos</option>
+          <option value="Vencido">Vencido</option>
+          <option value="Próximo">Próximo</option>
+          <option value="Al día">Al día</option>
+        </select>
+        <button class="srch-clear" id="equip-clear" onclick="clearEquipFilter()">Limpiar filtros</button>
+        <span class="srch-count" id="equip-count"></span>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID / Tipo</th><th>Cliente</th>
+                <th>Última visita</th><th>Últ. Preventivo</th><th>Últ. Refrigerante</th><th>Últ. Batería</th>
+                <th>Estado</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="equip-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FACTURACIÓN -->
+  <section id="module-facturacion" class="module">
+    <div class="page-header">
+      <div>
+        <h2>Facturación Mensual</h2>
+        <div id="facturacion-sub" class="page-header-sub"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="month-sel">
+          <button onclick="changeMonth(-1)">‹</button>
+          <span id="fact-month-lbl"></span>
+          <button onclick="changeMonth(1)">›</button>
+        </div>
+        <div id="fact-month-info" style="font-size:12px;color:var(--t3)"></div>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-weight:600;font-size:13.5px">Progreso del mes</span>
+          <span id="fact-prog-txt" style="font-size:13px;color:var(--t2)"></span>
+        </div>
+        <div class="pb-wrap"><div class="pb-fill" id="fact-prog-bar"></div></div>
+        <div style="display:flex;gap:14px;margin-top:10px" id="fact-stats"></div>
+      </div>
+      <div class="srch-bar">
+        <div class="srch-wrap">
+          <svg class="srch-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="srch-input" id="fact-q" placeholder="Buscar cliente…" oninput="applyFactFilter()">
+        </div>
+        <select class="srch-select" id="fact-f-tipo" onchange="applyFactFilter()">
+          <option value="">Tipo: Todos</option>
+          <option value="Sanatorio/Clínica">Sanatorio / Clínica</option>
+          <option>Industrial</option><option>Comercial</option><option>Otro</option>
+        </select>
+        <select class="srch-select" id="fact-f-ajuste" onchange="applyFactFilter()">
+          <option value="">Ajuste: Todos</option>
+          <option>IPC</option><option>Dólar divisa</option>
+          <option>Dólar billete</option><option>Fijo pesos</option>
+        </select>
+        <select class="srch-select" id="fact-f-modo" onchange="applyFactFilter()">
+          <option value="">Modalidad: Todas</option>
+          <option value="Manual">Manual</option>
+          <option value="Automática">Automática</option>
+          <option value="Por fecha">Por fecha</option>
+        </select>
+        <select class="srch-select" id="fact-f-est" onchange="applyFactFilter()">
+          <option value="">Estado: Todos</option>
+          <option>Pendiente</option><option>Facturado</option>
+          <option>Cobrado</option><option>Excluido</option>
+        </select>
+        <button class="srch-clear" id="fact-clear" onclick="clearFactFilter()">Limpiar filtros</button>
+        <span class="srch-count" id="fact-count"></span>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="cl-item cl-head">
+          <div>Cliente</div><div>Ajuste</div><div style="text-align:center">OC</div>
+          <div style="text-align:center">HES</div><div>Modo / Fecha</div><div>Estado</div><div></div>
+        </div>
+        <div id="fact-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLIENTES -->
+  <section id="module-clientes" class="module">
+    <div class="page-header">
+      <div>
+        <h2>Clientes</h2>
+        <div id="clientes-sub" class="page-header-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="openCsvModal('clientes')">↑ Importar CSV</button>
+        <button class="btn btn-primary btn-sm" onclick="openClientModal(null)">+ Nuevo cliente</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="srch-bar">
+        <div class="srch-wrap">
+          <svg class="srch-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="srch-input" id="cli-q" placeholder="Buscar nombre, email, contacto, ciudad…" oninput="applyCliFilter()">
+        </div>
+        <select class="srch-select" id="cli-f-tipo" onchange="applyCliFilter()">
+          <option value="">Tipo: Todos</option>
+          <option>Sanatorio/Clínica</option><option>Industria</option>
+          <option>Comercio</option><option>Edificio</option><option>Otro</option>
+        </select>
+        <select class="srch-select" id="cli-f-est" onchange="applyCliFilter()">
+          <option value="">Estado: Todos</option>
+          <option>Activo</option><option>Inactivo</option><option>Suspendido</option>
+        </select>
+        <button class="srch-clear" id="cli-clear" onclick="clearCliFilter()">Limpiar filtros</button>
+        <span class="srch-count" id="cli-count"></span>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th id="th-cli-nombre" onclick="cliSortBy('nombre')" style="cursor:pointer">Cliente ⇅</th>
+                <th id="th-cli-tipo" onclick="cliSortBy('tipo')" style="cursor:pointer">Tipo ⇅</th>
+                <th id="th-cli-ciudad" onclick="cliSortBy('ciudad')" style="cursor:pointer">Ciudad ⇅</th>
+                <th>Contacto</th>
+                <th>Frecuencia visita</th>
+                <th id="th-cli-presupuesto" onclick="cliSortBy('presupuesto')" style="cursor:pointer">Presupuesto mens. ⇅</th>
+                <th id="th-cli-estadoCliente" onclick="cliSortBy('estadoCliente')" style="cursor:pointer">Estado ⇅</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="cli-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECORDATORIOS -->
+  <section id="module-recordatorios" class="module">
+    <div class="page-header">
+      <h2>Recordatorios</h2>
+      <div style="display:flex;align-items:center;gap:8px">
+        <select class="fc" id="rem-filter" onchange="renderRecordatorios()" style="width:auto;padding:5px 10px;font-size:12.5px">
+          <option value="todos">Todos</option>
+          <option value="Pendiente">Pendientes</option>
+          <option value="Hecho">Hechos</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="openRemModal(null)">+ Nuevo recordatorio</button>
+      </div>
+    </div>
+    <div class="page-content">
+      <div class="srch-bar">
+        <div class="srch-wrap">
+          <svg class="srch-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input class="srch-input" id="rem-q" placeholder="Buscar título, cliente o notas…" oninput="applyRemFilter()">
+        </div>
+        <select class="srch-select" id="rem-f-prio" onchange="applyRemFilter()">
+          <option value="">Prioridad: Todas</option>
+          <option>Alta</option><option>Media</option><option>Baja</option>
+        </select>
+        <select class="srch-select" id="rem-f-est" onchange="applyRemFilter()">
+          <option value="">Estado: Todos</option>
+          <option>Pendiente</option><option>Hecho</option>
+        </select>
+        <button class="srch-clear" id="rem-clear" onclick="clearRemFilter()">Limpiar filtros</button>
+        <span class="srch-count" id="rem-count"></span>
+      </div>
+      <div class="card" style="padding:0">
+        <div class="tbl-wrap">
+          <table class="rem-table">
+            <thead>
+              <tr>
+                <th>Título</th><th>Cliente</th><th>Fecha y hora</th>
+                <th>Prioridad</th><th>Estado</th><th>Notas</th><th style="width:110px">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="rem-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- CALENDARIO -->
+  <section id="module-calendario" class="module">
+    <div class="page-header">
+      <div>
+        <h2>Calendario</h2>
+        <div id="cal-sub" class="page-header-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden">
+          <button id="cal-btn-mes" onclick="calSetVista('mes')" style="padding:5px 14px;font-size:12px;font-weight:500;background:var(--t1);color:#fff;border:none;cursor:pointer;font-family:inherit;transition:all 150ms">Mes</button>
+          <button id="cal-btn-sem" onclick="calSetVista('semana')" style="padding:5px 14px;font-size:12px;font-weight:500;background:transparent;color:var(--t2);border:none;cursor:pointer;font-family:inherit;transition:all 150ms">Semana</button>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openCalEventModal(null)">+ Evento</button>
+      </div>
+    </div>
+    <div class="page-content" style="padding:20px 28px">
+      <!-- Nav mes -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button onclick="calPrev()" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:5px 12px;cursor:pointer;font-size:15px;transition:background 120ms" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='var(--card)'">‹</button>
+          <h3 id="cal-title" style="font-size:16px;font-weight:600;color:var(--t1);min-width:200px;text-align:center"></h3>
+          <button onclick="calNext()" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:5px 12px;cursor:pointer;font-size:15px;transition:background 120ms" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='var(--card)'">›</button>
+        </div>
+        <button onclick="calGoToday()" style="background:transparent;border:1px solid var(--border);border-radius:var(--r-sm);padding:5px 12px;font-size:12px;font-weight:500;cursor:pointer;color:var(--t2);font-family:inherit;transition:all 150ms" onmouseover="this.style.background='var(--hover)'" onmouseout="this.style.background='transparent'">Hoy</button>
+      </div>
+      <!-- Leyenda -->
+      <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--t2)"><span style="width:10px;height:10px;border-radius:3px;background:#c73030;display:inline-block"></span>Equipo vencido</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--t2)"><span style="width:10px;height:10px;border-radius:3px;background:#f59e0b;display:inline-block"></span>Equipo próximo</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--t2)"><span style="width:10px;height:10px;border-radius:3px;background:#c4600a;display:inline-block"></span>Follow-up</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--t2)"><span style="width:10px;height:10px;border-radius:3px;background:#1d6fa4;display:inline-block"></span>Recordatorio</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--t2)"><span style="width:10px;height:10px;border-radius:3px;background:#6d40c4;display:inline-block"></span>Pedido</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--t2)"><span style="width:10px;height:10px;border-radius:3px;background:#0a7c5c;display:inline-block"></span>Reunión</span>
+      </div>
+      <!-- Grid -->
+      <div id="cal-grid"></div>
+    </div>
+  </section>
+
+<!-- EXCEL / DRIVE MODULE -->
+<section id="module-excel" class="module">
+  <div class="page-header">
+    <div>
+      <h2>Excel &amp; Google Drive</h2>
+      <div class="page-header-sub">Importá datos en masa o exportá reportes a tu Drive y PC</div>
+    </div>
+  </div>
+  <div class="page-content">
+    <div id="excel-drive-status" style="background:var(--warn-bg);border:1px solid var(--warn);border-radius:var(--r-md);padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:12px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="excel-drive-msg" style="color:var(--warn);font-size:13px;font-weight:500">Drive no conectado — conectate desde el sidebar para guardar reportes en la nube</span>
+      <button class="btn btn-outline" style="margin-left:auto;font-size:12px" onclick="gdriveAuth()">Conectar Drive</button>
+    </div>
+    <div style="margin-bottom:32px">
+      <h3 style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px">📥 Importar datos</h3>
+      <p style="font-size:13px;color:var(--t2);margin-bottom:16px">Descargá la plantilla, completála en Excel y volvé a importarla.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+        <div style="border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:var(--card)">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">👥 Clientes</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Nombre, tipo, contacto, email, ciudad, ajuste, OC/HES</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsDownloadPlantilla('clientes')">⬇ Exportar / Plantilla</button>
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="document.getElementById('xls-import-clientes').click()">⬆ Importar</button>
+            <input type="file" id="xls-import-clientes" accept=".xlsx,.xls,.csv" style="display:none" onchange="xlsImport(event,'clientes')">
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:var(--card)">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">⚙️ Equipos</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Cliente, tipo, fechas de mantenimiento, horómetro</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsDownloadPlantilla('equipos')">⬇ Exportar / Plantilla</button>
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="document.getElementById('xls-import-equipos').click()">⬆ Importar</button>
+            <input type="file" id="xls-import-equipos" accept=".xlsx,.xls,.csv" style="display:none" onchange="xlsImport(event,'equipos')">
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:var(--card)">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">📋 Cotizaciones</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Cliente, descripción, monto, responsable, estado</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsDownloadPlantilla('cotizaciones')">⬇ Exportar / Plantilla</button>
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="document.getElementById('xls-import-cotizaciones').click()">⬆ Importar</button>
+            <input type="file" id="xls-import-cotizaciones" accept=".xlsx,.xls,.csv" style="display:none" onchange="xlsImport(event,'cotizaciones')">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-size:14px;font-weight:600;color:var(--t1);margin-bottom:4px">📤 Exportar reportes</h3>
+      <p style="font-size:13px;color:var(--t2);margin-bottom:16px">Cada reporte se puede descargar a tu PC o guardar en <strong>Aercom Gestion/Reportes/</strong> en Drive.</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">
+        <div style="border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:var(--card)">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">👥 Reporte de Clientes</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Listado completo con contactos, ajuste y configuración de facturación</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsExport('clientes','download')">⬇ Descargar</button>
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsExport('clientes','drive')">☁ Drive</button>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:var(--card)">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">⚙️ Reporte de Equipos</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Estado de vencimientos, horómetro y próximos mantenimientos</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsExport('equipos','download')">⬇ Descargar</button>
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsExport('equipos','drive')">☁ Drive</button>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:var(--card)">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">📋 Reporte de Cotizaciones</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Pipeline completo con estados, montos y responsables</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsExport('cotizaciones','download')">⬇ Descargar</button>
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsExport('cotizaciones','drive')">☁ Drive</button>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:var(--card)">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">🧾 Reporte de Facturación</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Estado de facturación del mes actual por cliente</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsExport('facturacion','download')">⬇ Descargar</button>
+            <button class="btn btn-outline" style="flex:1;font-size:12px" onclick="xlsExport('facturacion','drive')">☁ Drive</button>
+          </div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:var(--card);border-top:3px solid #1d6fa4">
+          <div style="font-weight:600;font-size:13px;margin-bottom:4px">📊 Reporte de Vencimientos</div>
+          <div style="font-size:12px;color:var(--t2);margin-bottom:12px">Informe visual con gráficos · equipos vencidos, próximos 30 y 60 días · con logo Aercom</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" style="flex:1;font-size:12px" onclick="generarReporteVencimientos()">📊 Generar informe</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- FICHA CLIENTE -->
+<div id="ficha-overlay">
+  <div class="ficha-modal">
+    <div class="ficha-head">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <h3 id="ficha-title" style="font-size:16px;font-weight:600"></h3>
+          <span id="ficha-crit"></span>
+        </div>
+        <div id="ficha-subtitle" style="font-size:12px;color:var(--t2);margin-top:3px"></div>
+      </div>
+      <button class="modal-close" onclick="closeFicha()">×</button>
+    </div>
+    <div class="ficha-tabs" id="ficha-tabs"></div>
+    <div class="ficha-body" id="ficha-body"></div>
+  </div>
+</div>
+
+
+
+<!-- MODAL -->
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title"></h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot" id="modal-foot"></div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div id="conf-overlay">
+  <div class="modal" style="width:420px;max-width:95vw">
+    <div class="modal-head">
+      <h3>Confirmar eliminación</h3>
+      <button class="modal-close" onclick="closeConf()">×</button>
+    </div>
+    <div class="modal-body" id="conf-body" style="padding:20px 20px 8px"></div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeConf()">Cancelar</button>
+      <button class="btn btn-danger" onclick="doConf()">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ─── DEFAULT DATA ────────────────────────────────────────────────────────────
+const DEFAULT = {"version":"1.0","clientes":[{"id":"C001","nombre":"Sanatorio Parque","tipo":"Sanatorio","prioridad":"Crítico","frecuenciaVisita":"Mensual","presupuesto":450000,"email":"contacto@sanatorioparque.com.ar","telefono":"0341-456-7890","contacto":"Dr. Martínez","ciudad":"Rosario","estadoCliente":"Activo","ajuste":"IPC","requiereOC":true,"requiereHES":false,"facturacion":"Manual"},{"id":"C002","nombre":"Molinos Agro SA","tipo":"Industrial","prioridad":"Crítico","frecuenciaVisita":"Mensual","presupuesto":820000,"email":"mantenimiento@molinosagro.com.ar","telefono":"0341-234-5678","contacto":"Ing. Fernández","ciudad":"Rosario","estadoCliente":"Activo","ajuste":"Dólar divisa","requiereOC":true,"requiereHES":true,"facturacion":"Manual"},{"id":"C003","nombre":"Clínica del Sol","tipo":"Clínica","prioridad":"Crítico","frecuenciaVisita":"Mensual","presupuesto":320000,"email":"admin@clinicadelsol.com.ar","telefono":"0341-345-6789","contacto":"Lic. Rodríguez","ciudad":"Rosario","estadoCliente":"Activo","ajuste":"IPC","requiereOC":false,"requiereHES":false,"facturacion":"Automática"},{"id":"C004","nombre":"Frigorífico Rosario","tipo":"Industrial","prioridad":"Normal","frecuenciaVisita":"Trimestral","presupuesto":185000,"email":"mantenimiento@frigorifico.com.ar","telefono":"0341-567-8901","contacto":"Sr. López","ciudad":"Rosario","estadoCliente":"Activo","ajuste":"Fijo pesos","requiereOC":false,"requiereHES":false,"facturacion":"Automática"},{"id":"C005","nombre":"Hospital Provincial","tipo":"Sanatorio","prioridad":"Crítico","frecuenciaVisita":"Mensual","presupuesto":520000,"email":"equipos@hospitalprovincial.gob.ar","telefono":"0341-678-9012","contacto":"Dr. García","ciudad":"Rosario","estadoCliente":"Activo","ajuste":"IPC","requiereOC":true,"requiereHES":true,"facturacion":"Manual"}],"equipos":[{"id":"GE-001","clienteId":"C001","tipo":"Grupo Electrógeno","ultimoPreventivo":"2025-05-10","proximoPreventivo":"2026-05-10","ultimoAceite":"2025-11-10","ultimoBateria":"2024-05-10","ultimoRefrigerante":"2024-05-10","horometro":4250,"observaciones":"Requiere limpieza de filtros de aire"},{"id":"GE-002","clienteId":"C002","tipo":"Grupo Electrógeno","ultimoPreventivo":"2025-06-01","proximoPreventivo":"2026-06-01","ultimoAceite":"2025-12-01","ultimoBateria":"2024-06-01","ultimoRefrigerante":"2024-06-01","horometro":3870,"observaciones":""},{"id":"EC-001","clienteId":"C003","tipo":"Electrocompresor","ultimoPreventivo":"2025-06-25","proximoPreventivo":"2026-06-25","ultimoAceite":"2025-12-25","ultimoBateria":"2024-06-25","ultimoRefrigerante":"2025-06-25","horometro":2100,"observaciones":"Compresor sala UCI — prioridad alta"},{"id":"EC-002","clienteId":"C004","tipo":"Electrocompresor","ultimoPreventivo":"2026-01-15","proximoPreventivo":"2027-01-15","ultimoAceite":"2026-01-15","ultimoBateria":"2024-07-15","ultimoRefrigerante":"2025-01-15","horometro":1850,"observaciones":""},{"id":"MC-001","clienteId":"C001","tipo":"Motocompresor","ultimoPreventivo":"2025-05-25","proximoPreventivo":"2026-05-25","ultimoAceite":"2025-11-25","ultimoBateria":"2024-05-25","ultimoRefrigerante":"2024-11-25","horometro":5600,"observaciones":"Vibración anormal detectada en rodamiento"},{"id":"MB-001","clienteId":"C005","tipo":"Motobomba","ultimoPreventivo":"2026-01-01","proximoPreventivo":"2027-01-01","ultimoAceite":"2026-01-01","ultimoBateria":"2025-01-01","ultimoRefrigerante":"2025-01-01","horometro":980,"observaciones":"Sistema contra incendio — revisión prioritaria"},{"id":"GE-003","clienteId":"C002","tipo":"Grupo Electrógeno","ultimoPreventivo":"2026-04-20","proximoPreventivo":"2027-04-20","ultimoAceite":"2026-04-20","ultimoBateria":"2025-04-20","ultimoRefrigerante":"2025-10-20","horometro":720,"observaciones":""},{"id":"MB-002","clienteId":"C004","tipo":"Motobomba","ultimoPreventivo":"2025-06-30","proximoPreventivo":"2026-06-30","ultimoAceite":"2025-12-30","ultimoBateria":"2024-06-30","ultimoRefrigerante":"2025-06-30","horometro":2340,"observaciones":""}],"cotizaciones":[{"id":"COT-2026-001","clienteId":"C001","equipoId":"GE-001","descripcion":"Mantenimiento preventivo anual — Grupo Electrógeno Caterpillar 3412","monto":450000,"fechaEnvio":"2026-06-01","fechaFollowup":"2026-06-10","responsable":"Gonzalez M.","estado":"Solicitud","notas":"Cliente solicitó incluir cambio de filtros y revisión de alternador"},{"id":"COT-2026-002","clienteId":"C002","equipoId":"GE-002","descripcion":"Reparación compresor de tornillo — Fuga de aceite en sello","monto":820000,"fechaEnvio":"2026-05-15","fechaFollowup":"2026-05-22","responsable":"Torres P.","estado":"En seguimiento","notas":"Follow-up vencido. Pendiente respuesta del área técnica"},{"id":"COT-2026-003","clienteId":"C004","equipoId":"EC-002","descripcion":"Cambio de aceite y filtros — Mantenimiento menor programado","monto":185000,"fechaEnvio":"2026-05-01","fechaFollowup":"2026-05-10","responsable":"Gonzalez M.","estado":"Aprobada","notas":"Aprobada por jefe de mantenimiento Sr. López"},{"id":"COT-2026-004","clienteId":"C003","equipoId":"EC-001","descripcion":"Revisión sistema eléctrico y ajuste de correas de transmisión","monto":320000,"fechaEnvio":"2026-05-28","fechaFollowup":"2026-06-05","responsable":"Torres P.","estado":"Enviar","notas":"Segundo contacto realizado por mail el 04/06"}],"facturacion_estados":{},"recordatorios":[]};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let D = {};
+let curModule = 'dashboard';
+// _charts y _dashAlertItems migradas a js/modules/dashboard.js (Sprint 4)
+let curMonth = '';
+let _unsaved = false;
+let _autosaveTimer = null;
+// equipFilter migrada a js/modules/equipos.js (Sprint 6)
+// editingQuoteId migrada a js/modules/cotizaciones.js (Sprint 8)
+
+// ─── THEME UTILS ─────────────────────────────────────────────────────────────
+// initTheme(), toggleTheme(), updateThemeIcon() migradas a
+// js/modules/theme.js (Sprint 12)
+
+// ─── DATE UTILS ──────────────────────────────────────────────────────────────
+// Migradas a js/utils.js (Sprint 2): today, daysDiff, fmtDate, fmtMoney,
+// addDays, addMonths, monthLabel, nowMonthStr. js/utils.js se carga antes
+// de este script, por lo que estas funciones ya están disponibles acá.
+
+// ─── EQUIP STATUS ────────────────────────────────────────────────────────────
+function equipStatus(e){
+  const nextAceite  = e.proximoAceite      || (e.ultimoAceite      ? addDays(e.ultimoAceite,730)      : null);
+  const nextBateria = e.proximoBateria || (e.ultimoBateria ? addDays(e.ultimoBateria,730) : null);
+  const nextRefrig  = e.ultimoRefrigerante ? addDays(e.ultimoRefrigerante,730) : null;
+  const nextVisita  = e.proximaVisita      || (()=>{
+    if(!e.ultimaVisita) return null;
+    const cli=D.clientes.find(c=>c.id===e.clienteId);
+    const FDAYS={'Semanal':7,'Quincenal':15,'Mensual':30,'Bimestral':60,'Trimestral':90,'Semestral':180,'Anual':365};
+    const d=FDAYS[cli?.frecuenciaVisita||''];
+    return d?addDays(e.ultimaVisita,d):null;
+  })();
+  const dates=[e.proximoPreventivo,nextAceite,nextBateria,nextRefrig].filter(Boolean);
+  const sinFechas = !e.proximoPreventivo && !e.ultimoPreventivo && !e.ultimoBateria && !e.ultimoAceite;
+  let st = sinFechas ? 'gris' : 'verde';
+  if(!sinFechas){
+    for(const d of dates){
+      const diff=daysDiff(d);
+      if(diff<0){st='rojo';break;}
+      if(diff<=30&&st!=='rojo') st='amarillo';
+    }
+    if(nextVisita&&daysDiff(nextVisita)<0){
+      if(st==='verde') st='amarillo';
+      else if(st==='amarillo') st='rojo';
+    }
+  }
+  return {st,sinFechas,nextAceite,nextBateria,nextRefrig,nextVisita};
+}
+
+function clientName(id){
+  const c=D.clientes.find(c=>c.id===id);
+  return c?c.nombre:id;
+}
+// _esc migrada a js/utils.js (Sprint 2)
+function clientCritical(id){
+  const c=D.clientes.find(x=>x.id===id);
+  return c?.prioridad==='Crítico';
+}
+function critBadge(id){
+  return clientCritical(id)?`<span class="badge b-err" style="font-size:10px;padding:1px 5px;margin-left:5px;vertical-align:middle">CRÍTICO</span>`:'';
+}
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+// loadData(), persist() (base), exportData() e importData() migradas a
+// js/storage.js (Sprint 3). js/storage.js se carga antes de este script,
+// por lo que estas funciones ya están disponibles acá. persist() sigue
+// siendo "parcheada" más abajo (undo/redo + sincronización con Drive).
+
+function _updateSaveBtn(){
+  const btn=document.getElementById('btn-guardar');
+  const txt=document.getElementById('btn-guardar-text');
+  if(!btn||!txt) return;
+  if(_unsaved){
+    btn.classList.remove('save-saved'); btn.classList.add('save-unsaved');
+    txt.innerHTML='<span style="color:var(--warn)">● </span>Guardar JSON';
+  } else {
+    btn.classList.remove('save-unsaved'); btn.classList.add('save-saved');
+    txt.textContent='✓ Guardado';
+  }
+}
+function markUnsaved(){
+  _unsaved=true;
+  if(_autosaveTimer) clearTimeout(_autosaveTimer);
+  _autosaveTimer=setTimeout(()=>{exportData();markSaved();},300000);
+  _updateSaveBtn();
+}
+function markSaved(){
+  _unsaved=false;
+  if(_autosaveTimer){clearTimeout(_autosaveTimer);_autosaveTimer=null;}
+  _updateSaveBtn();
+}
+function saveDataAndMark(){
+  exportData();
+  markSaved();
+  toast('✓ Datos guardados correctamente');
+}
+// persist() (base), exportData() e importData() migradas a js/storage.js
+// (Sprint 3). persist() se re-declara más abajo como decorador (undo/redo
+// + Drive) sobre la versión base que ahora vive en js/storage.js.
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ─── NAV ─────────────────────────────────────────────────────────────────────
+function showModule(name){
+  document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('module-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  curModule=name;
+  resetFilters();
+  renderModule();
+  if(name==='pipeline') refreshPipeRespOpts();
+}
+
+function renderModule(){
+  if(curModule==='dashboard') renderDashboard();
+  else if(curModule==='pipeline') renderPipeline();
+  else if(curModule==='pedidos') renderPedidos();
+  else if(curModule==='equipos') renderEquipos();
+  else if(curModule==='facturacion') renderFacturacion();
+  else if(curModule==='recordatorios') renderRecordatorios();
+  else if(curModule==='clientes') renderClientes();
+  else if(curModule==='calendario') renderCalendario();
+  else if(curModule==='excel') updateExcelCounts();
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+// _dashItemHtml(), showDashAlerts(), renderDashboard() y renderDashboardCharts()
+// migradas a js/modules/dashboard.js (Sprint 4). Ese script se carga antes de
+// este bloque, por lo que las funciones ya están disponibles acá.
+
+// ─── PIPELINE ────────────────────────────────────────────────────────────────
+const ESTADOS=['Solicitud','Cotizar','Enviar','En seguimiento','Aprobada','A facturar','Facturada','Ejecutada','Rechazada'];
+const E_COLOR={'Solicitud':'#6b7280','Cotizar':'#06b6d4','Enviar':'#3b82f6','En seguimiento':'#f59e0b','Aprobada':'#22c55e','A facturar':'#d9730d','Facturada':'#8b5cf6','Ejecutada':'#10b981','Rechazada':'#ef4444'};
+
+// renderPipeline(), buildCard(), setupDrag(), confirmFacturacion(), doFacturar()
+// migradas a js/modules/cotizaciones.js (Sprint 8).
+// ─── SEARCH / FILTER ─────────────────────────────────────────────────────────
+function resetFilters(){
+  ['cli-q','cli-f-tipo','cli-f-prio','cli-f-est',
+   'equip-q','equip-f-tipo','equip-f-est',
+   'pipe-q','pipe-f-est','pipe-f-resp',
+   'fact-q','fact-f-ajuste','fact-f-est','fact-f-tipo',
+   'rem-q','rem-f-prio','rem-f-est',
+   'ped-q','ped-f-est','ped-f-cli'
+  ].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('.srch-clear').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.srch-count').forEach(s=>s.textContent='');
+}
+function toggleClear(pfx,active){
+  const el=document.getElementById(pfx+'-clear');
+  if(el)el.classList.toggle('on',!!active);
+}
+
+// applyCliFilter() y clearCliFilter() migradas a js/modules/clientes.js (Sprint 5)
+
+// applyEquipFilter() y clearEquipFilter() migradas a js/modules/equipos.js (Sprint 6)
+
+// refreshPipeRespOpts(), applyPipeFilter() y clearPipeFilter() migradas
+// a js/modules/cotizaciones.js (Sprint 8)
+
+// applyFactFilter() y clearFactFilter() migradas a js/modules/facturacion.js (Sprint 7)
+
+// applyRemFilter() y clearRemFilter() migradas a js/modules/recordatorios.js (Sprint 11)
+
+// quoteFromEquip() migrada a js/modules/equipos.js (Sprint 6)
+
+// ─── FACTURACIÓN ─────────────────────────────────────────────────────────────
+// renderFacturacion(), changeMonth(), setFactEst(), excludeFactMonth(),
+// restoreFactMonth() migradas a js/modules/facturacion.js (Sprint 7).
+// updateEquipSel(), openQuoteModal(), saveQuote(), deleteQuote() migradas
+// a js/modules/cotizaciones.js (Sprint 8)
+
+// openEquipModal(), autoNextPrev(), autoNextAceite(), autoNextVisita(),
+// saveEquip(), deleteEquip() migradas a js/modules/equipos.js (Sprint 6)
+
+// ─── CONFIRM DELETE ──────────────────────────────────────────────────────────
+let confCb=null;
+function confirmDel(label,cb){
+  confCb=cb;
+  document.getElementById('conf-body').innerHTML=
+    `<p style="font-size:14px;color:var(--t1);line-height:1.6">¿Seguro que querés eliminar <strong>${label}</strong>?<br><span style="font-size:13px;color:var(--t2)">Esta acción no se puede deshacer.</span></p>`;
+  document.getElementById('conf-overlay').classList.add('open');
+}
+function closeConf(){document.getElementById('conf-overlay').classList.remove('open');confCb=null;}
+function doConf(){if(confCb)confCb();closeConf();}
+
+// delEquipConfirm() migrada a js/modules/equipos.js (Sprint 6)
+// delQuoteConfirm() migrada a js/modules/cotizaciones.js (Sprint 8)
+// delFactConfirm() migrada a js/modules/facturacion.js (Sprint 7)
+
+// ─── CLIENTES ────────────────────────────────────────────────────────────────
+// _cliSort, _cliSortedList(), _cliSortIcon(), cliSortBy(), renderClientes(),
+// openClientModal(), onCliTipoChange(), onFacturacionChange(), saveClient(),
+// delClientConfirm(), fichaClientId, openFicha(), closeFicha(), fichaTab(),
+// fichaRenderTab(), _ff(), fichaGeneral(), fichaEquipos(), fichaCotizaciones(),
+// fichaFacturacion(), fichaFacturacionEditMode(), saveFichaFacturacion(),
+// fichaRecordatorios() migradas a js/modules/clientes.js (Sprint 5). Ese script
+// se carga antes de este bloque, por lo que ya están disponibles acá.
+// ─── RECORDATORIOS ───────────────────────────────────────────────────────────
+// renderRecordatorios(), openRemModal(), saveRem(), toggleRemDone(),
+// delRemConfirm() migradas a js/modules/recordatorios.js (Sprint 11)
+
+
+// CSV_SCHEMAS, openCsvModal(), csvFileSelected(), parseCsv(), csvSplitLine(), confirmCsvImport() migradas a js/modules/csv.js (Sprint 16)
+
+
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.querySelector('#modal-overlay .modal').classList.remove('modal-lg');
+  editingQuoteId=null;
+}
+
+document.getElementById('modal-overlay').addEventListener('click',function(e){
+  if(e.target===this) closeModal();
+});
+
+// ─── SIDEBAR BADGES ──────────────────────────────────────────────────────────
+function updateSidebarBadges(){
+  // Pedidos activos
+  const pedA=(D.pedidos||[]).filter(p=>p.estado==='Pendiente'||p.estado==='En ejecución').length;
+  const pedV=(D.pedidos||[]).filter(p=>p.estado!=='Realizado'&&p.fechaARealizar&&daysDiff(p.fechaARealizar)<0).length;
+  // Equipos vencidos
+  const eqV=D.equipos.filter(e=>equipStatus(e).st==='rojo').length;
+  // Recordatorios pendientes hoy o vencidos
+  const remA=D.recordatorios.filter(r=>r.estado==='Pendiente'&&r.fechaHora&&daysDiff(r.fechaHora.split('T')[0])<=0).length;
+  // Cotizaciones a facturar
+  const afact=D.cotizaciones.filter(c=>c.estado==='A facturar').length;
+
+  function setBadge(navId, count, isError){
+    const el=document.getElementById(navId);
+    if(!el) return;
+    const old=el.querySelector('.sb-badge');
+    if(old) old.remove();
+    if(!count) return;
+    const sp=document.createElement('span');
+    sp.className='sb-badge';
+    sp.style.cssText=`margin-left:auto;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700;${isError?'background:var(--err-bg);color:var(--err)':'background:var(--warn-bg);color:var(--warn)'}`;
+    sp.textContent=count;
+    el.appendChild(sp);
+  }
+  setBadge('nav-pedidos', pedA, pedV>0);
+  setBadge('nav-equipos', eqV, true);
+  setBadge('nav-recordatorios', remA, true);
+  setBadge('nav-pipeline', afact, false);
+
+  // Badge total en nav-dashboard
+  const cotFollow=D.cotizaciones.filter(c=>
+    !['Facturada','Ejecutada','Rechazada'].includes(c.estado)
+    && c.fechaFollowup && daysDiff(c.fechaFollowup)<0
+  ).length;
+  const remHoy=D.recordatorios.filter(r=>
+    r.estado==='Pendiente' && r.fechaHora &&
+    daysDiff(r.fechaHora.split('T')[0])<=0
+  ).length;
+  const pedVenc=(D.pedidos||[]).filter(p=>
+    ['Pendiente','En ejecución'].includes(p.estado) &&
+    p.fechaARealizar && daysDiff(p.fechaARealizar)<0
+  ).length;
+  const total=eqV+cotFollow+remHoy+pedVenc;
+
+  const nb=document.getElementById('nav-dashboard');
+  const existing=nb?.querySelector('.nav-badge');
+  if(existing) existing.remove();
+  if(total>0 && nb){
+    const badge=document.createElement('span');
+    badge.className='nav-badge';
+    badge.textContent=total;
+    nb.appendChild(badge);
+  }
+}
+
+// ─── ATAJOS DE TECLADO ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  const inInput = ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName);
+  // Escape — cerrar modal o ficha
+  if (e.key === 'Escape') { closeModal(); closeFicha(); closeConf(); return; }
+  // Ctrl+Z — deshacer
+  if ((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key==='z') { e.preventDefault(); undoAction(); return; }
+  // Ctrl+Y / Ctrl+Shift+Z — rehacer
+  if ((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.shiftKey&&e.key==='z'))) { e.preventDefault(); redoAction(); return; }
+  if (inInput) return;
+  // Ctrl+S / Cmd+S — guardar JSON
+  if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); saveDataAndMark(); return; }
+  // N — nuevo registro en el módulo activo
+  if (e.key==='n'||e.key==='N') {
+    if(curModule==='clientes') { openClientModal(null); }
+    else if(curModule==='pedidos') { openPedidoModal(null,null,null); }
+    else if(curModule==='recordatorios') { openRemModal(null); }
+    return;
+  }
+});
+
+
+
+// GDRIVE_CLIENT_ID, GDRIVE_SCOPES, gdriveAuth(), _updateDriveUI(), _gdriveEnsureFolders(),
+// _gdriveGetOrCreateFolder(), _gdriveLoadData(), _gdriveSaveData(), _scheduleDriveSave(),
+// _gdriveUploadFile() migradas a js/modules/drive.js (Sprint 15)
+
+
+// ── Parchear persist ──
+// Sprint 3.1: se captura _persistBase (js/storage.js) en vez de persist.
+// Antes ambos scripts declaraban una función "persist"; el hoisting de
+// la declaración de abajo hacía que _origPersist quedara auto-referenciado
+// al propio decorador. Al no compartir nombre, esto ya no ocurre.
+const _origPersist=_persistBase;
+let _inPersist=false;
+function persist(){
+  if(_inPersist) return;
+  _inPersist=true;
+  try{
+    // Snapshot para undo ANTES de guardar: D ya fue mutado por el módulo
+    // llamante antes de llegar acá, así que el estado previo a este cambio
+    // es el que todavía está guardado en localStorage, no el D actual.
+    const prevSaved = localStorage.getItem(STORAGE_KEY);
+    _history.push(prevSaved !== null ? prevSaved : JSON.stringify(D));
+    if(_history.length > MAX_HIST) _history.shift();
+    _future.length = 0;
+    _origPersist();
+  } finally { _inPersist=false; }
+  _scheduleDriveSave();
+  _updateUndoBtn();
+}
+
+
+// xlsDownloadPlantilla(), xlsImport(), _xlsDate(), xlsExport() migradas a js/modules/excel.js (Sprint 14)
+
+
+
+
+
+
+// generarReporteVencimientos() y _LOGO_RPT migradas a js/modules/reportes.js (Sprint 13)
+
+// updateExcelCounts() migrada a js/modules/excel.js (Sprint 14)
+
+
+// ─── UNDO/REDO ───────────────────────────────────────────────────────────────
+const _history = [];
+const _future  = [];
+const MAX_HIST = 30;
+
+function _snapshot(){
+  _history.push(JSON.stringify(D));
+  if(_history.length > MAX_HIST) _history.shift();
+  _future.length = 0; // limpiar future al hacer nueva acción
+  _updateUndoBtn();
+}
+
+function _updateUndoBtn(){
+  const btn = document.getElementById('btn-undo');
+  const rbtn = document.getElementById('btn-redo');
+  if(btn){
+    btn.disabled = _history.length === 0;
+    btn.style.opacity = _history.length ? '1' : '.4';
+    btn.title = _history.length ? `Deshacer (${_history.length} acciones)` : 'Sin acciones para deshacer';
+  }
+  if(rbtn){
+    rbtn.disabled = _future.length === 0;
+    rbtn.style.opacity = _future.length ? '1' : '.4';
+    rbtn.title = _future.length ? `Rehacer (${_future.length} acciones)` : 'Sin acciones para rehacer';
+  }
+}
+
+function undoAction(){
+  if(!_history.length){ toast('⚠ Sin acciones para deshacer'); return; }
+  _future.push(JSON.stringify(D));
+  D = JSON.parse(_history.pop());
+  _origPersist();
+  renderModule();
+  _updateUndoBtn();
+  toast('↩ Acción deshecha');
+}
+
+function redoAction(){
+  if(!_future.length){ toast('⚠ Sin acciones para rehacer'); return; }
+  _history.push(JSON.stringify(D));
+  D = JSON.parse(_future.pop());
+  _origPersist();
+  renderModule();
+  _updateUndoBtn();
+  toast('↪ Acción rehecha');
+}
+
+
+// _tryAutoConnectDrive() migrada a js/modules/drive.js (Sprint 15)
+
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+initTheme();
+loadData();
+curMonth=nowMonthStr();
+renderDashboard();
+updateSidebarBadges();
+markSaved();
+// Auto-reconexión silenciosa con Drive
+if(localStorage.getItem('aercom-drive-connected')==='1') setTimeout(_tryAutoConnectDrive, 1500);
+window.addEventListener('beforeunload',ev=>{
+  if(_unsaved){ev.preventDefault();ev.returnValue='Tenés cambios sin guardar. ¿Seguro que querés salir?';}
+});
+</script>
+<script src="js/config.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
