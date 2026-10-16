@@ -4,6 +4,16 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — Paso 5: conciliar copias y conservar conflictos
+
+- Se reemplaza la comparación por fecha sin hora por comparación SHA-256 del contenido normalizado (sin `lastSaved`) y una base compartida por carpeta/archivo. La base se captura por pestaña y se persiste para la próxima sesión.
+- Copias iguales no se suben; si solo cambió una respecto de la base se actualiza la otra. Sin base conocida o con cambios en ambas, la sincronización se detiene y ofrece conservar local, usar Drive o decidir después. No se fusionan registros automáticamente.
+- Antes de una elección se respaldan ambas copias en el navegador. Se pueden descargar individualmente y descargar el historial de respaldos, incluso después de recargar. Si falta espacio, se bloquea el reemplazo y se ofrece reintentar el respaldo.
+- Se buscan backups al reconectar y antes de crear; listas ambiguas detienen la operación sin elegir ni eliminar archivos. El alta del backup usa multipart (metadata y contenido juntos), evitando un archivo vacío si falla una segunda petición.
+- Se serializan las operaciones de sincronización de cada sesión, se reevalúan ediciones recibidas durante lecturas/subidas y se invalidan respuestas de sesiones desconectadas. Las actualizaciones envían `If-Match`; un 412 vuelve a pedir elección y, sin ETag, no se sobrescribe.
+- Validación: 102 pruebas aprobadas; Chromium aislado verificó el diálogo, descargas, posponer/reabrir, ambas elecciones, falta de espacio, reintento y cambio concurrente. HTTP/ETag/Chart simulados; pendiente validar el comportamiento ETag/If-Match con Drive real antes de fusionar este paso.
+- Limitación: dos dispositivos pueden crear a la vez el primer archivo o carpeta porque Drive no impone nombres únicos. Se preservan los archivos y se detecta la ambigüedad en la siguiente búsqueda, sin eliminación automática.
+
 ## Sin publicar — Paso 4: confirmar guardados de Drive
 
 - Las búsquedas y creaciones de carpetas/archivos y los PATCH de backups/reportes comprueban HTTP. Las respuestas de búsqueda y creación deben contener IDs válidos; un error no se interpreta como archivo ausente.

@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { webcrypto } = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 const source = file => fs.readFileSync(path.join(root, file), 'utf8');
 const copy = value => JSON.parse(JSON.stringify(value));
@@ -20,7 +21,7 @@ function fixture() {
   const control = { writes: 0, renderFailure: false, quotaFailure: false,
     badgeFailure: false, uploads: 0, requests: [] };
   const messages = [];
-  const c = vm.createContext({ D: old, DEFAULT: valid(), _history: ['previo'],
+  const c = vm.createContext({ crypto: webcrypto, TextEncoder, D: old, DEFAULT: valid(), _history: ['previo'],
     _future: ['futuro'], _inPersist: false, MAX_HIST: 30,
     console: { error() {} },
     localStorage: {
@@ -39,7 +40,7 @@ function fixture() {
         throw new Error('Error de interfaz tras guardar');
       }
     },
-    markUnsaved() {}, _updateUndoBtn() {}, toast: text => messages.push(text),
+    markUnsaved() {}, markSaved() {}, _updateUndoBtn() {}, toast: text => messages.push(text),
     FileReader: class {
       readAsText(file) {
         if (file.error) this.onerror();
@@ -60,7 +61,7 @@ function fixture() {
     c.importData(event);
     assert.equal(event.target.value, '');
   };
-  vm.runInContext("_folderRootId='folder'; _gdriveToken='test-only'", c);
+  vm.runInContext("_folderRootId='folder'; _gdriveToken='test-only'; _gdriveReady=true", c);
   const remote = (data, status = 200) => {
     control.requests.length = 0;
     c.fetch = async url => {
@@ -217,7 +218,7 @@ test('Drive: JSON inválido no reemplaza el local ni dispara subida', async () =
   assert.equal(control.writes, 0);
   assert.equal(control.uploads, 0);
   assert.equal(vm.runInContext('_gdriveDataFileId', c), null);
-  assert.match(messages.at(-1), /No se cargaron/);
+  assert.match(messages.at(-1), /No se pudo sincronizar/);
 });
 
 test('Drive: tampoco se sube la copia local si el backup inválido parece más antiguo', async () => {
@@ -228,9 +229,11 @@ test('Drive: tampoco se sube la copia local si el backup inválido parece más a
   assert.equal(control.uploads, 0);
 });
 
-test('Drive: backup válido más reciente reemplaza y normaliza sin subir datos', async () => {
+test('Drive: solo el remoto cambió respecto de la base; reemplaza y normaliza sin subir datos', async () => {
   const { c, memory, control, remote } = fixture();
   remote(JSON.stringify(valid()));
+  c.baseSignature = await c._gdriveSignature(c.D);
+  vm.runInContext("_gdriveBase={folderId:'folder',fileId:'file',signature:baseSignature}", c);
   await c._gdriveLoadData();
   assert.equal(c.D.clientes[0].id, 'C1');
   assert.deepEqual(copy(c.D.pedidos), []);
@@ -255,6 +258,8 @@ test('Drive: render fallido conserva la copia local', async () => {
   const stored = memory.get('aercom-data');
   remote(JSON.stringify(valid()));
   control.renderFailure = true;
+  c.baseSignature = await c._gdriveSignature(c.D);
+  vm.runInContext("_gdriveBase={folderId:'folder',fileId:'file',signature:baseSignature}", c);
   await c._gdriveLoadData();
   assert.equal(c.D, old);
   assert.equal(memory.get('aercom-data'), stored);

@@ -5,11 +5,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { webcrypto } = require('node:crypto');
 
 function fixture() {
   const nodes = new Map();
   const node = id => {
-    if (!nodes.has(id)) nodes.set(id, { textContent: '', style: {}, querySelector: () => null });
+    if (!nodes.has(id)) nodes.set(id, { textContent: '', style: {}, querySelector: () => null, remove() {} });
     return nodes.get(id);
   };
   const memory = new Map();
@@ -18,6 +19,8 @@ function fixture() {
   const state = { saved: 0, pending: false };
   const responses = [];
   const c = vm.createContext({
+    crypto: webcrypto, TextEncoder,
+    _parseImportedData: text => JSON.parse(text),
     D: { clientes: [{ id: 'C1', nombre: 'Prueba' }], equipos: [], cotizaciones: [] },
     STORAGE_KEY: 'aercom-data', today: () => '2026-10-16',
     document: { getElementById: node },
@@ -36,6 +39,9 @@ function fixture() {
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/modules/drive.js'), 'utf8'), c);
   vm.runInContext("_gdriveReady=true; _gdriveToken='test-only'; _folderRootId='root'; _gdriveDataFileId='data-file'", c);
+  // Aislar transporte del preflight; drive-sync.test.js ejercita el flujo completo.
+  c._gdriveSyncOnce = session => c._gdriveWriteSnapshot(JSON.parse(JSON.stringify(c.D)),
+    vm.runInContext('_gdriveDataFileId', c) ? { fileId: 'data-file', etag: '"revision"' } : null, session);
   const response = (status, data) => ({ ok: status >= 200 && status < 300, status,
     json: async () => data });
   return { c, node, memory, calls, messages, state, responses, response };
@@ -85,7 +91,7 @@ test('Backup: las ediciones durante una subida no quedan marcadas como guardadas
   let complete;
   responses.push(() => new Promise(resolve => { complete = resolve; }));
   const upload = c._gdriveSaveData();
-  await Promise.resolve();
+  while (!complete) await new Promise(resolve => setImmediate(resolve));
   c.D.clientes[0].nombre = 'Edición posterior';
   complete(response(200));
   assert.equal(await upload, true);
@@ -113,16 +119,17 @@ test('Backup nuevo: un ID inválido no produce una subida a undefined', async ()
   assert.equal(vm.runInContext('_gdriveDataFileId', c), null);
 });
 
-test('Backup nuevo: conservar ID creado permite reintentar PATCH sin crear otro archivo', async () => {
+test('Backup nuevo: crear metadata y contenido en una sola petición, sin archivo vacío', async () => {
   const { c, calls, state, responses, response } = fixture();
   vm.runInContext('_gdriveDataFileId=null', c);
-  responses.push(response(201, { id: 'created' }), response(500), response(204));
-  assert.equal(await c._gdriveSaveData(), false);
-  assert.equal(state.saved, 0);
+  responses.push(response(201, { id: 'created' }));
   assert.equal(await c._gdriveSaveData(), true);
-  assert.equal(calls.filter(call => call.method === 'POST').length, 1);
-  assert.equal(calls.filter(call => call.method === 'PATCH').length, 2);
-  assert.match(calls[2].url, /created/);
+  assert.equal(state.saved, 1);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].method, 'POST');
+  assert.match(calls[0].url, /uploadType=multipart/);
+  assert.match(calls[0].body, /aercom-data.json/);
+  assert.match(calls[0].body, /Prueba/);
 });
 
 for (const status of [401, 403, 429, 500]) {
