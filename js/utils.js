@@ -152,3 +152,28 @@ function _esc(s) {
         .replace(/"/g, "&quot;");
 
 }
+
+/* Borrados compartidos: conservar referencias e historial; nunca eliminar en cascada.
+ * Lee D y usa toast(), sin modificar datos. Revalidar dentro de confirmDel(). */
+function canDeleteRecord(collection, id) {
+    if (!(D[collection] || []).some(record => record.id === id)) return false;
+    const links = collection === 'clientes'
+        ? [['equipos', 'clienteId', 'equipos'], ['cotizaciones', 'clienteId', 'cotizaciones'],
+           ['pedidos', 'clienteId', 'pedidos'], ['recordatorios', 'clienteId', 'recordatorios'],
+           ['eventos', 'clienteId', 'eventos de calendario']]
+        : collection === 'equipos'
+            ? [['cotizaciones', 'equipoId', 'cotizaciones'], ['pedidos', 'equipoId', 'pedidos']]
+            : collection === 'cotizaciones' ? [['pedidos', 'cotizacionId', 'pedidos']] : [];
+    const dependencies = links.flatMap(([key, field, label]) => {
+        const count = (D[key] || []).filter(record => record[field] === id).length;
+        return count ? [`${count} ${label}`] : [];
+    });
+    if (collection === 'clientes') {
+        const months = Object.values(D.facturacion_estados || {})
+            .filter(states => Object.prototype.hasOwnProperty.call(states, id)).length;
+        if (months) dependencies.push(`${months} meses de facturación`);
+    }
+    if (!dependencies.length) return true;
+    toast(`⚠ No se puede eliminar: tiene ${dependencies.join(', ')} asociados. Se conserva el historial.`);
+    return false;
+}

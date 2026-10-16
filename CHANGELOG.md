@@ -4,6 +4,15 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — Paso 6: proteger borrados y referencias del calendario
+
+- Bloqueo compartido en las seis rutas de borrado de clientes, equipos y cotizaciones cuando existen referencias. Clientes incluye recordatorios, eventos e historial mensual de facturación, incluso estados Pendiente/Excluido; equipos incluye cotizaciones/pedidos; cotizaciones incluye pedidos de cualquier estado.
+- Se informa el número de asociaciones y se revalida al confirmar. No se borran registros en cascada ni se modifica el historial. Los registros sin dependencias mantienen su borrado habitual.
+- Al cambiar el código de un cliente, también se actualizan sus eventos propios del calendario.
+- Verificación: 90 pruebas Node (38 nuevas y ampliación del caso de renombrado), más Chromium aislado: seis rutas bloqueadas sin mutación, seis borrados con recarga, asociación agregada durante la confirmación y renombrado desde el formulario con persistencia. Sin errores JS; Chart simulado y Drive desconectado.
+- Tras integrar main con el PR #2: 114 pruebas aprobadas y repetición satisfactoria del flujo de Chromium aislado.
+- Rama creada desde main y actualizada con el PR #2 ya fusionado; no incorpora el PR #3 de conflictos de Drive. No repara huérfanos preexistentes ni valida todas las relaciones en importaciones o cambios de asociación.
+
 ## Sin publicar — Paso 4: confirmar guardados de Drive
 
 - Las búsquedas y creaciones de carpetas/archivos y los PATCH de backups/reportes comprueban HTTP. Las respuestas de búsqueda y creación deben contener IDs válidos; un error no se interpreta como archivo ausente.

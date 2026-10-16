@@ -189,3 +189,18 @@ El repositorio ya no contiene archivos huérfanos, vacíos o históricos. Fueron
 - `Legacy` (raíz del proyecto) — snapshot histórico de una versión anterior de `index.html`.
 
 Deuda técnica vigente (bugs activos, código muerto, duplicaciones no unificadas): ver `TECH_DEBT.md`.
+
+
+## Protección de borrados (paso 6)
+
+`js/utils.js` expone `canDeleteRecord(colección, id)`: lee D, informa asociaciones mediante toast y no modifica estado. Las seis rutas de borrado de Clientes/Facturación, Equipos y Cotizaciones lo llaman antes de confirmar y dentro del callback. No existe cascada.
+
+| Registro a eliminar | Asociaciones que bloquean |
+|---|---|
+| Cliente | Equipos, cotizaciones, pedidos, recordatorios, eventos propios y cualquier entrada mensual de facturación |
+| Equipo | Cotizaciones y pedidos |
+| Cotización | Pedidos |
+
+Los pedidos bloquean independientemente de su estado y la facturación bloquea incluso entradas Pendiente/Excluido. Sin dependencias, se conserva el flujo de guardado/renderizado de cada ruta. Al renombrar el código de cliente, `saveClient()` actualiza también los eventos propios, además de las referencias que ya actualizaba.
+
+Esto protege las operaciones indicadas sobre D en la pestaña actual. No es una validación global: importaciones, reasignaciones, conflictos entre pestañas y huérfanos preexistentes requieren controles propios. No cambia el formato de los backups.

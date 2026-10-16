@@ -4,6 +4,14 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Integridad — seguimiento del paso 6
+
+Las rutas `delClientConfirm`, `delFactConfirm`, `deleteEquip`, `delEquipConfirm`, `deleteQuote` y `delQuoteConfirm` comparten `canDeleteRecord()` en utils. Comprueba referencias directas antes de abrir la confirmación y nuevamente antes de eliminar. También protege historial mensual de clientes, incluidos estados Pendiente/Excluido. Un ID inexistente no genera guardado. No hay eliminación en cascada. `saveClient()` ahora actualiza también `D.eventos` al cambiar el código.
+
+Verificación: 38 pruebas nuevas de borrados y ampliación de la prueba de renombrado; 90 pruebas en esta rama basada en main. Chromium aislado verificó las seis rutas, persistencia/recarga, revalidación y edición real del código con eventos. Chart simulado; sin conexión a Drive.
+
+Pendiente: detectar y resolver huérfanos preexistentes, validar referencias de JSON/CSV/Excel y formularios al reasignar cliente/equipo/cotización, y definir archivo lógico para equipos/cotizaciones con historial. No se reparan ni desconectan asociaciones automáticamente. La protección comprueba D en esta pestaña; no resuelve concurrencia entre pestañas/dispositivos ni reemplazos completos de estado. La confirmación de subidas de Drive del PR #2 ya está incorporada desde main. Los conflictos de Drive siguen separados en el PR #3, que requiere validar ETag/If-Match con una cuenta real. El cambio de código puede seguir colisionando con estados mensuales huérfanos cuyo código coincide con el nuevo; requiere validación específica antes de renombrar. Los errores de cuota al guardar siguen siendo un riesgo de los formularios existentes.
+
 ## Drive — seguimiento del paso 4
 
 Las operaciones de preparación y subida verifican respuestas HTTP y la estructura mínima de listas/IDs. Un fallo de búsqueda no dispara creación; un fallo de PATCH no confirma el backup ni devuelve éxito al exportador Excel. El indicador conserva los cambios pendientes y solo afirma que hay una copia local cuando su escritura terminó. La confirmación se compara con el snapshot enviado para no limpiar cambios realizados mientras esperaba la red.

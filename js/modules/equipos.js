@@ -12,7 +12,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
- *   D, persist(), toast(), closeModal(), confirmDel(), toggleClear(),
+ *   D, persist(), toast(), closeModal(), confirmDel(), canDeleteRecord(), toggleClear(),
  *   equipStatus()*, clientCritical()*, clientName()*, fichaTab()**,
  *   fmtDate(), daysDiff(), addDays(), _esc() (js/utils.js — PR-014.1,
  *   hardening XSS)
@@ -278,7 +278,9 @@ function saveEquip(){
 }
 
 function deleteEquip(id){
+  if(!canDeleteRecord('equipos',id)) return;
   confirmDel(`Equipo ${_esc(id)}`,()=>{
+    if(!canDeleteRecord('equipos',id)) return;
     D.equipos=D.equipos.filter(e=>e.id!==id);
     persist(); closeModal(); renderEquipos();
     toast(`Equipo ${id} eliminado`);
@@ -286,8 +288,10 @@ function deleteEquip(id){
 }
 
 function delEquipConfirm(eid){
+  if(!canDeleteRecord('equipos',eid)) return;
   const e=D.equipos.find(x=>x.id===eid);
   confirmDel(e?`${_esc(e.id)} — ${_esc(clientName(e.clienteId))}`:_esc(eid),()=>{
+    if(!canDeleteRecord('equipos',eid)) return;
     D.equipos=D.equipos.filter(x=>x.id!==eid);
     persist();renderEquipos();toast(`Equipo ${eid} eliminado`);
   });

@@ -13,7 +13,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
- *   D, curMonth, persist(), toast(), toggleClear(), confirmDel(),
+ *   D, curMonth, persist(), toast(), toggleClear(), confirmDel(), canDeleteRecord(),
  *   monthLabel(), nowMonthStr(), addMonths(), _esc() (js/utils.js —
  *   PR-014.1, hardening XSS)
  *
@@ -197,8 +197,10 @@ function restoreFactMonth(cid){
 }
 
 function delFactConfirm(cid){
+  if(!canDeleteRecord('clientes',cid)) return;
   const c=D.clientes.find(x=>x.id===cid);
   confirmDel(c?_esc(c.nombre):_esc(cid),()=>{
+    if(!canDeleteRecord('clientes',cid)) return;
     D.clientes=D.clientes.filter(x=>x.id!==cid);
     persist();renderFacturacion();toast('Cliente eliminado');
   });

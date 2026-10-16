@@ -14,7 +14,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
- *   D, ESTADOS, E_COLOR*, persist(), toast(), closeModal(), confirmDel(),
+ *   D, ESTADOS, E_COLOR*, persist(), toast(), closeModal(), confirmDel(), canDeleteRecord(),
  *   toggleClear(), renderModule(), clientName()*, toTitleCase(),
  *   openPedidoModal()**, today(), fmtMoney(), fmtDate(), daysDiff(),
  *   _esc() (js/utils.js — PR-014.1, hardening XSS)
@@ -346,7 +346,9 @@ function saveQuote(){
 }
 
 function deleteQuote(id){
+  if(!canDeleteRecord('cotizaciones',id)) return;
   confirmDel(`Cotización ${_esc(id)}`,()=>{
+    if(!canDeleteRecord('cotizaciones',id)) return;
     D.cotizaciones=D.cotizaciones.filter(c=>c.id!==id);
     persist(); closeModal(); renderModule();
     toast(`Cotización ${id} eliminada`);
@@ -354,8 +356,10 @@ function deleteQuote(id){
 }
 
 function delQuoteConfirm(qid){
+  if(!canDeleteRecord('cotizaciones',qid)) return;
   const c=D.cotizaciones.find(x=>x.id===qid);
   confirmDel(c?`${_esc(c.id)} — ${_esc(clientName(c.clienteId))}`:_esc(qid),()=>{
+    if(!canDeleteRecord('cotizaciones',qid)) return;
     D.cotizaciones=D.cotizaciones.filter(x=>x.id!==qid);
     persist();renderPipeline();toast(`Cotización ${qid} eliminada`);
   });
