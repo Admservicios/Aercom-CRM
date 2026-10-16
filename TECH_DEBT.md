@@ -10,7 +10,17 @@ Las rutas `delClientConfirm`, `delFactConfirm`, `deleteEquip`, `delEquipConfirm`
 
 Verificación: 38 pruebas nuevas de borrados y ampliación de la prueba de renombrado; 90 pruebas en esta rama basada en main. Chromium aislado verificó las seis rutas, persistencia/recarga, revalidación y edición real del código con eventos. Chart simulado; sin conexión a Drive.
 
-Pendiente: detectar y resolver huérfanos preexistentes, validar referencias de JSON/CSV/Excel y formularios al reasignar cliente/equipo/cotización, y definir archivo lógico para equipos/cotizaciones con historial. No se reparan ni desconectan asociaciones automáticamente. La protección comprueba D en esta pestaña; no resuelve concurrencia entre pestañas/dispositivos ni reemplazos completos de estado. Las subidas y conflictos de Drive se trabajan en los PR #2 y #3, separados de esta rama; #3 requiere validar ETag/If-Match con una cuenta real. El cambio de código puede seguir colisionando con estados mensuales huérfanos cuyo código coincide con el nuevo; requiere validación específica antes de renombrar. Los errores de cuota al guardar siguen siendo un riesgo de los formularios existentes.
+Pendiente: detectar y resolver huérfanos preexistentes, validar referencias de JSON/CSV/Excel y formularios al reasignar cliente/equipo/cotización, y definir archivo lógico para equipos/cotizaciones con historial. No se reparan ni desconectan asociaciones automáticamente. La protección comprueba D en esta pestaña; no resuelve concurrencia entre pestañas/dispositivos ni reemplazos completos de estado. La confirmación de subidas de Drive del PR #2 ya está incorporada desde main. Los conflictos de Drive siguen separados en el PR #3, que requiere validar ETag/If-Match con una cuenta real. El cambio de código puede seguir colisionando con estados mensuales huérfanos cuyo código coincide con el nuevo; requiere validación específica antes de renombrar. Los errores de cuota al guardar siguen siendo un riesgo de los formularios existentes.
+
+## Drive — seguimiento del paso 4
+
+Las operaciones de preparación y subida verifican respuestas HTTP y la estructura mínima de listas/IDs. Un fallo de búsqueda no dispara creación; un fallo de PATCH no confirma el backup ni devuelve éxito al exportador Excel. El indicador conserva los cambios pendientes y solo afirma que hay una copia local cuando su escritura terminó. La confirmación se compara con el snapshot enviado para no limpiar cambios realizados mientras esperaba la red.
+
+Los callbacks manual y automático capturan errores de preparación y no dejan Drive listo en ese caso. La reconexión ya no muestra tras tres segundos un mensaje de ausencia de cambios sin verificarlos. Se conservó la lógica de no descargar al reconectar automáticamente.
+
+Verificación: 24 pruebas con HTTP/OAuth/DOM/almacenamiento simulados y las 52 anteriores (76 aprobadas). Chromium comprobó copia local y estado pendiente tras 403, confirmación 204, cambios durante una subida, mensajes del exportador Excel y preparación fallida. No se probó una cuenta real; SheetJS y Chart se sustituyeron por dobles en el navegador.
+
+Pendiente: conflictos y duplicados entre dispositivos/sesiones, respuestas fuera de orden entre subidas simultáneas, desconexión durante una petición y renovación de credenciales. La comparación de snapshots evita un indicador falso, pero no serializa ni fusiona escrituras remotas. Un error no se reintenta automáticamente; el siguiente guardado puede volver a intentar la subida.
 
 ## Integridad — seguimiento del paso 3
 
@@ -20,7 +30,7 @@ La normalización existente se extrajo a `_normalizeData()` para compartir migra
 
 Verificación: 36 pruebas nuevas en `tests/data-import.test.js`, más las 16 anteriores (52 en total). Cubren casos incompatibles, backup semilla, migración heredada, exportación/reimportación, errores de lectura, cuota, render y restauración, y descargas de Drive simuladas. Chromium comprobó importación y recarga local, nueve pantallas con un backup representativo, recuperación ante render/cuota y carga remota simulada. No se usó Drive real ni se verificó el dibujo de gráficos.
 
-Pendiente: integridad referencial entre entidades, reglas de conflictos/duplicados de Drive, comprobación de subidas y endurecimiento de la carga inicial de localStorage corrupto. La validación estructural no certifica seguridad del renderizado en los módulos restantes ni limita el tamaño de los archivos. Los backups con tipos incompatibles requieren revisión; no se reparan automáticamente.
+Pendiente: integridad referencial entre entidades, reglas de conflictos/duplicados de Drive y endurecimiento de la carga inicial de localStorage corrupto. La validación estructural no certifica seguridad del renderizado en los módulos restantes ni limita el tamaño de los archivos. Los backups con tipos incompatibles requieren revisión; no se reparan automáticamente.
 
 ## Integridad — seguimiento del paso 2
 
@@ -62,7 +72,7 @@ Pendiente: revisión contextual de los demás módulos y restantes hallazgos de 
 
 ## Otras observaciones vigentes
 
-- `_gdriveLoadData()`/`_gdriveSaveData()` (`js/modules/drive.js`) usan el literal `'aercom-data'` en vez de la constante `STORAGE_KEY` de `js/storage.js` (mismo valor, sin impacto funcional) — inconsistencia de estilo, no un bug.
+- La carga y el guardado de Drive usan `STORAGE_KEY` desde los pasos 3 y 4; la observación anterior sobre literales duplicados quedó resuelta.
 - La descarga JSON de Drive valida su estructura desde el paso 3. Siguen pendientes los conflictos entre dispositivos y la revisión de todos los contextos de renderizado; validar la forma no autentica el origen del contenido del archivo.
 
 ---

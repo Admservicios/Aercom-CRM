@@ -10,7 +10,16 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 - Se informa el número de asociaciones y se revalida al confirmar. No se borran registros en cascada ni se modifica el historial. Los registros sin dependencias mantienen su borrado habitual.
 - Al cambiar el código de un cliente, también se actualizan sus eventos propios del calendario.
 - Verificación: 90 pruebas Node (38 nuevas y ampliación del caso de renombrado), más Chromium aislado: seis rutas bloqueadas sin mutación, seis borrados con recarga, asociación agregada durante la confirmación y renombrado desde el formulario con persistencia. Sin errores JS; Chart simulado y Drive desconectado.
-- Rama independiente desde main: no incorpora los PR pendientes de Drive. No repara huérfanos preexistentes ni valida todas las relaciones en importaciones o cambios de asociación.
+- Tras integrar main con el PR #2: 114 pruebas aprobadas y repetición satisfactoria del flujo de Chromium aislado.
+- Rama creada desde main y actualizada con el PR #2 ya fusionado; no incorpora el PR #3 de conflictos de Drive. No repara huérfanos preexistentes ni valida todas las relaciones en importaciones o cambios de asociación.
+
+## Sin publicar — Paso 4: confirmar guardados de Drive
+
+- Las búsquedas y creaciones de carpetas/archivos y los PATCH de backups/reportes comprueban HTTP. Las respuestas de búsqueda y creación deben contener IDs válidos; un error no se interpreta como archivo ausente.
+- El backup solo muestra guardado exitoso después del PATCH confirmado. Los fallos mantienen el estado pendiente y distinguen si la copia local pudo conservarse. Una edición posterior al snapshot enviado sigue pendiente aunque termine la subida anterior.
+- La preparación de carpetas debe terminar antes de anunciar que Drive está listo; los callbacks OAuth capturan sus errores. Se retiró el mensaje temporizado de reconexión que afirmaba ausencia de cambios sin comprobarla.
+- Se conserva el ID creado si falla la subida posterior, para que otro intento en la misma sesión no cree un segundo backup. No se añaden reintentos automáticos ni se resuelven conflictos entre dispositivos.
+- Validación: 24 pruebas nuevas (76 en total con `node --test tests/*.test.js`) y Chromium aislado para indicadores, exportación Excel y conexión fallida. HTTP, OAuth, SheetJS y Chart simulados; no se accedió a una cuenta real.
 
 ## Sin publicar — Paso 3: validar backups antes de reemplazar datos
 
