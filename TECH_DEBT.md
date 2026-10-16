@@ -4,6 +4,16 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Drive — seguimiento del paso 4
+
+Las operaciones de preparación y subida verifican respuestas HTTP y la estructura mínima de listas/IDs. Un fallo de búsqueda no dispara creación; un fallo de PATCH no confirma el backup ni devuelve éxito al exportador Excel. El indicador conserva los cambios pendientes y solo afirma que hay una copia local cuando su escritura terminó. La confirmación se compara con el snapshot enviado para no limpiar cambios realizados mientras esperaba la red.
+
+Los callbacks manual y automático capturan errores de preparación y no dejan Drive listo en ese caso. La reconexión ya no muestra tras tres segundos un mensaje de ausencia de cambios sin verificarlos. Se conservó la lógica de no descargar al reconectar automáticamente.
+
+Verificación: 24 pruebas con HTTP/OAuth/DOM/almacenamiento simulados y las 52 anteriores (76 aprobadas). Chromium comprobó copia local y estado pendiente tras 403, confirmación 204, cambios durante una subida, mensajes del exportador Excel y preparación fallida. No se probó una cuenta real; SheetJS y Chart se sustituyeron por dobles en el navegador.
+
+Pendiente: conflictos y duplicados entre dispositivos/sesiones, respuestas fuera de orden entre subidas simultáneas, desconexión durante una petición y renovación de credenciales. La comparación de snapshots evita un indicador falso, pero no serializa ni fusiona escrituras remotas. Un error no se reintenta automáticamente; el siguiente guardado puede volver a intentar la subida.
+
 ## Integridad — seguimiento del paso 3
 
 La importación JSON local y la descarga del backup de Drive validan una copia antes de reemplazar el estado. Se exigen las listas `clientes`, `equipos` y `cotizaciones`; las colecciones posteriores ausentes o null se normalizan como en los backups heredados. Se verifican registros, IDs, tipos de campos conocidos, fechas y estructura de estados de facturación. Los campos adicionales se conservan. No se convierten silenciosamente números/textos o booleanos incompatibles: se rechaza el archivo y se informa el campo para su revisión.
@@ -12,7 +22,7 @@ La normalización existente se extrajo a `_normalizeData()` para compartir migra
 
 Verificación: 36 pruebas nuevas en `tests/data-import.test.js`, más las 16 anteriores (52 en total). Cubren casos incompatibles, backup semilla, migración heredada, exportación/reimportación, errores de lectura, cuota, render y restauración, y descargas de Drive simuladas. Chromium comprobó importación y recarga local, nueve pantallas con un backup representativo, recuperación ante render/cuota y carga remota simulada. No se usó Drive real ni se verificó el dibujo de gráficos.
 
-Pendiente: integridad referencial entre entidades, reglas de conflictos/duplicados de Drive, comprobación de subidas y endurecimiento de la carga inicial de localStorage corrupto. La validación estructural no certifica seguridad del renderizado en los módulos restantes ni limita el tamaño de los archivos. Los backups con tipos incompatibles requieren revisión; no se reparan automáticamente.
+Pendiente: integridad referencial entre entidades, reglas de conflictos/duplicados de Drive y endurecimiento de la carga inicial de localStorage corrupto. La validación estructural no certifica seguridad del renderizado en los módulos restantes ni limita el tamaño de los archivos. Los backups con tipos incompatibles requieren revisión; no se reparan automáticamente.
 
 ## Integridad — seguimiento del paso 2
 
@@ -54,7 +64,7 @@ Pendiente: revisión contextual de los demás módulos y restantes hallazgos de 
 
 ## Otras observaciones vigentes
 
-- `_gdriveLoadData()`/`_gdriveSaveData()` (`js/modules/drive.js`) usan el literal `'aercom-data'` en vez de la constante `STORAGE_KEY` de `js/storage.js` (mismo valor, sin impacto funcional) — inconsistencia de estilo, no un bug.
+- La carga y el guardado de Drive usan `STORAGE_KEY` desde los pasos 3 y 4; la observación anterior sobre literales duplicados quedó resuelta.
 - La descarga JSON de Drive valida su estructura desde el paso 3. Siguen pendientes los conflictos entre dispositivos y la revisión de todos los contextos de renderizado; validar la forma no autentica el origen del contenido del archivo.
 
 ---
