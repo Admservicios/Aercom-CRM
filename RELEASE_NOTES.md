@@ -1,4 +1,15 @@
-# Aercom CRM v2.0.0
+# Aercom CRM — notas de cambios
+
+## Estado integrado al 16 de octubre de 2026
+
+Los PR #1, #2 y #4–#7 están fusionados en main. Incorporan protección de renderizado en los puntos revisados, conservación de campos, validación/recuperación de importaciones, confirmación HTTP de Drive, bloqueo de borrados con asociaciones, historial y fechas, importación tabular y navegación móvil/contadores. La suite integrada tiene 186 pruebas aprobadas; los resultados de Chromium y sus límites están en [TECH_DEBT.md](TECH_DEBT.md).
+
+El PR #3 sigue en borrador: la resolución de conflictos de Drive no está en main y requiere validar ETag/If-Match con una cuenta real. No hay garantía de edición simultánea segura ni certificación de seguridad global. Los valores de versión heredados difieren (README v2.0.0, CONFIG 2.1.0); este cierre documental no crea una versión nueva.
+
+## Notas históricas de v2.0.0
+
+El contenido siguiente describe el cierre original de modularización. Las afirmaciones históricas de cobertura de seguridad o limpieza no sustituyen el alcance revisado y los pendientes actuales.
+
 
 ## Resumen ejecutivo
 
