@@ -4,6 +4,14 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — Paso 4: confirmar guardados de Drive
+
+- Las búsquedas y creaciones de carpetas/archivos y los PATCH de backups/reportes comprueban HTTP. Las respuestas de búsqueda y creación deben contener IDs válidos; un error no se interpreta como archivo ausente.
+- El backup solo muestra guardado exitoso después del PATCH confirmado. Los fallos mantienen el estado pendiente y distinguen si la copia local pudo conservarse. Una edición posterior al snapshot enviado sigue pendiente aunque termine la subida anterior.
+- La preparación de carpetas debe terminar antes de anunciar que Drive está listo; los callbacks OAuth capturan sus errores. Se retiró el mensaje temporizado de reconexión que afirmaba ausencia de cambios sin comprobarla.
+- Se conserva el ID creado si falla la subida posterior, para que otro intento en la misma sesión no cree un segundo backup. No se añaden reintentos automáticos ni se resuelven conflictos entre dispositivos.
+- Validación: 24 pruebas nuevas (76 en total con `node --test tests/*.test.js`) y Chromium aislado para indicadores, exportación Excel y conexión fallida. HTTP, OAuth, SheetJS y Chart simulados; no se accedió a una cuenta real.
+
 ## Sin publicar — Paso 3: validar backups antes de reemplazar datos
 
 - Validación compartida de JSON local y descargado de Drive: raíz, colecciones, registros, IDs únicos/no reservados, tipos conocidos, fechas y estructura de facturación. Los campos adicionales se conservan y los tipos incompatibles se rechazan sin conversiones silenciosas.

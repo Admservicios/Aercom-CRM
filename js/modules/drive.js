@@ -38,11 +38,8 @@
  *   función de este módulo — el botón "Generar informe" no tiene
  *   opción de subir a Drive (a diferencia de los reportes Excel).
  *
- * Nota sobre `STORAGE_KEY`: solo
- * `_gdriveSaveData()` escriben `localStorage` con el literal
- * `'aercom-data'` en vez de la constante `STORAGE_KEY` de
- * `js/storage.js` (incluso teniendo el mismo valor) — preexistente,
- * migrado tal cual, ver TECH_DEBT.md.
+ * Los datos locales se guardan con STORAGE_KEY. Una subida solo se
+ * confirma tras comprobar HTTP y corresponde al snapshot enviado.
  */
 
 // ─── GOOGLE DRIVE INTEGRATION ────────────────────────────────────────────────
@@ -75,12 +72,18 @@ async function gdriveAuth(){
     callback: async(resp)=>{
       if(resp.error){toast('⚠ Error al conectar con Drive: '+resp.error);return;}
       _gdriveToken=resp.access_token;
-      _gdriveReady=true;
-      localStorage.setItem('aercom-drive-connected','1'); // recordar que conectó
-      _updateDriveUI();
-      toast('✓ Conectado a Google Drive');
-      await _gdriveEnsureFolders();
-      await _gdriveLoadData();
+      try{
+        await _gdriveEnsureFolders();
+        _gdriveReady=true;
+        localStorage.setItem('aercom-drive-connected','1'); // recordar que conectó
+        _updateDriveUI();
+        toast('✓ Conectado a Google Drive');
+        await _gdriveLoadData();
+      }catch(e){
+        _gdriveReady=false;
+        _resetDriveUI();
+        toast('⚠ No se pudo preparar Drive: '+e.message);
+      }
     }
   }).requestAccessToken();
 }
@@ -147,6 +150,26 @@ function gdriveDisconnect(){
   toast('Drive desconectado');
 }
 
+// Comprobar HTTP sin incluir tokens ni cuerpos de respuesta en los mensajes.
+async function _driveRequest(url, options){
+  const response=await fetch(url, options);
+  if(!response.ok) throw new Error(`Drive respondió HTTP ${response.status}.`);
+  return response;
+}
+
+function _driveFileId(file){
+  if(!file || typeof file.id!=='string' || !file.id.trim()){
+    throw new Error('Drive no devolvió un identificador de archivo válido.');
+  }
+  return file.id;
+}
+
+function _driveFileList(data){
+  if(!data || !Array.isArray(data.files)) throw new Error('Respuesta de Drive incompatible.');
+  data.files.forEach(_driveFileId);
+  return data.files;
+}
+
 // ── Crear estructura de carpetas ──
 async function _gdriveEnsureFolders(){
   _folderRootId   = await _gdriveGetOrCreateFolder('Aercom Gestion', null);
@@ -157,20 +180,21 @@ async function _gdriveEnsureFolders(){
 async function _gdriveGetOrCreateFolder(name, parentId){
   let q=`mimeType='application/vnd.google-apps.folder' and name='${name}' and trashed=false`;
   if(parentId) q+=` and '${parentId}' in parents`;
-  const res=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`,
+  const res=await _driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`,
     {headers:{Authorization:'Bearer '+_gdriveToken}});
   const data=await res.json();
-  if(data.files&&data.files.length>0) return data.files[0].id;
+  const files=_driveFileList(data);
+  if(files.length>0) return files[0].id;
   // Crear
   const body={name,mimeType:'application/vnd.google-apps.folder'};
   if(parentId) body.parents=[parentId];
-  const res2=await fetch('https://www.googleapis.com/drive/v3/files',{
+  const res2=await _driveRequest('https://www.googleapis.com/drive/v3/files',{
     method:'POST',
     headers:{Authorization:'Bearer '+_gdriveToken,'Content-Type':'application/json'},
     body:JSON.stringify(body)
   });
   const d2=await res2.json();
-  return d2.id;
+  return _driveFileId(d2);
 }
 
 // ── Cargar datos JSON desde Drive ──
@@ -207,26 +231,43 @@ async function _gdriveLoadData(){
 
 // ── Guardar JSON en Drive ──
 async function _gdriveSaveData(){
-  if(!_gdriveReady||!_gdriveToken||!_folderRootId) return;
+  if(!_gdriveReady||!_gdriveToken||!_folderRootId) return false;
+  let localSaved=false;
   try{
     D.lastSaved=today();
-    localStorage.setItem('aercom-data',JSON.stringify(D));
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(D));
+    localSaved=true;
     const body=JSON.stringify(D,null,2);
     if(_gdriveDataFileId){
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${_gdriveDataFileId}?uploadType=media`,{
+      await _driveRequest(`https://www.googleapis.com/upload/drive/v3/files/${_gdriveDataFileId}?uploadType=media`,{
         method:'PATCH',headers:{Authorization:'Bearer '+_gdriveToken,'Content-Type':'application/json'},body});
     } else {
       const meta={name:'aercom-data.json',parents:[_folderRootId]};
-      const res=await fetch('https://www.googleapis.com/drive/v3/files',{
+      const res=await _driveRequest('https://www.googleapis.com/drive/v3/files',{
         method:'POST',headers:{Authorization:'Bearer '+_gdriveToken,'Content-Type':'application/json'},
         body:JSON.stringify(meta)});
-      const d=await res.json(); _gdriveDataFileId=d.id;
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${_gdriveDataFileId}?uploadType=media`,{
+      const d=await res.json(); _gdriveDataFileId=_driveFileId(d);
+      await _driveRequest(`https://www.googleapis.com/upload/drive/v3/files/${_gdriveDataFileId}?uploadType=media`,{
         method:'PATCH',headers:{Authorization:'Bearer '+_gdriveToken,'Content-Type':'application/json'},body});
     }
-    document.getElementById('sb-saved').textContent='✓ Guardado en Drive '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-    markSaved();
-  }catch(e){console.error('Drive save',e);}
+    // El PATCH confirma el snapshot enviado, no las ediciones hechas mientras esperaba.
+    if(JSON.stringify(D,null,2)===body){
+      document.getElementById('sb-saved').textContent='✓ Guardado en Drive '+new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      markSaved();
+    } else {
+      markUnsaved();
+      document.getElementById('sb-saved').textContent='✓ Copia enviada a Drive; hay cambios pendientes';
+    }
+    return true;
+  }catch(e){
+    console.error('Drive save',e);
+    markUnsaved();
+    document.getElementById('sb-saved').textContent=localSaved
+      ? '⚠ Sin confirmar en Drive; copia local conservada'
+      : '⚠ No se pudo guardar la copia local ni confirmar Drive';
+    toast('⚠ No se pudo guardar en Drive: '+e.message);
+    return false;
+  }
 }
 
 function _scheduleDriveSave(){
@@ -237,24 +278,25 @@ function _scheduleDriveSave(){
 
 // ── Subir archivo a Drive (reportes) ──
 async function _gdriveUploadFile(name, content, mimeType, folderId){
-  if(!_gdriveReady||!folderId) return false;
+  if(!_gdriveReady||!_gdriveToken||!folderId) return false;
   try{
     // Buscar si ya existe para actualizar
     const q=`name='${name}' and '${folderId}' in parents and trashed=false`;
-    const res=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`,
+    const res=await _driveRequest(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`,
       {headers:{Authorization:'Bearer '+_gdriveToken}});
     const data=await res.json();
-    let fileId=data.files&&data.files.length>0?data.files[0].id:null;
+    const files=_driveFileList(data);
+    let fileId=files.length>0?files[0].id:null;
     if(fileId){
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,{
+      await _driveRequest(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,{
         method:'PATCH',headers:{Authorization:'Bearer '+_gdriveToken,'Content-Type':mimeType},body:content});
     } else {
       const meta={name,parents:[folderId]};
-      const r=await fetch('https://www.googleapis.com/drive/v3/files',{
+      const r=await _driveRequest('https://www.googleapis.com/drive/v3/files',{
         method:'POST',headers:{Authorization:'Bearer '+_gdriveToken,'Content-Type':'application/json'},
         body:JSON.stringify(meta)});
-      const d=await r.json(); fileId=d.id;
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,{
+      const d=await r.json(); fileId=_driveFileId(d);
+      await _driveRequest(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,{
         method:'PATCH',headers:{Authorization:'Bearer '+_gdriveToken,'Content-Type':mimeType},body:content});
     }
     return true;
@@ -275,12 +317,17 @@ async function _tryAutoConnectDrive(){
       callback: async(resp)=>{
         if(resp.error) return; // fallo silencioso
         _gdriveToken = resp.access_token;
-        _gdriveReady = true;
-        _updateDriveUI();
-        await _gdriveEnsureFolders();
-        // NO llamar _gdriveLoadData acá para no sobreescribir datos locales al arrancar
-        document.getElementById('sb-saved').textContent='✓ Drive reconectado automáticamente';
-        setTimeout(()=>{ const el=document.getElementById('sb-saved'); if(el) el.textContent='Sin cambios pendientes'; }, 3000);
+        try{
+          await _gdriveEnsureFolders();
+          _gdriveReady = true;
+          _updateDriveUI();
+          // NO llamar _gdriveLoadData acá para no sobreescribir datos locales al arrancar
+          document.getElementById('sb-saved').textContent='✓ Drive reconectado automáticamente';
+        }catch(e){
+          _gdriveReady = false;
+          _resetDriveUI();
+          toast('⚠ No se pudo preparar Drive: '+e.message);
+        }
       }
     });
     tc.requestAccessToken();
