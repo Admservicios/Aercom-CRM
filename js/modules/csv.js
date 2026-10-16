@@ -15,7 +15,7 @@
  *
  * Dependencias externas (definidas en index.html, sin mover —
  * no son responsabilidad de este módulo):
- *   D, persist(), closeModal(), renderModule(), toast()
+ *   D, persist(), closeModal(), renderModule(), toast(), _esc()
  *
  * Integración con Clientes / Equipos / Cotizaciones:
  *   `CSV_SCHEMAS` es el único punto del proyecto que escribe
@@ -145,7 +145,7 @@ function csvFileSelected(ev){
     const s=CSV_SCHEMAS[csvModule];
     const preview=rows.slice(0,3);
     const thHtml=s.cols.map(c=>`<th style="font-size:11px;padding:5px 8px;background:#f8fafc;white-space:nowrap">${c}</th>`).join('');
-    const trHtml=preview.map(row=>`<tr>${s.cols.map(c=>`<td style="font-size:11.5px;padding:4px 8px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:1px solid var(--border)">${row[c]||''}</td>`).join('')}</tr>`).join('');
+    const trHtml=preview.map(row=>`<tr>${s.cols.map(c=>`<td style="font-size:11.5px;padding:4px 8px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-bottom:1px solid var(--border)">${_esc(row[c]||'')}</td>`).join('')}</tr>`).join('');
     document.getElementById('csv-preview').innerHTML=rows.length===0
       ?`<div class="alert-box a-err" style="margin-top:10px"><div class="alert-title">El archivo no contiene registros válidos</div></div>`
       :`<div style="margin-top:14px">
@@ -161,7 +161,7 @@ function csvFileSelected(ev){
     document.getElementById('csv-conflict').innerHTML=conflicts.length
       ?`<div class="alert-box a-warn" style="margin-top:10px">
           <div class="alert-title">⚠ ${conflicts.length} registro${conflicts.length!==1?'s ya existen':' ya existe'}</div>
-          <ul class="alert-items">${conflicts.slice(0,5).map(row=>`<li>${row[s.keyField]}</li>`).join('')}${conflicts.length>5?`<li style="color:var(--t3)">...y ${conflicts.length-5} más</li>`:''}</ul>
+          <ul class="alert-items">${conflicts.slice(0,5).map(row=>`<li>${_esc(row[s.keyField])}</li>`).join('')}${conflicts.length>5?`<li style="color:var(--t3)">...y ${conflicts.length-5} más</li>`:''}</ul>
           <div style="margin-top:10px;display:flex;gap:16px">
             <label style="font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:6px"><input type="radio" name="csv-cf" value="saltar" checked onchange="csvConflictMode='saltar'"> Saltar existentes</label>
             <label style="font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:6px"><input type="radio" name="csv-cf" value="reemplazar" onchange="csvConflictMode='reemplazar'"> Reemplazar existentes</label>

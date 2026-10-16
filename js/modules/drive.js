@@ -15,7 +15,8 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
- *   D, toast(), today(), markSaved(), renderModule() (index.html)
+ *   D, toast(), today(), markSaved() (index.html)
+ *   _parseImportedData(), _applyImportedData(), STORAGE_KEY (js/storage.js)
  *
  * Relación con persist() (NO migrada, sigue en index.html):
  *   `persist()` es quien LLAMA a `_scheduleDriveSave()` (migrada
@@ -37,7 +38,7 @@
  *   función de este módulo — el botón "Generar informe" no tiene
  *   opción de subir a Drive (a diferencia de los reportes Excel).
  *
- * Nota sobre `STORAGE_KEY`: `_gdriveLoadData()` y
+ * Nota sobre `STORAGE_KEY`: solo
  * `_gdriveSaveData()` escriben `localStorage` con el literal
  * `'aercom-data'` en vez de la constante `STORAGE_KEY` de
  * `js/storage.js` (incluso teniendo el mismo valor) — preexistente,
@@ -179,28 +180,29 @@ async function _gdriveLoadData(){
     const q=`name='aercom-data.json' and '${_folderRootId}' in parents and trashed=false`;
     const res=await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)`,
       {headers:{Authorization:'Bearer '+_gdriveToken}});
+    if(!res.ok) throw new Error('No se pudo consultar el backup de Drive.');
     const data=await res.json();
-    if(data.files&&data.files.length>0){
-      _gdriveDataFileId=data.files[0].id;
-      const res2=await fetch(`https://www.googleapis.com/drive/v3/files/${_gdriveDataFileId}?alt=media`,
+    if(!Array.isArray(data.files)) throw new Error('Respuesta de Drive incompatible.');
+    if(data.files.length>0){
+      const fileId=data.files[0].id;
+      const res2=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
         {headers:{Authorization:'Bearer '+_gdriveToken}});
-      const parsed=JSON.parse(await res2.text());
+      if(!res2.ok) throw new Error('No se pudo descargar el backup de Drive.');
+      const parsed=_parseImportedData(await res2.text());
       const driveDate=parsed.lastSaved||'';
       const localDate=D.lastSaved||'';
       if(driveDate>localDate){
-        D=parsed;
-        if(!D.facturacion_estados) D.facturacion_estados={};
-        if(!D.recordatorios) D.recordatorios=[];
-        localStorage.setItem('aercom-data',JSON.stringify(D));
-        renderModule();
+        _applyImportedData(parsed, () => localStorage.setItem(STORAGE_KEY,JSON.stringify(D)));
+        _gdriveDataFileId=fileId;
         toast('✓ Datos sincronizados desde Drive');
       } else {
+        _gdriveDataFileId=fileId;
         await _gdriveSaveData();
       }
     } else {
       await _gdriveSaveData();
     }
-  }catch(e){console.error('Drive load',e);}
+  }catch(e){console.error('Drive load',e);toast('⚠ No se cargaron los datos de Drive: '+e.message);}
 }
 
 // ── Guardar JSON en Drive ──

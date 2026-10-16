@@ -77,11 +77,11 @@ function generarReporteVencimientos(){
       const dLabel = d===9999?'—': d<0
         ? `<span style="color:#c73030;font-weight:700">${Math.abs(d)}d vencido</span>`
         : `<span style="color:#c4600a;font-weight:700">en ${d}d</span>`;
-      const fd = v=>v?fmtDate(v):'—';
+      const fd = v=>v?_esc(fmtDate(v)):'—';
       return `<tr style="border-bottom:1px solid #f0efeb">
         <td style="padding:8px 10px;font-size:12px;font-weight:600;color:#1a1916">${_esc(item.eq.id)}</td>
         <td style="padding:8px 10px;font-size:12px;color:#706f6b">${_esc(cn)}</td>
-        <td style="padding:8px 10px;font-size:11px;color:#9b9a96">${item.eq.tipo}</td>
+        <td style="padding:8px 10px;font-size:11px;color:#9b9a96">${_esc(item.eq.tipo)}</td>
         <td style="padding:8px 10px;font-size:11.5px">${fd(item.nextPrev)}</td>
         <td style="padding:8px 10px;font-size:11.5px">${fd(item.nextBat)}</td>
         <td style="padding:8px 10px;text-align:center">${dLabel}</td>
@@ -89,7 +89,8 @@ function generarReporteVencimientos(){
     }).join('');
   }
 
-  const tLabels = JSON.stringify(Object.keys(tipoCount));
+  // JSON dentro de <script>: impedir que un dato cierre el elemento HTML.
+  const tLabels = JSON.stringify(Object.keys(tipoCount)).replace(/</g, '\\u003c');
   const tData   = JSON.stringify(Object.values(tipoCount));
 
   const html = `<!DOCTYPE html>

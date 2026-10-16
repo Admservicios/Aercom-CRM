@@ -90,9 +90,9 @@ function eqDateCell(eid, lastField, lastVal, nextVal){
   const diff=nextVal?daysDiff(nextVal):null;
   const nc=diff===null?'color:var(--t3)':diff<0?'color:var(--err);font-weight:600':diff<=30?'color:#b45309;font-weight:600':'color:var(--ok)';
   const lastHtml=lastVal
-    ?`<span class="equip-date-last" data-eid="${_esc(eid)}" data-field="${_esc(lastField)}" onclick="equipInlineDate(this,this.dataset.eid,this.dataset.field)">${fmtDate(lastVal)}</span>`
+    ?`<span class="equip-date-last" data-eid="${_esc(eid)}" data-field="${_esc(lastField)}" onclick="equipInlineDate(this,this.dataset.eid,this.dataset.field)">${_esc(fmtDate(lastVal))}</span>`
     :`<span class="equip-date-none" data-eid="${_esc(eid)}" data-field="${_esc(lastField)}" onclick="equipInlineDate(this,this.dataset.eid,this.dataset.field)">+ Sin registro</span>`;
-  return `<td class="equip-date-cell" data-equip="${_esc(eid)}" data-field="${_esc(lastField)}">${lastHtml}<div class="equip-date-next" style="${nc}">Próx: ${nextVal?fmtDate(nextVal):'—'}</div></td>`;
+  return `<td class="equip-date-cell" data-equip="${_esc(eid)}" data-field="${_esc(lastField)}">${lastHtml}<div class="equip-date-next" style="${nc}">Próx: ${nextVal?_esc(fmtDate(nextVal)):'—'}</div></td>`;
 }
 
 /* =========================
@@ -123,7 +123,7 @@ function renderEquipos(){
     return `<tr class="${rc}">
       <td>
         <div style="font-size:13px;font-weight:600">${_esc(e.id)}</div>
-        <div style="font-size:11px;color:var(--t2)">${tipoAbrev}</div>
+        <div style="font-size:11px;color:var(--t2)">${_esc(tipoAbrev)}</div>
       </td>
       <td>${_esc(clientName(e.clienteId))}</td>
       ${eqDateCell(e.id,'ultimaVisita',e.ultimaVisita,nextVisita)}
@@ -195,7 +195,7 @@ function openEquipModal(eid){
   document.getElementById('modal-title').textContent=eq?`Editar Equipo — ${eid}`:'Nuevo Equipo';
   const tipos=['Grupo Electrógeno','Electrocompresor','Motocompresor','Motobomba','Secadora de Aire'];
   const tipoOpts=tipos.map(t=>`<option ${eq?.tipo===t?'selected':''}>${t}</option>`).join('');
-  const cliOpts=D.clientes.map(c=>`<option value="${c.id}" ${eq?.clienteId===c.id?'selected':''}>${_esc(c.nombre)}</option>`).join('');
+  const cliOpts=D.clientes.map(c=>`<option value="${_esc(c.id)}" ${eq?.clienteId===c.id?'selected':''}>${_esc(c.nombre)}</option>`).join('');
   const _vfd={'Semanal':7,'Quincenal':15,'Mensual':30,'Bimestral':60,'Trimestral':90,'Semestral':180,'Anual':365};
   const _vcli=D.clientes.find(c=>c.id===(eq?.clienteId||''));
   const _nvisita=eq?.proximaVisita||(eq?.ultimaVisita&&_vfd[_vcli?.frecuenciaVisita||'']?addDays(eq.ultimaVisita,_vfd[_vcli?.frecuenciaVisita||'']):'' );
@@ -207,24 +207,24 @@ function openEquipModal(eid){
     </div>
     <div class="fg"><label class="fl">Cliente *</label><select class="fc" id="e-cli">${cliOpts}</select></div>
     <div class="form-row">
-      <div class="fg"><label class="fl">Fecha del último preventivo realizado</label><input class="fc" type="date" id="e-uprev" value="${eq?.ultimoPreventivo||''}" oninput="autoNextPrev()"></div>
-      <div class="fg"><label class="fl">Próximo preventivo</label><input class="fc" type="date" id="e-nprev" value="${eq?.proximoPreventivo||''}"></div>
+      <div class="fg"><label class="fl">Fecha del último preventivo realizado</label><input class="fc" type="date" id="e-uprev" value="${_esc(eq?.ultimoPreventivo||'')}" oninput="autoNextPrev()"></div>
+      <div class="fg"><label class="fl">Próximo preventivo</label><input class="fc" type="date" id="e-nprev" value="${_esc(eq?.proximoPreventivo||'')}"></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label class="fl">Fecha del último cambio de refrigerante</label><input class="fc" type="date" id="e-ace" value="${eq?.ultimoAceite||''}" oninput="autoNextAceite()"></div>
-      <div class="fg"><label class="fl">Próximo refrigerante</label><input class="fc" type="date" id="e-nace" value="${eq?.proximoAceite||(eq?.ultimoAceite?addDays(eq.ultimoAceite,730):'')}" ></div>
+      <div class="fg"><label class="fl">Fecha del último cambio de refrigerante</label><input class="fc" type="date" id="e-ace" value="${_esc(eq?.ultimoAceite||'')}" oninput="autoNextAceite()"></div>
+      <div class="fg"><label class="fl">Próximo refrigerante</label><input class="fc" type="date" id="e-nace" value="${_esc(eq?.proximoAceite||(eq?.ultimoAceite?addDays(eq.ultimoAceite,730):''))}" ></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label class="fl">Fecha del último cambio de batería</label><input class="fc" type="date" id="e-bat" value="${eq?.ultimoBateria||''}"></div>
-      <div class="fg"><label class="fl">Último refrigerante (gas)</label><input class="fc" type="date" id="e-ref" value="${eq?.ultimoRefrigerante||''}"></div>
+      <div class="fg"><label class="fl">Fecha del último cambio de batería</label><input class="fc" type="date" id="e-bat" value="${_esc(eq?.ultimoBateria||'')}"></div>
+      <div class="fg"><label class="fl">Último refrigerante (gas)</label><input class="fc" type="date" id="e-ref" value="${_esc(eq?.ultimoRefrigerante||'')}"></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label class="fl">Horómetro (hs)</label><input class="fc" type="number" id="e-hor" value="${eq?.horometro||''}"></div>
+      <div class="fg"><label class="fl">Horómetro (hs)</label><input class="fc" type="number" id="e-hor" value="${_esc(eq?.horometro||'')}"></div>
       <div class="fg"></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label class="fl">Fecha de la última visita</label><input class="fc" type="date" id="e-uvisita" value="${eq?.ultimaVisita||''}" oninput="autoNextVisita()"></div>
-      <div class="fg"><label class="fl">Próxima visita</label><input class="fc" type="date" id="e-nvisita" value="${_nvisita}"></div>
+      <div class="fg"><label class="fl">Fecha de la última visita</label><input class="fc" type="date" id="e-uvisita" value="${_esc(eq?.ultimaVisita||'')}" oninput="autoNextVisita()"></div>
+      <div class="fg"><label class="fl">Próxima visita</label><input class="fc" type="date" id="e-nvisita" value="${_esc(_nvisita)}"></div>
     </div>
     <div class="fg"><label class="fl">Observaciones</label><textarea class="fc" id="e-obs">${_esc(eq?.observaciones)}</textarea></div>
   `;

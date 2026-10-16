@@ -131,7 +131,7 @@ function renderClientes(){
     return `<tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:36px;height:36px;border-radius:8px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:${avatarFs};font-weight:700;color:#fff;flex-shrink:0;letter-spacing:-.3px;font-family:monospace;padding:2px">${avatarLabel}</div>
+          <div style="width:36px;height:36px;border-radius:8px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:${avatarFs};font-weight:700;color:#fff;flex-shrink:0;letter-spacing:-.3px;font-family:monospace;padding:2px">${_esc(avatarLabel)}</div>
           <div>
             <div style="font-weight:600;font-size:13.5px">${_esc(c.nombre)}${crit?`<span class="badge b-err" style="font-size:9px;padding:1px 5px;margin-left:6px;vertical-align:middle">CRÍTICO</span>`:''}</div>
             <div style="font-size:11px;color:var(--t3);margin-top:1px">${equipN} equipo${equipN!==1?'s':''}${pedN?` · <span style="color:var(--warn);font-weight:600">${pedN} pedido${pedN!==1?'s':''} activo${pedN!==1?'s':''}</span>`:''}</div>
@@ -146,12 +146,12 @@ function renderClientes(){
           </div>
         </div>
       </td>
-      <td><span class="badge ${TIPO_B[c.tipo]||'b-gray'}" style="font-size:11px">${c.tipo||'—'}</span></td>
+      <td><span class="badge ${TIPO_B[c.tipo]||'b-gray'}" style="font-size:11px">${_esc(c.tipo||'—')}</span></td>
       <td style="font-size:12.5px">${_esc(c.ciudad)||'—'}</td>
       <td style="font-size:12.5px">${_esc(c.contacto)||'—'}${c.telefono?`<br><span style="color:var(--t2)">${_esc(c.telefono)}</span>`:''}</td>
-      <td style="font-size:12.5px">${c.frecuenciaVisita||'—'}</td>
+      <td style="font-size:12.5px">${_esc(c.frecuenciaVisita||'—')}</td>
       <td style="font-size:12.5px;font-weight:500">${c.presupuesto?'$ '+Number(c.presupuesto).toLocaleString('es-AR'):'—'}</td>
-      <td><span class="badge ${EST_B[c.estadoCliente]||'b-gray'}" style="font-size:11px">${c.estadoCliente||'Activo'}</span></td>
+      <td><span class="badge ${EST_B[c.estadoCliente]||'b-gray'}" style="font-size:11px">${_esc(c.estadoCliente||'Activo')}</span></td>
       <td style="white-space:nowrap">
         <div style="display:flex;gap:5px;align-items:center">
           <button class="btn btn-outline btn-sm" data-id="${_esc(c.id)}" onclick="openFicha(this.dataset.id)">Ver ficha</button>
@@ -170,9 +170,15 @@ function renderClientes(){
 
 function openClientModal(id){
   const c=id?D.clientes.find(x=>x.id===id):null;
-  const tipoOpts=['Sanatorio/Clínica','Industria','Comercio','Edificio','Otro'].map(t=>`<option value="${t}" ${c?.tipo===t?'selected':''}>${t}</option>`).join('');
-  const estOpts=['Activo','Inactivo','Suspendido'].map(e=>`<option value="${e}" ${(c?c.estadoCliente===e:e==='Activo')?'selected':''}>${e}</option>`).join('');
-  const freqOpts=['Semanal','Quincenal','Mensual','Bimestral','Trimestral','Semestral','Anual'].map(f=>`<option value="${f}" ${c?.frecuenciaVisita===f?'selected':''}>${f}</option>`).join('');
+  // Conservar valores históricos/importados al editar, aunque no estén en el catálogo.
+  const opciones=(valores,actual)=>{
+    const lista=[...valores];
+    if(actual && !lista.includes(actual)) lista.push(actual);
+    return lista.map(v=>`<option value="${_esc(v)}" ${v===actual?'selected':''}>${_esc(v)}</option>`).join('');
+  };
+  const tipoOpts=opciones(['Sanatorio/Clínica','Industria','Comercio','Edificio','Otro'],c?.tipo);
+  const estOpts=opciones(['Activo','Inactivo','Suspendido'],c?c.estadoCliente:'Activo');
+  const freqOpts=opciones(['Semanal','Quincenal','Mensual','Bimestral','Trimestral','Semestral','Anual'],c?.frecuenciaVisita);
   const nextId=`C${String(D.clientes.length+1).padStart(3,'0')}`;
   document.getElementById('modal-title').textContent=c?'Editar cliente':'Nuevo cliente';
   document.getElementById('modal-body').innerHTML=`
@@ -182,7 +188,7 @@ function openClientModal(id){
           <span style="font-size:10px;font-weight:400;color:var(--t3);margin-left:4px">(único)</span>
         </label>
         <input class="fc" id="cli-id-edit"
-          value="${c?c.id:nextId}"
+          value="${_esc(c?c.id:nextId)}"
           placeholder="${nextId}"
           style="font-family:monospace;font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase"
           oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\-_]/g,'')">
@@ -190,7 +196,7 @@ function openClientModal(id){
       </div>
       <div class="fg">
         <label class="fl">Nombre *</label>
-        <input class="fc" id="cli-nombre" value="${c?c.nombre.replace(/"/g,'&quot;'):''}" placeholder="Nombre del cliente">
+        <input class="fc" id="cli-nombre" value="${_esc(c?.nombre)}" placeholder="Nombre del cliente">
       </div>
     </div>
     <div class="form-row">
@@ -214,23 +220,23 @@ function openClientModal(id){
         <select class="fc" id="cli-frecuencia"><option value="">— Sin definir —</option>${freqOpts}</select>
       </div>
     </div>
-    <div class="fg"><label class="fl">Presupuesto mensual ($)</label><input class="fc" id="cli-presupuesto" type="number" min="0" value="${c?.presupuesto||''}" placeholder="0"></div>
+    <div class="fg"><label class="fl">Presupuesto mensual ($)</label><input class="fc" id="cli-presupuesto" type="number" min="0" value="${_esc(c?.presupuesto||'')}" placeholder="0"></div>
     <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
       <div style="font-size:12px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Facturación</div>
       <div class="form-row">
         <div class="fg"><label class="fl">Ajuste de precio</label>
           <select class="fc" id="cli-ajuste">
-            ${['IPC','Dólar divisa','Dólar billete','Fijo pesos'].map(a=>`<option value="${a}" ${(c?.ajuste||'IPC')===a?'selected':''}>${a}</option>`).join('')}
+            ${opciones(['IPC','Dólar divisa','Dólar billete','Fijo pesos'],c?.ajuste||'IPC')}
           </select>
         </div>
         <div class="fg"><label class="fl">Modalidad de facturación</label>
           <select class="fc" id="cli-facturacion" onchange="onFacturacionChange()">
-            ${['Manual','Automática','Por fecha'].map(f=>`<option value="${f}" ${(c?.facturacion||'Manual')===f?'selected':''}>${f}</option>`).join('')}
+            ${opciones(['Manual','Automática','Por fecha'],c?.facturacion||'Manual')}
           </select>
           <div id="fact-fecha-cfg" style="margin-top:8px;display:${(c?.facturacion==='Por fecha')?'block':'none'}">
             <label class="fl" style="margin-bottom:4px">Facturar a partir del día</label>
             <div style="display:flex;align-items:center;gap:8px">
-              <input class="fc" type="number" id="cli-fact-dia" min="1" max="28" value="${c?.facturacionDia||15}" style="width:80px;text-align:center;font-size:15px;font-weight:600" placeholder="15">
+              <input class="fc" type="number" id="cli-fact-dia" min="1" max="28" value="${_esc(c?.facturacionDia||15)}" style="width:80px;text-align:center;font-size:15px;font-weight:600" placeholder="15">
               <span style="font-size:13px;color:var(--t2)">de cada mes</span>
             </div>
             <div style="font-size:11.5px;color:var(--t3);margin-top:4px">Ej: 15 → facturás a partir del día 15 · 20 → a partir del 20</div>
@@ -303,8 +309,14 @@ function saveClient(id,nextId){
     });
   }
   const tipo=document.getElementById('cli-tipo').value;
+  const facturacion=document.getElementById('cli-facturacion').value;
   const obj={
-    id:idFinal, nombre, tipo, prioridad:'Normal',
+    // Defaults para altas; en edición prevalecen los campos ajenos al formulario.
+    prioridad:'Normal',
+    incluyeNS:false, incluyePreventivo:false, incluyeCombustible:false,
+    incluyePlataforma:false, incluyeBateria:false, incluyeOtro:'',
+    ...existing,
+    id:idFinal, nombre, tipo,
     ciudad:document.getElementById('cli-ciudad').value.trim(),
     estadoCliente:document.getElementById('cli-estado').value,
     contacto:document.getElementById('cli-contacto').value.trim(),
@@ -315,17 +327,10 @@ function saveClient(id,nextId){
     ajuste:document.getElementById('cli-ajuste').value,
     requiereOC:document.getElementById('cli-oc').checked,
     requiereHES:document.getElementById('cli-hes').checked,
-    facturacion:document.getElementById('cli-facturacion').value,
-    facturacionDia: document.getElementById('cli-facturacion').value==='Por fecha'
+    facturacion,
+    facturacionDia: facturacion==='Por fecha'
       ? (parseInt((document.getElementById('cli-fact-dia')||{value:'15'}).value)||15)
-      : null,
-    // Preservar los incluidos en abono que vienen del objeto existente (se editan en ficha)
-    incluyeNS:          existing?.incluyeNS||false,
-    incluyePreventivo:  existing?.incluyePreventivo||false,
-    incluyeCombustible: existing?.incluyeCombustible||false,
-    incluyePlataforma:  existing?.incluyePlataforma||false,
-    incluyeBateria:     existing?.incluyeBateria||false,
-    incluyeOtro:        existing?.incluyeOtro||''
+      : (facturacion===existing?.facturacion ? existing.facturacionDia??null : null)
   };
   const i=D.clientes.findIndex(x=>x.id===id);
   if(i>-1) D.clientes[i]=obj; else D.clientes.push(obj);
@@ -383,10 +388,10 @@ function openFicha(id){
           <div style="font-size:22px;font-weight:700;color:var(--t1);line-height:1.2;margin-bottom:10px">${_esc(c.nombre)}</div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:${tipoColor};font-weight:600;background:${tipoColor}18;padding:2px 8px;border-radius:var(--r-sm)">
-              ${c.tipo||'Sin tipo'}
+              ${_esc(c.tipo||'Sin tipo')}
             </span>
             ${c.ciudad?`<span style="font-size:12px;color:var(--t3)">📍 ${_esc(c.ciudad)}</span>`:''}
-            <span class="badge ${estBadge}" style="font-size:11px">${c.estadoCliente||'Activo'}</span>
+            <span class="badge ${estBadge}" style="font-size:11px">${_esc(c.estadoCliente||'Activo')}</span>
           </div>
         </div>
         <!-- Estado general -->
@@ -395,7 +400,7 @@ function openFicha(id){
             <div style="width:8px;height:8px;border-radius:50%;background:${estadoGeneral.dot}"></div>
             <span style="font-size:12px;font-weight:600;color:${estadoGeneral.dot}">${estadoGeneral.txt}</span>
           </div>
-          ${c.frecuenciaVisita?`<div style="font-size:11px;color:var(--t3);margin-top:4px">Visita ${c.frecuenciaVisita.toLowerCase()}</div>`:''}
+          ${c.frecuenciaVisita?`<div style="font-size:11px;color:var(--t3);margin-top:4px">Visita ${_esc(c.frecuenciaVisita.toLowerCase())}</div>`:''}
         </div>
       </div>
     </div>`;
@@ -428,7 +433,7 @@ function openFicha(id){
       <div style="background:var(--card);padding:22px 24px;text-align:center">
         <div style="font-size:30px;font-weight:700;line-height:1;letter-spacing:-1px;color:var(--t1)">${c.presupuesto?'$'+Math.round(Number(c.presupuesto)/1000)+'k':'—'}</div>
         <div style="font-size:11px;color:var(--t3);margin-top:7px;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Presupuesto</div>
-        <div style="font-size:10px;color:var(--t4);margin-top:2px">${c.ajuste||'IPC'}</div>
+        <div style="font-size:10px;color:var(--t4);margin-top:2px">${_esc(c.ajuste||'IPC')}</div>
       </div>
     </div>`;
 
@@ -493,7 +498,7 @@ function fichaGeneral(c){
         <span style="font-size:15px">${urgente.minD<0?'⚠':'⏰'}</span>
         <div>
           <div style="font-size:12.5px;font-weight:600;color:${urgente.minD<0?'var(--err)':'#b45309'}">
-            ${urgente.minD<0?`Equipo ${urgente.id} vencido hace ${Math.abs(urgente.minD)} días`:`Equipo ${urgente.id} vence en ${urgente.minD} días`}
+            ${urgente.minD<0?`Equipo ${_esc(urgente.id)} vencido hace ${Math.abs(urgente.minD)} días`:`Equipo ${_esc(urgente.id)} vence en ${urgente.minD} días`}
           </div>
           <div style="font-size:11.5px;color:var(--t2);margin-top:1px">Requiere programar mantenimiento</div>
         </div>
@@ -532,8 +537,8 @@ function fichaGeneral(c){
   return `
     ${alertaEquipo}
     <div class="ficha-row">
-      ${_ff('Tipo', c.tipo?`<span class="badge ${TIPO_B[c.tipo]||'b-gray'}">${c.tipo}</span>`:'')}
-      ${_ff('Estado', `<span class="badge ${EST_B[c.estadoCliente]||'b-gray'}">${c.estadoCliente||'Activo'}</span>`)}
+      ${_ff('Tipo', c.tipo?`<span class="badge ${TIPO_B[c.tipo]||'b-gray'}">${_esc(c.tipo)}</span>`:'')}
+      ${_ff('Estado', `<span class="badge ${EST_B[c.estadoCliente]||'b-gray'}">${_esc(c.estadoCliente||'Activo')}</span>`)}
     </div>
     <div class="ficha-row">
       ${_ff('Ciudad', _esc(c.ciudad))}
@@ -545,7 +550,7 @@ function fichaGeneral(c){
     </div>
     <div class="ficha-row">
       ${_ff('Email', c.email?`<a href="mailto:${_esc(c.email)}" style="color:var(--accent)">${_esc(c.email)}</a>`:'')}
-      ${_ff('Frecuencia de visita', c.frecuenciaVisita)}
+      ${_ff('Frecuencia de visita', _esc(c.frecuenciaVisita))}
     </div>
     <div class="ficha-row">
       ${_ff('Presupuesto mensual', c.presupuesto?'$ '+Number(c.presupuesto).toLocaleString('es-AR'):'')}
@@ -579,7 +584,7 @@ function fichaEquipos(c){
       const lbl=st==='rojo'?'Vencido':st==='amarillo'?'Próximo':'Al día';
       return `<tr class="${rc}">
         <td style="padding:14px 16px"><strong style="font-size:13.5px">${_esc(e.id)}</strong>${e.marca?`<div style="font-size:11px;color:var(--t3);margin-top:2px">${_esc(e.marca)}</div>`:''}</td>
-        <td style="padding:14px 16px"><span class="badge b-gray" style="font-size:12px;white-space:nowrap">${e.tipo}</span></td>
+        <td style="padding:14px 16px"><span class="badge b-gray" style="font-size:12px;white-space:nowrap">${_esc(e.tipo)}</span></td>
         ${eqDateCell(e.id,'ultimoPreventivo',e.ultimoPreventivo,e.proximoPreventivo)}
         ${eqDateCell(e.id,'ultimoBateria',e.ultimoBateria,nextBateria)}
         ${eqDateCell(e.id,'ultimoAceite',e.ultimoAceite,nextAceite)}
@@ -603,8 +608,8 @@ function fichaCotizaciones(c){
         <td style="white-space:nowrap"><strong>${_esc(q.id)}</strong></td>
         <td style="font-size:12px;max-width:200px">${_esc(q.descripcion)}</td>
         <td style="font-size:12.5px;font-weight:600;color:var(--accent);white-space:nowrap">${fmtMoney(q.monto)}</td>
-        <td><span class="badge" style="background:${clr}22;color:${clr};font-size:11px">${q.estado}</span></td>
-        <td style="font-size:12px;${overdue?'color:var(--err);font-weight:600':''};white-space:nowrap">${q.fechaFollowup?fmtDate(q.fechaFollowup):'—'}${overdue?' ⚠':''}</td>
+        <td><span class="badge" style="background:${clr}22;color:${clr};font-size:11px">${_esc(q.estado)}</span></td>
+        <td style="font-size:12px;${overdue?'color:var(--err);font-weight:600':''};white-space:nowrap">${q.fechaFollowup?_esc(fmtDate(q.fechaFollowup)):'—'}${overdue?' ⚠':''}</td>
         <td style="font-size:12px;color:var(--t2)">${_esc(q.responsable)||'—'}</td>
       </tr>`;
     }).join('')}</tbody>
@@ -622,12 +627,12 @@ function fichaFacturacion(c){
   const reqList=[c.requiereHJS&&'Hoja de Servicio',(c.requierePeriodo)&&'Período de Fechas',c.enviarEmail&&'Enviar por Email'].filter(Boolean);
   return `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-      <div style="font-size:13px;color:var(--t2)">Estado del mes <strong style="color:var(--t1)">${monthLabel(mStr)}</strong>: <span class="badge ${EST_B[st]||'b-gray'}">${st}</span></div>
+      <div style="font-size:13px;color:var(--t2)">Estado del mes <strong style="color:var(--t1)">${monthLabel(mStr)}</strong>: <span class="badge ${EST_B[st]||'b-gray'}">${_esc(st)}</span></div>
       <button class="btn btn-outline btn-sm" onclick="fichaFacturacionEditMode()">Editar configuración</button>
     </div>
     <div class="fact-sec-title" style="padding-top:0">Abono y servicio</div>
     <div class="ficha-row">
-      ${_ff('Tipo',c.tipoAbono||'Abono')}
+      ${_ff('Tipo',_esc(c.tipoAbono||'Abono'))}
       ${_ff('Código de servicio',_esc(c.codigoServicio))}
     </div>
     <div class="ficha-row">
@@ -635,26 +640,26 @@ function fichaFacturacion(c){
       ${_ff('Precio',c.precioAbono?'$ '+Number(c.precioAbono).toLocaleString('es-AR'):'')}
     </div>
     <div class="ficha-row">
-      ${_ff('Moneda',moneda)}
-      ${_ff('Cantidad',c.cantidadAbono!=null?String(c.cantidadAbono):'1')}
+      ${_ff('Moneda',_esc(moneda))}
+      ${_ff('Cantidad',_esc(c.cantidadAbono!=null?String(c.cantidadAbono):'1'))}
     </div>
     <div class="ficha-row">
-      ${_ff('% Descuento',(c.descuentoAbono||0)+'%')}
+      ${_ff('% Descuento',_esc((c.descuentoAbono||0)+'%'))}
       <div></div>
     </div>
     <div class="ficha-row">
-      ${_ff('Vigencia desde',fmtDate(c.vigenciaDesde))}
-      ${_ff('Vigencia hasta',fmtDate(c.vigenciaHasta))}
+      ${_ff('Vigencia desde',_esc(fmtDate(c.vigenciaDesde)))}
+      ${_ff('Vigencia hasta',_esc(fmtDate(c.vigenciaHasta)))}
     </div>
     <div class="fact-sec-title">Modalidad y meses de facturación</div>
     <div class="ficha-field"><div class="ficha-label">Modalidad</div><div class="ficha-val">${
       c.facturacion==='Por fecha'&&c.facturacionDia
-        ? `<span style="font-weight:600;color:var(--info)">📅 Por fecha — a partir del día <strong>${c.facturacionDia}</strong></span>`
+        ? `<span style="font-weight:600;color:var(--info)">📅 Por fecha — a partir del día <strong>${_esc(c.facturacionDia)}</strong></span>`
         : c.facturacion==='Automática'
         ? '<span style="font-weight:600;color:var(--ok)">⚡ Automática</span>'
         : '<span style="color:var(--t2)">Manual</span>'
     }</div></div>
-    <div class="ficha-field"><div class="ficha-label">Meses</div><div class="ficha-val">${meses}</div></div>
+    <div class="ficha-field"><div class="ficha-label">Meses</div><div class="ficha-val">${_esc(meses)}</div></div>
     <div class="fact-sec-title">Datos adicionales</div>
     <div class="ficha-row">
       ${_ff('N° O.C. / Referencia',_esc(c.nroOC))}
@@ -676,7 +681,7 @@ function fichaFacturacion(c){
       <div class="ficha-field">
         <div class="ficha-label">Archivos a adjuntar</div>
         <div class="ficha-val" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">
-          ${adjList.length?adjList.map(a=>`<span class="badge b-gray">${a}</span>`).join(''):'<span style="color:var(--t3)">—</span>'}
+          ${adjList.length?adjList.map(a=>`<span class="badge b-gray">${_esc(a)}</span>`).join(''):'<span style="color:var(--t3)">—</span>'}
         </div>
       </div>
     </div>`;
@@ -699,11 +704,11 @@ function fichaFacturacionEditMode(){
           <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="radio" name="ff-tipoAbono" value="Alquiler" ${c.tipoAbono==='Alquiler'?'checked':''}>Alquiler</label>
         </div>
       </div>
-      <div class="fg"><label class="fl">Código de servicio</label><input class="fc" id="ff-codSrv" value="${(c.codigoServicio||'').replace(/"/g,'&quot;')}"></div>
+      <div class="fg"><label class="fl">Código de servicio</label><input class="fc" id="ff-codSrv" value="${_esc(c.codigoServicio||'')}"></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label class="fl">Descripción</label><input class="fc" id="ff-descSrv" value="${(c.descripcionServicio||c.facturacion||'').replace(/"/g,'&quot;')}"></div>
-      <div class="fg"><label class="fl">Precio</label><input class="fc" id="ff-precio" type="number" step="0.01" min="0" value="${c.precioAbono||''}"></div>
+      <div class="fg"><label class="fl">Descripción</label><input class="fc" id="ff-descSrv" value="${_esc(c.descripcionServicio||c.facturacion||'')}"></div>
+      <div class="fg"><label class="fl">Precio</label><input class="fc" id="ff-precio" type="number" step="0.01" min="0" value="${_esc(c.precioAbono||'')}"></div>
     </div>
     <div class="form-row">
       <div class="fg"><label class="fl">Moneda</label>
@@ -715,15 +720,15 @@ function fichaFacturacionEditMode(){
           <option ${sel(moneda,'Euro')}>Euro</option>
         </select>
       </div>
-      <div class="fg"><label class="fl">Cantidad</label><input class="fc" id="ff-cant" type="number" min="1" value="${c.cantidadAbono!=null?c.cantidadAbono:1}"></div>
+      <div class="fg"><label class="fl">Cantidad</label><input class="fc" id="ff-cant" type="number" min="1" value="${_esc(c.cantidadAbono!=null?c.cantidadAbono:1)}"></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label class="fl">% Descuento</label><input class="fc" id="ff-descPct" type="number" min="0" max="100" value="${c.descuentoAbono||0}"></div>
+      <div class="fg"><label class="fl">% Descuento</label><input class="fc" id="ff-descPct" type="number" min="0" max="100" value="${_esc(c.descuentoAbono||0)}"></div>
       <div class="fg"></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label class="fl">Vigencia desde</label><input class="fc" id="ff-vigDesde" type="date" value="${c.vigenciaDesde||''}"></div>
-      <div class="fg"><label class="fl">Vigencia hasta</label><input class="fc" id="ff-vigHasta" type="date" value="${c.vigenciaHasta||''}"></div>
+      <div class="fg"><label class="fl">Vigencia desde</label><input class="fc" id="ff-vigDesde" type="date" value="${_esc(c.vigenciaDesde||'')}"></div>
+      <div class="fg"><label class="fl">Vigencia hasta</label><input class="fc" id="ff-vigHasta" type="date" value="${_esc(c.vigenciaHasta||'')}"></div>
     </div>
     <div class="fact-sec-title">Meses de facturación</div>
     <div style="font-size:12px;color:var(--t3);margin-bottom:10px">Si ninguno está marcado, se factura todos los meses</div>
@@ -732,14 +737,14 @@ function fichaFacturacionEditMode(){
     </div>
     <div class="fact-sec-title">Datos adicionales</div>
     <div class="form-row">
-      <div class="fg"><label class="fl">N° O.C. (o de Referencia)</label><input class="fc" id="ff-nroOC" value="${(c.nroOC||'').replace(/"/g,'&quot;')}"></div>
-      <div class="fg"><label class="fl">N° Presupuesto</label><input class="fc" id="ff-nroPres" value="${(c.nroPresupuesto||'').replace(/"/g,'&quot;')}"></div>
+      <div class="fg"><label class="fl">N° O.C. (o de Referencia)</label><input class="fc" id="ff-nroOC" value="${_esc(c.nroOC||'')}"></div>
+      <div class="fg"><label class="fl">N° Presupuesto</label><input class="fc" id="ff-nroPres" value="${_esc(c.nroPresupuesto||'')}"></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label class="fl">Otra referencia</label><input class="fc" id="ff-otraRef" value="${(c.otraReferencia||'').replace(/"/g,'&quot;')}"></div>
+      <div class="fg"><label class="fl">Otra referencia</label><input class="fc" id="ff-otraRef" value="${_esc(c.otraReferencia||'')}"></div>
       <div class="fg"></div>
     </div>
-    <div class="fg"><label class="fl">Texto adicional en factura</label><textarea class="fc" id="ff-textoFact" rows="3" style="font-family:inherit;font-size:13px" placeholder="MANTENIMIENTO [FRECUENCIA] PROGRAMADO&#10;[EQUIPO]&#10;PERÍODO &lt;mmmm&gt; &lt;aaaa&gt;">${(c.textoFactura||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></div>
+    <div class="fg"><label class="fl">Texto adicional en factura</label><textarea class="fc" id="ff-textoFact" rows="3" style="font-family:inherit;font-size:13px" placeholder="MANTENIMIENTO [FRECUENCIA] PROGRAMADO&#10;[EQUIPO]&#10;PERÍODO &lt;mmmm&gt; &lt;aaaa&gt;">${_esc(c.textoFactura||'')}</textarea></div>
     <div class="fact-sec-title">Requisitos y adjuntos</div>
     <div class="ficha-chk-cols">
       <div>
@@ -756,7 +761,7 @@ function fichaFacturacionEditMode(){
           <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer"><input type="checkbox" id="ff-adjPres" ${c.adjPresupuesto?'checked':''}>Presupuesto</label>
           <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer"><input type="checkbox" id="ff-adjOC" ${c.adjOC?'checked':''}>Orden de Compra</label>
           <label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer"><input type="checkbox" id="ff-adjHJS" ${c.adjHJS?'checked':''}>Hoja de Servicio</label>
-          <div style="display:flex;align-items:center;gap:7px"><span style="font-size:13px;white-space:nowrap;color:var(--t1)">Otros:</span><input class="fc" id="ff-adjOtros" style="margin:0;flex:1" value="${(c.adjOtros||'').replace(/"/g,'&quot;')}"></div>
+          <div style="display:flex;align-items:center;gap:7px"><span style="font-size:13px;white-space:nowrap;color:var(--t1)">Otros:</span><input class="fc" id="ff-adjOtros" style="margin:0;flex:1" value="${_esc(c.adjOtros||'')}"></div>
         </div>
       </div>
     </div>
@@ -857,9 +862,9 @@ function fichaRecordatorios(c){
       const rowCls=done?'rem-done':diff<0?'rem-venc':diff===0?'rem-hoy':'';
       return `<tr class="${rowCls}">
         <td><span class="rem-titulo">${_esc(r.titulo)}</span></td>
-        <td style="font-size:12px;white-space:nowrap">${fmtDateTime(r.fechaHora)}</td>
-        <td><span class="badge ${PRIO_B[r.prioridad]||'b-gray'}">${r.prioridad}</span></td>
-        <td><span class="badge ${done?'b-ok':'b-warn'}">${r.estado}</span></td>
+        <td style="font-size:12px;white-space:nowrap">${_esc(fmtDateTime(r.fechaHora))}</td>
+        <td><span class="badge ${PRIO_B[r.prioridad]||'b-gray'}">${_esc(r.prioridad)}</span></td>
+        <td><span class="badge ${done?'b-ok':'b-warn'}">${_esc(r.estado)}</span></td>
         <td style="font-size:12px;color:var(--t2)">${_esc(r.notas)||'—'}</td>
       </tr>`;
     }).join('')}</tbody>
@@ -877,11 +882,11 @@ function fichaPedidos(c){
     <thead><tr><th>N° Pedido</th><th>Fecha solicitud</th><th>Equipo</th><th>Detalle</th><th>Técnico</th><th>Estado</th></tr></thead>
     <tbody>${list.map(p=>`<tr>
       <td style="font-size:12px;font-weight:600;cursor:pointer;color:var(--info)" data-pedid="${_esc(p.id)}" onclick="closeFicha();openPedidoModal(this.dataset.pedid,null,null)">${_esc(p.id)}</td>
-      <td style="font-size:12px">${fmtDate(p.fechaSolicitud)||'—'}</td>
+      <td style="font-size:12px">${_esc(fmtDate(p.fechaSolicitud))||'—'}</td>
       <td style="font-size:12px">${_esc(p.equipoId)||'—'}</td>
       <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_esc(p.detalle)}">${p.detalle?_esc(p.detalle.slice(0,50))+(p.detalle.length>50?'…':''):'—'}</td>
       <td style="font-size:12px">${_esc(p.tecnico)||'—'}</td>
-      <td><span class="badge ${BADG[p.estado]||'b-gray'}">${p.estado}</span></td>
+      <td><span class="badge ${BADG[p.estado]||'b-gray'}">${_esc(p.estado)}</span></td>
     </tr>`).join('')}</tbody>
   </table></div>`:`<div class="empty">Sin pedidos para este cliente</div>`}`;
 }
