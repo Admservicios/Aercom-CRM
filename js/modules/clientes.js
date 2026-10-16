@@ -21,7 +21,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js /
  * js/storage.js, sin mover — no son responsabilidad de este módulo):
- *   D, persist(), toast(), closeModal(), confirmDel(), updateSidebarBadges(),
+ *   D, persist(), toast(), closeModal(), confirmDel(), canDeleteRecord(), updateSidebarBadges(),
  *   toggleClear(), equipStatus(), clientCritical()*, clientName()*,
  *   eqDateCell(), E_COLOR, curMonth, openEquipModal(), openQuoteModal(),
  *   openPedidoModal(), fmtMoney(), fmtDate(), fmtDateTime(), daysDiff(),
@@ -300,6 +300,7 @@ function saveClient(id,nextId){
     D.cotizaciones.forEach(c=>{ if(c.clienteId===idAnterior) c.clienteId=idFinal; });
     (D.pedidos||[]).forEach(p=>{ if(p.clienteId===idAnterior) p.clienteId=idFinal; });
     D.recordatorios.forEach(r=>{ if(r.clienteId===idAnterior) r.clienteId=idFinal; });
+    (D.eventos||[]).forEach(e=>{ if(e.clienteId===idAnterior) e.clienteId=idFinal; });
     // Actualizar facturación estados
     Object.keys(D.facturacion_estados).forEach(mes=>{
       if(D.facturacion_estados[mes][idAnterior]!==undefined){
@@ -339,8 +340,10 @@ function saveClient(id,nextId){
 }
 
 function delClientConfirm(id){
+  if(!canDeleteRecord('clientes',id)) return;
   const c=D.clientes.find(x=>x.id===id);
   confirmDel(c?_esc(c.nombre):_esc(id),()=>{
+    if(!canDeleteRecord('clientes',id)) return;
     D.clientes=D.clientes.filter(x=>x.id!==id);
     persist(); renderClientes(); toast('Cliente eliminado');
   });

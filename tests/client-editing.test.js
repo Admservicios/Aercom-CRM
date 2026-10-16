@@ -42,6 +42,7 @@ function fixture() {
     D: { clientes: [client], equipos: [{ id: 'EQ1', clienteId: 'C001' }],
       cotizaciones: [{ id: 'Q1', clienteId: 'C001' }],
       pedidos: [{ id: 'P1', clienteId: 'C001' }], recordatorios: [{ id: 'R1', clienteId: 'C001' }],
+      eventos: [{ id: 'EV1', clienteId: 'C001' }, { id: 'EV2', clienteId: 'C002' }],
       facturacion_estados: { '2026-10': { C001: 'Cobrado', C002: 'Pendiente' } } },
     document: { getElementById: node },
     persist() { saves.push(JSON.stringify(context.D)); }, closeModal() {}, toast() {}
@@ -109,9 +110,10 @@ test('Renombrar ID conserva los campos y actualiza las referencias existentes', 
   c.saveClient('C001', 'C002');
   assert.equal(c.D.clientes.length, 1);
   assert.deepEqual(copy(c.D.clientes[0]), expected);
-  for (const key of ['equipos', 'cotizaciones', 'pedidos', 'recordatorios']) {
+  for (const key of ['equipos', 'cotizaciones', 'pedidos', 'recordatorios', 'eventos']) {
     assert.equal(c.D[key][0].clienteId, 'C010');
   }
+  assert.equal(c.D.eventos[1].clienteId, 'C002');
   assert.deepEqual(copy(c.D.facturacion_estados['2026-10']), { C010: 'Cobrado', C002: 'Pendiente' });
 });
 

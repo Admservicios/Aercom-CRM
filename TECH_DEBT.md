@@ -4,6 +4,14 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Integridad — seguimiento del paso 6
+
+Las rutas `delClientConfirm`, `delFactConfirm`, `deleteEquip`, `delEquipConfirm`, `deleteQuote` y `delQuoteConfirm` comparten `canDeleteRecord()` en utils. Comprueba referencias directas antes de abrir la confirmación y nuevamente antes de eliminar. También protege historial mensual de clientes, incluidos estados Pendiente/Excluido. Un ID inexistente no genera guardado. No hay eliminación en cascada. `saveClient()` ahora actualiza también `D.eventos` al cambiar el código.
+
+Verificación: 38 pruebas nuevas de borrados y ampliación de la prueba de renombrado; 90 pruebas en esta rama basada en main. Chromium aislado verificó las seis rutas, persistencia/recarga, revalidación y edición real del código con eventos. Chart simulado; sin conexión a Drive.
+
+Pendiente: detectar y resolver huérfanos preexistentes, validar referencias de JSON/CSV/Excel y formularios al reasignar cliente/equipo/cotización, y definir archivo lógico para equipos/cotizaciones con historial. No se reparan ni desconectan asociaciones automáticamente. La protección comprueba D en esta pestaña; no resuelve concurrencia entre pestañas/dispositivos ni reemplazos completos de estado. Las subidas y conflictos de Drive se trabajan en los PR #2 y #3, separados de esta rama; #3 requiere validar ETag/If-Match con una cuenta real. El cambio de código puede seguir colisionando con estados mensuales huérfanos cuyo código coincide con el nuevo; requiere validación específica antes de renombrar. Los errores de cuota al guardar siguen siendo un riesgo de los formularios existentes.
+
 ## Integridad — seguimiento del paso 3
 
 La importación JSON local y la descarga del backup de Drive validan una copia antes de reemplazar el estado. Se exigen las listas `clientes`, `equipos` y `cotizaciones`; las colecciones posteriores ausentes o null se normalizan como en los backups heredados. Se verifican registros, IDs, tipos de campos conocidos, fechas y estructura de estados de facturación. Los campos adicionales se conservan. No se convierten silenciosamente números/textos o booleanos incompatibles: se rechaza el archivo y se informa el campo para su revisión.
