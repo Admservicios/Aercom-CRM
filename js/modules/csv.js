@@ -16,6 +16,7 @@
  * Dependencias externas (definidas en index.html, sin mover —
  * no son responsabilidad de este módulo):
  *   D, persist(), closeModal(), renderModule(), toast(), _esc()
+ *   _applyTableImport(), _importNumber(), _importBoolean() (js/storage.js)
  *
  * Integración con Clientes / Equipos / Cotizaciones:
  *   `CSV_SCHEMAS` es el único punto del proyecto que escribe
@@ -38,7 +39,7 @@
  */
 
 // ─── CSV IMPORT ──────────────────────────────────────────────────────────────
-let csvModule=null, csvParsed=null, csvConflictMode='saltar';
+let csvModule=null, csvParsed=null, csvConflictMode='saltar', csvReadVersion=0;
 
 const CSV_SCHEMAS={
   clientes:{
@@ -105,7 +106,7 @@ const CSV_SCHEMAS={
 };
 
 function openCsvModal(mod){
-  csvModule=mod; csvParsed=null; csvConflictMode='saltar';
+  csvModule=mod; csvParsed=null; csvConflictMode='saltar'; csvReadVersion++;
   const s=CSV_SCHEMAS[mod];
   document.querySelector('#modal-overlay .modal').classList.add('modal-lg');
   document.getElementById('modal-title').textContent=`Importar ${s.label} desde CSV`;
@@ -137,10 +138,19 @@ function openCsvModal(mod){
 }
 
 function csvFileSelected(ev){
+  const version=++csvReadVersion, module=csvModule;
+  csvConflictMode='saltar';
+  csvParsed=null;
+  for(const id of ['csv-preview','csv-conflict']){const node=document.getElementById(id);if(node) node.innerHTML='';}
+  const button=document.getElementById('csv-confirm-btn');
+  if(button) button.style.display='none';
   const f=ev.target.files[0]; if(!f) return;
   const rd=new FileReader();
   rd.onload=e=>{
+    if(version!==csvReadVersion || module!==csvModule) return;
+    try{
     csvParsed=parseCsv(e.target.result);
+    _validateCsvRows(csvParsed,csvModule);
     const{rows}=csvParsed;
     const s=CSV_SCHEMAS[csvModule];
     const preview=rows.slice(0,3);
@@ -170,44 +180,87 @@ function csvFileSelected(ev){
       :'';
     const btn=document.getElementById('csv-confirm-btn');
     if(btn) btn.style.display=rows.length>0?'':'none';
+    }catch(error){csvParsed=null;toast('⚠ CSV rechazado: '+error.message);}
   };
+  rd.onerror=()=>{if(version===csvReadVersion){csvParsed=null;toast('⚠ No se pudo leer el CSV');}};
   rd.readAsText(f,'UTF-8');
 }
 
+// CSV con comas, comillas escapadas y saltos de línea dentro de campos.
+function _csvRecords(text){
+  const records=[];let row=[],field='',quoted=false,closed=false;
+  const endField=()=>{row.push(field.trim());field='';closed=false;};
+  text=String(text).replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(quoted){
+      if(ch==='"' && text[i+1]==='"'){field+='"';i++;}
+      else if(ch==='"'){quoted=false;closed=true;}
+      else field+=ch;
+    }else if(ch===','){endField();}
+    else if(ch==='\n'){endField();records.push(row);row=[];}
+    else if(ch==='"'){
+      if(field.trim() || closed) throw new Error('Comillas fuera de posición.');
+      field='';quoted=true;
+    }else{
+      if(closed && ch.trim()) throw new Error('Texto después del cierre de comillas.');
+      field+=ch;
+    }
+  }
+  if(quoted) throw new Error('Campo con comillas sin cerrar.');
+  endField();records.push(row);
+  return records.filter(values=>values.some(value=>value!==''));
+}
+
 function parseCsv(text){
-  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
-  if(lines.length<2) return{headers:[],rows:[]};
-  const headers=csvSplitLine(lines[0]);
-  const rows=lines.slice(1).map(line=>{
-    const vals=csvSplitLine(line);
-    const row={};
-    headers.forEach((h,i)=>{row[h]=(vals[i]||'').trim();});
-    return row;
-  }).filter(r=>Object.values(r).some(v=>v!==''));
+  const records=_csvRecords(text);
+  if(!records.length) return{headers:[],rows:[]};
+  const [headers,...data]=records;
+  if(headers.some(h=>!h || ['__proto__','constructor','prototype'].includes(h)) || new Set(headers).size!==headers.length){
+    throw new Error('Encabezados vacíos, duplicados o reservados.');
+  }
+  const rows=data.map((values,index)=>{
+    if(values.length!==headers.length) throw new Error(`Fila ${index+2}: cantidad de columnas incorrecta.`);
+    return Object.fromEntries(headers.map((key,i)=>[key,values[i]]));
+  });
   return{headers,rows};
 }
 
-function csvSplitLine(line){
-  const cols=[]; let cur='',inQ=false;
-  for(let i=0;i<line.length;i++){
-    const ch=line[i];
-    if(ch==='"'){inQ=!inQ;}
-    else if(ch===','&&!inQ){cols.push(cur);cur='';}
-    else{cur+=ch;}
-  }
-  cols.push(cur);
-  return cols.map(s=>s.replace(/^"|"$/g,'').trim());
+function csvSplitLine(line){return _csvRecords(line)[0]||[];}
+
+function _validateCsvRows(parsed,module){
+  const schema=CSV_SCHEMAS[module];
+  if(!parsed.headers.includes(schema.keyField)) throw new Error(`Falta la columna ${schema.keyField}.`);
+  if(parsed.headers.some(key=>!schema.cols.includes(key))) throw new Error('Hay columnas desconocidas; usá los encabezados de la plantilla.');
+  const keys=new Set();
+  parsed.rows.forEach((row,index)=>{
+    const key=row[schema.keyField];
+    if(!key || keys.has(key)) throw new Error(`Fila ${index+2}: clave vacía o repetida.`);
+    keys.add(key);
+    for(const field of ['presupuesto','horometro','monto']) if(row[field]) _importNumber(row[field],field);
+    for(const field of ['requiereOC','requiereHES']) if(row[field]) _importBoolean(row[field],field);
+    if(module==='clientes' && D.clientes.filter(c=>c.nombre===key).length>1) throw new Error(`Nombre ambiguo: ${key}.`);
+  });
 }
 
 function confirmCsvImport(){
   if(!csvParsed||!csvModule) return;
+  try{
+  _validateCsvRows(csvParsed,csvModule);
   const s=CSV_SCHEMAS[csvModule];
   const{rows}=csvParsed;
   let added=0,replaced=0,skipped=0;
+  _applyTableImport(()=>{
   rows.forEach(row=>{
-    if(!row[s.keyField]) return;
     const existing=s.findExisting(row);
-    const obj=s.toObj(row,existing);
+    const raw=s.toObj(row,existing);
+    const obj=existing ? {...existing,id:existing.id} : raw;
+    for(const key of s.cols){
+      if(Object.prototype.hasOwnProperty.call(row,key)) obj[key]=raw[key];
+    }
+    for(const field of ['requiereOC','requiereHES']){
+      if(row[field]) obj[field]=_importBoolean(row[field],field);
+    }
     if(existing){
       if(csvConflictMode==='reemplazar'){s.save(obj,existing);replaced++;}
       else skipped++;
@@ -215,10 +268,12 @@ function confirmCsvImport(){
       s.save(obj,null);added++;
     }
   });
-  persist();closeModal();renderModule();
+  });
+  closeModal();
   const parts=[];
   if(added) parts.push(`${added} agregado${added!==1?'s':''}`);
   if(replaced) parts.push(`${replaced} reemplazado${replaced!==1?'s':''}`);
   if(skipped) parts.push(`${skipped} saltado${skipped!==1?'s':''}`);
   toast(`Importación: ${parts.join(', ')||'sin cambios'}`);
+  }catch(error){toast('⚠ CSV rechazado: '+error.message);}
 }

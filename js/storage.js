@@ -326,3 +326,61 @@ function loadStorage() {
     debugLog("Storage module cargado (placeholder — preparado para refactor)");
 
 }
+
+/** CSV/Excel construyen un lote síncrono sobre una copia; solo se aplica al validar todo. */
+function _applyTableImport(build) {
+    const previous = D;
+    let candidate, result;
+    try {
+        D = JSON.parse(JSON.stringify(previous));
+        result = build();
+        if (JSON.stringify(D) === JSON.stringify(previous)) return result;
+        // Revisar solo registros nuevos/modificados; no reparar huérfanos históricos.
+        for (const type of ['clientes', 'equipos', 'cotizaciones']) {
+            for (const record of D[type]) {
+                const old = previous[type].find(item => item.id === record.id);
+                if (old && JSON.stringify(old) === JSON.stringify(record)) continue;
+                if (type !== 'clientes' && !D.clientes.some(c => c.id === record.clienteId)) {
+                    throw new Error(`${type} ${record.id}: cliente inexistente.`);
+                }
+                if (type === 'cotizaciones' && typeof ESTADOS !== 'undefined' &&
+                    ![...ESTADOS, 'Borrador', 'Enviada'].includes(record.estado)) {
+                    throw new Error(`Cotización ${record.id}: estado no reconocido.`);
+                }
+                if (type === 'cotizaciones' && record.equipoId &&
+                    !D.equipos.some(e => e.id === record.equipoId && e.clienteId === record.clienteId)) {
+                    throw new Error(`Cotización ${record.id}: equipo inexistente o de otro cliente.`);
+                }
+                if (old && type === 'equipos' && old.clienteId !== record.clienteId &&
+                    [...D.cotizaciones, ...(D.pedidos || [])].some(r => r.equipoId === record.id)) {
+                    throw new Error(`Equipo ${record.id}: no se puede reasignar con cotizaciones o pedidos asociados.`);
+                }
+                if (old && type === 'cotizaciones' &&
+                    (old.clienteId !== record.clienteId || old.equipoId !== record.equipoId) &&
+                    (D.pedidos || []).some(p => p.cotizacionId === record.id)) {
+                    throw new Error(`Cotización ${record.id}: no se puede reasignar con pedidos asociados.`);
+                }
+            }
+        }
+        candidate = _parseImportedData(JSON.stringify(D));
+    } finally { D = previous; }
+    if (JSON.stringify(candidate) === JSON.stringify(previous)) return result;
+    _applyImportedData(candidate, persist);
+    return result;
+}
+
+function _importNumber(value, field) {
+    if (!['number', 'string'].includes(typeof value) ||
+        (typeof value === 'string' && !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?$/i.test(value.trim())) ||
+        !Number.isFinite(Number(value))) {
+        throw new Error(`${field}: se esperaba un número finito con punto decimal.`);
+    }
+    return Number(value);
+}
+
+function _importBoolean(value, field) {
+    const text = String(value).trim().toLowerCase();
+    if (['true', '1', 'si', 'sí'].includes(text)) return true;
+    if (['false', '0', 'no'].includes(text)) return false;
+    throw new Error(`${field}: se esperaba SI/NO, true/false o 1/0.`);
+}

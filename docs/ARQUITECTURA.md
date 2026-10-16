@@ -211,3 +211,18 @@ Esto protege las operaciones indicadas sobre D en la pestaña actual. No es una 
 `index.html` conserva un snapshot del estado normalizado de arranque, usado cuando la primera edición todavía no tiene copia previa en localStorage. El decorador de persistencia agrega historial después del guardado exitoso. `_restoreHistory()` usa `_applyImportedData()` de Storage para recuperar memoria, copia local y pilas ante errores; solo mueve la acción entre pilas tras el éxito y entonces llama al programador de Drive. Undo/redo no crea una acción adicional mediante `persist()`. Los atajos respetan campos editables y el historial mantiene su límite de 30 acciones por sesión.
 
 `_localDateString(Date)` serializa año/mes/día locales sin convertirlos a UTC; lo usan `today()` y el calendario. `daysDiff()` compara fechas YYYY-MM-DD como días UTC respecto de hoy local; `addDays()` suma sobre días UTC. Esta distinción conserva el día civil y evita duraciones de 23/25 horas en la aritmética. No convierte horas ni altera el formato de datos existente.
+
+
+## Importaciones tabulares (paso 8)
+
+CSV y Excel comparten `_applyTableImport(build)` en `js/storage.js`. `build` ejecuta las conversiones existentes sobre una copia temporal síncrona de D; se descarta ante cualquier error. Los registros nuevos/modificados se validan contra clientes/equipos y se impiden reasignaciones que comprometan cotizaciones/pedidos asociados. El candidato completo pasa por el validador JSON y se aplica mediante `_applyImportedData(candidate,persist)`, con recuperación y una acción de historial para el lote. No hay persistencia durante la construcción ni para lotes sin cambios.
+
+| Aspecto | CSV | Excel |
+|---|---|---|
+| Identidad | Clientes por nombre exacto único; equipos/cotizaciones por ID | Clientes por ID o nombre exacto único; equipos/cotizaciones requieren ID |
+| Conflicto | Saltar o reemplazar, según elección | Actualizar coincidentes y agregar nuevos, tras confirmación |
+| Campo ausente | Conserva el valor existente | Conserva el valor existente |
+| Celda vacía | Aplica vacío/predeterminado de esa columna | Conserva el valor existente |
+| Error de lote | Rechazo completo con mensaje | Rechazo completo con mensaje |
+
+Ambos preservan campos adicionales de registros existentes. No se asigna un cliente por coincidencia parcial. Se rechazan claves repetidas, columnas desconocidas, conversiones inválidas y asociaciones ambiguas. Los encabezados/valores de plantillas y reportes quedan alineados; cotizaciones incluye Cliente ID. Los libros Excel 1904 requieren conversión explícita y no se importan automáticamente. El formato de los backups JSON y la versión de SheetJS permanecen iguales.
