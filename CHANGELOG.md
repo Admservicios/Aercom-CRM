@@ -12,6 +12,15 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 - Hoy se obtiene del calendario local. Las diferencias y sumas de fechas sin hora usan días UTC para evitar offsets y cambios DST. El calendario mensual/semanal construye sus claves y rangos con fechas locales.
 - Validación: 134 pruebas Node (20 nuevas), con cinco zonas horarias y transiciones DST. Chromium aislado en esas cinco zonas comprobó primera edición, botones/atajos, fallo de cuota y recuperación, recarga y fechas/eventos del mes y semana. Cero errores JS; Chart simulado, Drive desconectado y datos ficticios.
 
+## Sin publicar — Paso 9: navegación móvil y contadores de clientes
+
+- Menú desplegable hasta 800 px, con cierre por selección, fondo y Escape, foco y controles inert; el escritorio conserva la barra lateral. Opciones de navegación activables con Enter/Espacio.
+- Formularios y ficha pasan a una columna en pantallas pequeñas; facturación y calendario desplazan sus áreas horizontalmente sin ensanchar el módulo. En 320 px el contenido principal pasa de 104 a 320 px disponibles.
+- Los contadores del listado de clientes se calculan con Map en una pasada por equipos/pedidos, conservando estados, orden, escapado y HTML. No se mantienen cachés entre renders.
+- Verificación: 138 pruebas Node (cuatro nuevas) en la rama basada en main, sin el PR #6 aún abierto. Chromium con Chart.js 4.4.1 real: nueve pantallas en cinco anchos de 320–1440 px, formularios/ficha, edición, menú por teclado/fondo/Escape, cambio a escritorio y temas claro/oscuro, sin errores JS. Drive desconectado.
+- Combinación de prueba con el PR #6 en snapshot temporal: sin conflictos, 186 pruebas aprobadas; no se fusionó ni publicó esa combinación.
+- Comparación sintética con 2.000 clientes, 20.000 equipos y 20.000 pedidos: HTML idéntico; mediana de tres generaciones en Node de 520 ms antes a 10 ms después. DOM y badges simulados; no representa tiempo total del navegador ni una garantía para otros equipos.
+
 ## Sin publicar — Paso 6: proteger borrados y referencias del calendario
 
 - Bloqueo compartido en las seis rutas de borrado de clientes, equipos y cotizaciones cuando existen referencias. Clientes incluye recordatorios, eventos e historial mensual de facturación, incluso estados Pendiente/Excluido; equipos incluye cotizaciones/pedidos; cotizaciones incluye pedidos de cualquier estado.

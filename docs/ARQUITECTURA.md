@@ -206,6 +206,12 @@ Los pedidos bloquean independientemente de su estado y la facturación bloquea i
 Esto protege las operaciones indicadas sobre D en la pestaña actual. No es una validación global: importaciones, reasignaciones, conflictos entre pestañas y huérfanos preexistentes requieren controles propios. No cambia el formato de los backups.
 
 
+## Navegación y listado de clientes (paso 9)
+
+En anchos hasta 800 px, CSS muestra el control de menú y usa el sidebar existente como panel. `setMobileMenu()`/`toggleMobileMenu()` en index.html coordinan aria-expanded, foco, inert y cierre al seleccionar un módulo o cambiar a escritorio. Escape y el fondo cierran el panel; las opciones de navegación admiten teclado. En escritorio se conserva el sidebar. Las tablas/calendario/facturación usan desplazamiento horizontal interno y los formularios/ficha se reorganizan en una columna.
+
+`renderClientes()` genera contadores en Maps locales por cliente a partir de una pasada por equipos y pedidos. No hay índices persistentes ni invalidación de cachés; cada render usa los datos actuales. Esto reduce los recorridos de contadores, manteniendo el resto del renderizado, filtrado y almacenamiento. No incorpora paginación ni virtualización.
+
 ## Historial y fechas (paso 7)
 
 `index.html` conserva un snapshot del estado normalizado de arranque, usado cuando la primera edición todavía no tiene copia previa en localStorage. El decorador de persistencia agrega historial después del guardado exitoso. `_restoreHistory()` usa `_applyImportedData()` de Storage para recuperar memoria, copia local y pilas ante errores; solo mueve la acción entre pilas tras el éxito y entonces llama al programador de Drive. Undo/redo no crea una acción adicional mediante `persist()`. Los atajos respetan campos editables y el historial mantiene su límite de 30 acciones por sesión.

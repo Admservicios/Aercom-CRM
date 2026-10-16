@@ -119,11 +119,21 @@ function renderClientes(){
   function initials(n){return (n||'').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase()||'?';}
   function avatarColor(id){let h=0;for(const c of(id||''))h=(h*31+c.charCodeAt(0))&0xffff;return COLORS[h%COLORS.length];}
 
+  // Contar una sola vez por render; no mantener cachés que puedan quedar obsoletas.
+  const equiposPorCliente=new Map(), pedidosPorCliente=new Map();
+  for(const equipo of D.equipos){
+    equiposPorCliente.set(equipo.clienteId,(equiposPorCliente.get(equipo.clienteId)||0)+1);
+  }
+  for(const pedido of (D.pedidos||[])){
+    if(pedido.estado==='Pendiente'||pedido.estado==='En ejecución'){
+      pedidosPorCliente.set(pedido.clienteId,(pedidosPorCliente.get(pedido.clienteId)||0)+1);
+    }
+  }
   tbody.innerHTML = _cliSortedList().map(c => {
     const bg = avatarColor(c.id);
     const crit = c.prioridad==='Crítico';
-    const equipN = D.equipos.filter(e=>e.clienteId===c.id).length;
-    const pedN = (D.pedidos||[]).filter(p=>p.clienteId===c.id&&(p.estado==='Pendiente'||p.estado==='En ejecución')).length;
+    const equipN = equiposPorCliente.get(c.id)||0;
+    const pedN = pedidosPorCliente.get(c.id)||0;
     // Mostrar ID del cliente en el circulito — más útil que las iniciales
     const avatarLabel = c.id||initials(c.nombre);
     // Ajustar tamaño de fuente según longitud del ID
