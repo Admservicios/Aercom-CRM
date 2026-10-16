@@ -204,3 +204,10 @@ Deuda técnica vigente (bugs activos, código muerto, duplicaciones no unificada
 Los pedidos bloquean independientemente de su estado y la facturación bloquea incluso entradas Pendiente/Excluido. Sin dependencias, se conserva el flujo de guardado/renderizado de cada ruta. Al renombrar el código de cliente, `saveClient()` actualiza también los eventos propios, además de las referencias que ya actualizaba.
 
 Esto protege las operaciones indicadas sobre D en la pestaña actual. No es una validación global: importaciones, reasignaciones, conflictos entre pestañas y huérfanos preexistentes requieren controles propios. No cambia el formato de los backups.
+
+
+## Historial y fechas (paso 7)
+
+`index.html` conserva un snapshot del estado normalizado de arranque, usado cuando la primera edición todavía no tiene copia previa en localStorage. El decorador de persistencia agrega historial después del guardado exitoso. `_restoreHistory()` usa `_applyImportedData()` de Storage para recuperar memoria, copia local y pilas ante errores; solo mueve la acción entre pilas tras el éxito y entonces llama al programador de Drive. Undo/redo no crea una acción adicional mediante `persist()`. Los atajos respetan campos editables y el historial mantiene su límite de 30 acciones por sesión.
+
+`_localDateString(Date)` serializa año/mes/día locales sin convertirlos a UTC; lo usan `today()` y el calendario. `daysDiff()` compara fechas YYYY-MM-DD como días UTC respecto de hoy local; `addDays()` suma sobre días UTC. Esta distinción conserva el día civil y evita duraciones de 23/25 horas en la aritmética. No convierte horas ni altera el formato de datos existente.

@@ -10,38 +10,29 @@
    FECHAS
 ========================= */
 
+// Fechas de negocio sin hora: usar el calendario local para hoy y días UTC
+// para la aritmética; así no intervienen offsets ni días de 23/25 horas.
+function _localDateString(date) {
+    return `${String(date.getFullYear()).padStart(4, '0')}-${String(date.getMonth()+1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 function today() {
-    return new Date().toISOString().split("T")[0];
+    return _localDateString(new Date());
 }
 
 function nowMonthStr() {
-    const d = new Date();
-
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    return today().slice(0, 7);
 }
 
 function daysDiff(dateString) {
-
     if (!dateString) return 9999;
-
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    const date = new Date(dateString);
-    date.setHours(0, 0, 0, 0);
-
-    return Math.round((date - now) / 86400000);
-
+    return Math.round((Date.parse(dateString + 'T00:00:00Z') - Date.parse(today() + 'T00:00:00Z')) / 86400000);
 }
 
 function addDays(dateString, days) {
-
-    const d = new Date(dateString);
-
-    d.setDate(d.getDate() + days);
-
-    return d.toISOString().split("T")[0];
-
+    const date = new Date(dateString + 'T00:00:00Z');
+    date.setUTCDate(date.getUTCDate() + days);
+    return date.toISOString().split('T')[0];
 }
 
 function addMonths(monthString, months) {

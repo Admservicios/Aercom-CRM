@@ -4,6 +4,14 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — Paso 7: deshacer/rehacer y fechas de calendario
+
+- Se conserva un snapshot inicial en memoria para deshacer también la primera edición cuando aún no existe `aercom-data`. El guardado agrega historial y descarta rehacer después de completarse correctamente.
+- Deshacer/rehacer reutiliza la aplicación con recuperación de Storage: un error de parseo, renderizado o persistencia no consume la acción ni confirma éxito. Las restauraciones exitosas programan la sincronización habitual con Drive y mantienen el límite de 30 acciones.
+- Ctrl/Meta+Z conserva el deshacer nativo en campos editables; Ctrl/Meta+Shift+Z funciona con `Z` mayúscula.
+- Hoy se obtiene del calendario local. Las diferencias y sumas de fechas sin hora usan días UTC para evitar offsets y cambios DST. El calendario mensual/semanal construye sus claves y rangos con fechas locales.
+- Validación: 134 pruebas Node (20 nuevas), con cinco zonas horarias y transiciones DST. Chromium aislado en esas cinco zonas comprobó primera edición, botones/atajos, fallo de cuota y recuperación, recarga y fechas/eventos del mes y semana. Cero errores JS; Chart simulado, Drive desconectado y datos ficticios.
+
 ## Sin publicar — Paso 6: proteger borrados y referencias del calendario
 
 - Bloqueo compartido en las seis rutas de borrado de clientes, equipos y cotizaciones cuando existen referencias. Clientes incluye recordatorios, eventos e historial mensual de facturación, incluso estados Pendiente/Excluido; equipos incluye cotizaciones/pedidos; cotizaciones incluye pedidos de cualquier estado.

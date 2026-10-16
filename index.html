@@ -893,14 +893,16 @@ function updateSidebarBadges(){
 
 // ─── ATAJOS DE TECLADO ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  const inInput = ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName);
+  const inInput = ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
+  const key=e.key.toLowerCase();
   // Escape — cerrar modal o ficha
   if (e.key === 'Escape') { closeModal(); closeFicha(); closeConf(); return; }
-  // Ctrl+Z — deshacer
-  if ((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key==='z') { e.preventDefault(); undoAction(); return; }
-  // Ctrl+Y / Ctrl+Shift+Z — rehacer
-  if ((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.shiftKey&&e.key==='z'))) { e.preventDefault(); redoAction(); return; }
+  // En campos editables, conservar el deshacer nativo del navegador.
   if (inInput) return;
+  // Ctrl+Z — deshacer
+  if ((e.ctrlKey||e.metaKey) && !e.shiftKey && key==='z') { e.preventDefault(); undoAction(); return; }
+  // Ctrl+Y / Ctrl+Shift+Z — rehacer
+  if ((e.ctrlKey||e.metaKey) && (key==='y' || (e.shiftKey&&key==='z'))) { e.preventDefault(); redoAction(); return; }
   // Ctrl+S / Cmd+S — guardar JSON
   if ((e.ctrlKey||e.metaKey) && e.key==='s') { e.preventDefault(); saveDataAndMark(); return; }
   // N — nuevo registro en el módulo activo
@@ -934,10 +936,11 @@ function persist(){
     // llamante antes de llegar acá, así que el estado previo a este cambio
     // es el que todavía está guardado en localStorage, no el D actual.
     const prevSaved = localStorage.getItem(STORAGE_KEY);
-    _history.push(prevSaved !== null ? prevSaved : JSON.stringify(D));
+    const previous=prevSaved !== null ? prevSaved : (_initialSnapshot || JSON.stringify(D));
+    _origPersist();
+    _history.push(previous);
     if(_history.length > MAX_HIST) _history.shift();
     _future.length = 0;
-    _origPersist();
   } finally { _inPersist=false; }
   _scheduleDriveSave();
   _updateUndoBtn();
@@ -957,6 +960,7 @@ function persist(){
 
 
 // ─── UNDO/REDO ───────────────────────────────────────────────────────────────
+let _initialSnapshot = null;
 const _history = [];
 const _future  = [];
 const MAX_HIST = 30;
@@ -983,24 +987,33 @@ function _updateUndoBtn(){
   }
 }
 
+// La aplicación transaccional conserva datos e historial ante errores.
+function _restoreHistory(source,target,message){
+  try{
+    const candidate=JSON.parse(source[source.length-1]);
+    const current=JSON.stringify(D);
+    _applyImportedData(candidate,_origPersist);
+    source.pop();
+    target.push(current);
+    if(target.length>MAX_HIST) target.shift();
+  }catch(error){
+    _updateUndoBtn();
+    toast('⚠ No se pudo restaurar la acción: '+error.message);
+    return;
+  }
+  _updateUndoBtn();
+  _scheduleDriveSave();
+  toast(message);
+}
+
 function undoAction(){
   if(!_history.length){ toast('⚠ Sin acciones para deshacer'); return; }
-  _future.push(JSON.stringify(D));
-  D = JSON.parse(_history.pop());
-  _origPersist();
-  renderModule();
-  _updateUndoBtn();
-  toast('↩ Acción deshecha');
+  _restoreHistory(_history,_future,'↩ Acción deshecha');
 }
 
 function redoAction(){
   if(!_future.length){ toast('⚠ Sin acciones para rehacer'); return; }
-  _history.push(JSON.stringify(D));
-  D = JSON.parse(_future.pop());
-  _origPersist();
-  renderModule();
-  _updateUndoBtn();
-  toast('↪ Acción rehecha');
+  _restoreHistory(_future,_history,'↪ Acción rehecha');
 }
 
 
@@ -1010,6 +1023,7 @@ function redoAction(){
 // ─── INIT ────────────────────────────────────────────────────────────────────
 initTheme();
 loadData();
+_initialSnapshot=JSON.stringify(D);
 curMonth=nowMonthStr();
 renderDashboard();
 updateSidebarBadges();

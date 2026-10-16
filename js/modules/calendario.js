@@ -17,7 +17,7 @@
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
  *   D, persist(), toast(), closeModal(), clientName(), today(),
- *   daysDiff(), addDays(), toTitleCase(), _esc() (js/utils.js —
+ *   daysDiff(), addDays(), _localDateString(), toTitleCase(), _esc() (js/utils.js —
  *   PR-014.1, hardening XSS)
  *
  * Decisiones de límite de módulo:
@@ -164,19 +164,19 @@ function renderCalendario(){
   if(!grid) return;
 
   const events = _calGetEventos();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = today();
 
   // Rango del período visible (mes actual, o semana lun-dom actual)
   let desde, hasta;
   if(calVista==='mes'){
-    desde = new Date(calFecha.getFullYear(), calFecha.getMonth(), 1).toISOString().split('T')[0];
-    hasta = new Date(calFecha.getFullYear(), calFecha.getMonth()+1, 0).toISOString().split('T')[0];
+    desde = _localDateString(new Date(calFecha.getFullYear(), calFecha.getMonth(), 1));
+    hasta = _localDateString(new Date(calFecha.getFullYear(), calFecha.getMonth()+1, 0));
   } else {
     const dow = calFecha.getDay();
     const lun = new Date(calFecha); lun.setDate(calFecha.getDate() - dow + (dow===0?-6:1));
     const dom = new Date(lun); dom.setDate(lun.getDate()+6);
-    desde = lun.toISOString().split('T')[0];
-    hasta = dom.toISOString().split('T')[0];
+    desde = _localDateString(lun);
+    hasta = _localDateString(dom);
   }
   // Total eventos del período visible
   const totalEv = Object.keys(events).filter(d=>d>=desde&&d<=hasta).reduce((s,d)=>s+events[d].length,0);
@@ -224,16 +224,16 @@ function _renderCalMes(grid, events, todayStr){
       dayNum = prevDias - offset + i + 1;
       isCurrentMonth = false;
       const d = new Date(año, mes-1, dayNum);
-      dateStr = d.toISOString().split('T')[0];
+      dateStr = _localDateString(d);
     } else if(i - offset < dias){
       dayNum = i - offset + 1;
       const d = new Date(año, mes, dayNum);
-      dateStr = d.toISOString().split('T')[0];
+      dateStr = _localDateString(d);
     } else {
       dayNum = i - offset - dias + 1;
       isCurrentMonth = false;
       const d = new Date(año, mes+1, dayNum);
-      dateStr = d.toISOString().split('T')[0];
+      dateStr = _localDateString(d);
     }
 
     const isToday = dateStr === todayStr;
@@ -272,7 +272,7 @@ function _renderCalSemana(grid, events, todayStr){
   // Header vacío para la columna de etiqueta
   html += '<div class="cal-day-header" style="background:var(--bg-soft)"></div>';
   dias.forEach(dd=>{
-    const ds = dd.toISOString().split('T')[0];
+    const ds = _localDateString(dd);
     const isToday = ds===todayStr;
     html += `<div class="cal-sem-header">
       <div class="cal-sem-header-day">${DIAS_SEMANA[dd.getDay()]}</div>
@@ -283,7 +283,7 @@ function _renderCalSemana(grid, events, todayStr){
   // Fila "Todo el día"
   html += '<div class="cal-sem-label">Todo<br>el día</div>';
   dias.forEach(dd=>{
-    const ds = dd.toISOString().split('T')[0];
+    const ds = _localDateString(dd);
     const isToday = ds===todayStr;
     const dayEvents = events[ds]||[];
     let evHtml = dayEvents.map(ev=>

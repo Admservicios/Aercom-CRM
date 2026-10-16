@@ -4,6 +4,16 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Historial y fechas — seguimiento del paso 7
+
+Corregidos: primera edición imposible de deshacer sin copia previa, consumo de pilas al fallar una restauración, ausencia de programación de Drive tras undo/redo, interceptación del deshacer nativo de formularios y atajo Shift+Z sensible a mayúsculas. `_restoreHistory()` reutiliza `_applyImportedData()` y solo mueve las pilas después de restaurar con éxito. El snapshot de arranque vive en memoria; el historial sigue limitado a 30 acciones y no persiste tras recargar.
+
+`today()` y los rangos/claves del calendario usan fecha local; `daysDiff()`/`addDays()` operan sobre fechas YYYY-MM-DD como días sin hora. Corrige alertas desplazadas un día al oeste de UTC y desplazamientos en las celdas al este de UTC o en semanas navegadas a última hora. No cambia el formato de los backups ni repara fechas históricas ya guardadas incorrectamente.
+
+Verificación: 15 pruebas nuevas de historial/atajos y cinco procesos con zonas horarias reales (UTC, Buenos Aires, Nueva York, Berlín y Kiritimati), incluyendo límites de mes/año, bisiestos y DST; 134 pruebas aprobadas. Chromium repitió los flujos reales en las cinco zonas con datos ficticios, sin errores JS; Chart simulado y sin Drive real. Se comprobó la invocación del programador de sincronización, no su entrega a una cuenta real.
+
+Pendiente: el guardado ordinario de formularios sigue sin revertir la mutación en memoria si falla por cuota; se conserva el historial previo, pero eso no constituye una transacción de edición. Si el navegador impide también recuperar una copia local tras una falla parcial, Storage advierte exportar los datos en memoria. Los indicadores de guardado no se restauran como parte de la transacción. Peticiones remotas ya iniciadas/concurrencia siguen bajo el PR #3 pendiente. Las funciones de fechas esperan YYYY-MM-DD; validación universal de formularios, navegación de meses desde el día 29–31 y conversión de fechas Excel requieren revisión separada.
+
 ## Integridad — seguimiento del paso 6
 
 Las rutas `delClientConfirm`, `delFactConfirm`, `deleteEquip`, `delEquipConfirm`, `deleteQuote` y `delQuoteConfirm` comparten `canDeleteRecord()` en utils. Comprueba referencias directas antes de abrir la confirmación y nuevamente antes de eliminar. También protege historial mensual de clientes, incluidos estados Pendiente/Excluido. Un ID inexistente no genera guardado. No hay eliminación en cascada. `saveClient()` ahora actualiza también `D.eventos` al cambiar el código.
