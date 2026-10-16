@@ -4,6 +4,32 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Integridad — seguimiento del paso 3
+
+La importación JSON local y la descarga del backup de Drive validan una copia antes de reemplazar el estado. Se exigen las listas `clientes`, `equipos` y `cotizaciones`; las colecciones posteriores ausentes o null se normalizan como en los backups heredados. Se verifican registros, IDs, tipos de campos conocidos, fechas y estructura de estados de facturación. Los campos adicionales se conservan. No se convierten silenciosamente números/textos o booleanos incompatibles: se rechaza el archivo y se informa el campo para su revisión.
+
+La normalización existente se extrajo a `_normalizeData()` para compartir migraciones y valores predeterminados con el arranque. `_applyImportedData()` intenta renderizar antes de persistir y recupera D, almacenamiento e historial si falla la aplicación del backup. Si una falla posterior al guardado impide también restaurar el almacenamiento, D se conserva y se advierte que debe exportarse antes de recargar. Los errores de lectura y de búsqueda/descarga HTTP en Drive se informan; un JSON remoto rechazado no provoca una subida como alternativa.
+
+Verificación: 36 pruebas nuevas en `tests/data-import.test.js`, más las 16 anteriores (52 en total). Cubren casos incompatibles, backup semilla, migración heredada, exportación/reimportación, errores de lectura, cuota, render y restauración, y descargas de Drive simuladas. Chromium comprobó importación y recarga local, nueve pantallas con un backup representativo, recuperación ante render/cuota y carga remota simulada. No se usó Drive real ni se verificó el dibujo de gráficos.
+
+Pendiente: integridad referencial entre entidades, reglas de conflictos/duplicados de Drive, comprobación de subidas y endurecimiento de la carga inicial de localStorage corrupto. La validación estructural no certifica seguridad del renderizado en los módulos restantes ni limita el tamaño de los archivos. Los backups con tipos incompatibles requieren revisión; no se reparan automáticamente.
+
+## Integridad — seguimiento del paso 2
+
+Corregida la pérdida de prioridad y campos de facturación detallada al guardar desde el formulario general de Clientes. Se parte del registro existente y se reemplazan los campos del formulario. Los valores previos fuera de los catálogos se conservan como opciones escapadas; el usuario puede elegir explícitamente otra modalidad. No se modifica el formato almacenado ni la implementación de sincronización o renombrado de referencias.
+
+Verificación: nueve pruebas nuevas en `tests/client-editing.test.js`, más las siete pruebas del paso 1. El flujo real se comprobó en Chromium con un contexto temporal, almacenamiento local de prueba y Drive desconectado: conservación completa del cliente tras edición/recarga, renombrado con referencias, duplicados sin mutación, cambio de modalidad y alta sin copiar campos de otro cliente.
+
+Limitaciones: el cambio previene pérdidas futuras; no recupera información eliminada anteriormente. Sigue pendiente separar conceptualmente modalidad y descripción en `facturacion`, así como resolver los restantes hallazgos; la validación JSON se agregó en el paso 3. No se cambió esa semántica de negocio en este paso.
+
+## Seguridad — seguimiento del paso 1
+
+Se protegieron interpolaciones de datos en Clientes, Equipos, vista previa/conflictos CSV y Reporte de Vencimientos. El reporte también protege las etiquetas JSON insertadas en su script. No se cambió el formato almacenado ni la lógica de guardado, importación o sincronización.
+
+Verificación reproducible: `node --test tests/security-rendering.test.js`, con módulos nativos de Node. Cubre contenido HTML, ruptura de atributos, entidades literales, salida de facturación, equipos, etiquetas del reporte y conservación del estado. También se verificaron estos flujos en Chromium aislado; los recursos externos se bloquearon y Chart se sustituyó por un doble que captura su configuración, por lo que no se validó el dibujo real de gráficos.
+
+Pendiente: revisión contextual de los demás módulos y restantes hallazgos de integridad/sincronización. La validación y recuperación de importaciones JSON se agregaron en el paso 3. Las entradas históricas de XSS resuelto describen su alcance original, no una garantía global de seguridad.
+
 ## Bugs vigentes
 
 ### Filas `.row-err`/`.row-warn` ilegibles en modo oscuro (Sprint 6)
@@ -29,7 +55,7 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 ## Otras observaciones vigentes
 
 - `_gdriveLoadData()`/`_gdriveSaveData()` (`js/modules/drive.js`) usan el literal `'aercom-data'` en vez de la constante `STORAGE_KEY` de `js/storage.js` (mismo valor, sin impacto funcional) — inconsistencia de estilo, no un bug.
-- Sincronización de Google Drive sin validación de contenido: un `aercom-data.json` editado a mano y subido a la carpeta de Drive se carga tal cual en `_gdriveLoadData()`, sin chequeo de forma ni de origen.
+- La descarga JSON de Drive valida su estructura desde el paso 3. Siguen pendientes los conflictos entre dispositivos y la revisión de todos los contextos de renderizado; validar la forma no autentica el origen del contenido del archivo.
 
 ---
 

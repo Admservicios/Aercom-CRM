@@ -143,7 +143,8 @@ Implementado en `index.html`, no en ningún módulo — es infraestructura trans
 - Sincronización de `D` completo como `aercom-data.json` en la carpeta raíz — al conectar, compara `lastSaved` local vs remoto y usa el más reciente.
 - El token OAuth se mantiene solo en memoria (`_gdriveToken`), nunca se persiste en `localStorage` — solo se guarda el flag booleano de "conectado" para reintentar reconexión silenciosa.
 - `_scheduleDriveSave()` hace debounce de 5s sobre el guardado remoto, invocado desde `persist()`.
-- Riesgo conocido y sin mitigar: la sincronización no valida el contenido de `D` que llega desde Drive — un archivo `aercom-data.json` editado a mano (por cualquier persona con acceso a esa carpeta de Drive) se carga tal cual, incluyendo IDs o campos con caracteres especiales.
+- Desde el paso 3, la descarga valida el JSON con `_parseImportedData()` antes de comparar fechas: exige las tres colecciones principales, verifica registros, IDs, tipos conocidos, fechas y facturación, y aplica las normalizaciones heredadas. Los campos adicionales se conservan; los datos incompatibles se rechazan sin reparación automática. La búsqueda y descarga comprueban HTTP. `_applyImportedData()` protege el reemplazo y recupera datos e historial ante errores; si el almacenamiento impide restaurar la copia, se informa la necesidad de exportar D antes de recargar.
+- Esta validación también se usa al importar un archivo JSON local. No verifica todas las relaciones entre entidades, no autentica el contenido, no corrige conflictos entre dispositivos ni sustituye el escapado contextual del renderizado. La carga inicial de localStorage mantiene su comportamiento existente.
 
 ---
 
@@ -168,7 +169,11 @@ Implementado en `index.html`, no en ningún módulo — es infraestructura trans
 
 ## 10. Seguridad — saneamiento de datos de usuario
 
-Todo dato proveniente de `D` (formularios, CSV, Excel, o sincronizado desde Drive) que se renderiza como HTML pasa por `_esc()` (`js/utils.js`) antes de insertarse vía `innerHTML`, tanto en contenido de texto como en atributos `value`/`title` y `<option>`. Los atributos `onclick`/`ondblclick` que antes interpolaban datos de usuario como argumento de string JS fueron reemplazados por atributos `data-*` (también escapados) leídos vía `this.dataset.*` en el propio handler — el `onclick` en sí es siempre JS estático, sin interpolación. Historial completo de este endurecimiento en `TECH_DEBT.md`, sección "Resueltos" (PR-014.1 a PR-014.5).
+`_esc()` (`js/utils.js`) se usa para representar datos como texto HTML y atributos entre comillas dobles. El endurecimiento histórico de PR-014.1 a PR-014.5 no garantiza que todas las interpolaciones del proyecto estén protegidas: la auditoría posterior encontró omisiones.
+
+El paso 1 protege los puntos revisados de Clientes (listado, formularios y ficha), Equipos (listado, formulario y fechas inline), la vista previa y los conflictos CSV, y las tablas del Reporte de Vencimientos. Las etiquetas del gráfico del reporte usan serialización JSON con `<` representado como `\u003c`, para impedir que datos importados cierren el elemento `<script>`; el escapado HTML no sustituye esa protección. Los datos originales se conservan sin escapar en `D`. Los handlers revisados conservan su lógica y leen los IDs desde atributos `data-*` escapados.
+
+Cobertura reproducible sin paquetes adicionales: `node --test tests/security-rendering.test.js` (requiere Node con `node:test`; Node no es necesario para ejecutar el CRM). Las pruebas usan un DOM simulado y verifican los renderizadores y el script generado. La comprobación adicional en Chromium utiliza datos ficticios y un contexto aislado. Este alcance no certifica ausencia de XSS en los módulos restantes ni reemplaza la validación de estructura e integridad de las importaciones.
 
 ---
 

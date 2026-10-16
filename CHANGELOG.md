@@ -4,6 +4,28 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — Paso 3: validar backups antes de reemplazar datos
+
+- Validación compartida de JSON local y descargado de Drive: raíz, colecciones, registros, IDs únicos/no reservados, tipos conocidos, fechas y estructura de facturación. Los campos adicionales se conservan y los tipos incompatibles se rechazan sin conversiones silenciosas.
+- Las normalizaciones existentes (arrays opcionales, clientes y migraciones heredadas) se comparten con el arranque. No se cambia el formato de exportación.
+- Render previo al guardado y recuperación de memoria, copia local e historial ante errores. Si el navegador impide restaurar la copia local, se informa que debe exportarse la copia en memoria antes de recargar.
+- La búsqueda y descarga de Drive comprueban HTTP y rechazan contenido incompatible antes de decidir una subida. No se modifican las reglas de conflictos ni la implementación de subidas.
+- Validación: 52 pruebas con `node --test tests/*.test.js`, más Chromium aislado para importación, recarga, pantallas y fallos de render/cuota. Drive se verificó con respuestas simuladas y Chart con un doble; no se validó acceso a cuentas reales.
+
+## Sin publicar — Paso 2: conservar datos al editar clientes
+
+- El guardado general conserva la prioridad y los campos existentes ajenos al formulario, incluida la configuración detallada de facturación y campos adicionales importados. Las altas mantienen sus valores predeterminados.
+- Los selectores muestran el valor histórico existente aunque no pertenezca al catálogo, evitando sustituir silenciosamente tipos como `Clínica` y descripciones de facturación personalizadas. Esas opciones mantienen el escapado del paso 1.
+- Una modalidad personalizada conserva su día existente al editar otros datos; cambiar explícitamente a una modalidad distinta de `Por fecha` limpia el día. La modalidad `Por fecha` sigue usando el día del formulario.
+- Pruebas: `node --test tests/client-editing.test.js tests/security-rendering.test.js` (16 pruebas). Chromium aislado verificó edición, persistencia y recarga, renombrado y referencias, rechazo de duplicados, modalidades y alta con datos ficticios; sin acceso a Drive.
+
+## Sin publicar — Paso 1: renderizado seguro
+
+- Escapado de datos en listados, formularios y ficha de Clientes; listado, formulario y fechas inline de Equipos; vista previa y conflictos CSV; tablas del Reporte de Vencimientos.
+- Serialización de etiquetas del gráfico del reporte que impide cerrar el script desde datos importados, conservando su valor original.
+- Pruebas de regresión con Node sin dependencias adicionales (`node --test tests/security-rendering.test.js`) y verificación aislada en Chromium. La comprobación de navegador usa un doble de Chart y no valida el dibujo de gráficos ni la conexión con Drive.
+- Documentación del alcance: no cambia la persistencia ni certifica los módulos restantes.
+
 ## Fase inicial — Core, Utils, Storage, Dashboard, Clientes, Equipos, Facturación, Cotizaciones
 
 Sesiones previas al historial registrado en este archivo. Se estableció la convención de módulo (`js/modules/*.js`, header con Responsabilidad + Dependencias externas + Decisiones de límite) y se migraron desde el `<script>` inline de `index.html`:
