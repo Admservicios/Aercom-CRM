@@ -2331,3 +2331,75 @@ th { border-bottom:2px solid var(--border) !important; }
 .ficha-chk-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 48px; }
 .equip-date-last { font-size: 13px; }
 .equip-date-next { font-size: 11.5px; margin-top: 4px; }
+
+
+/* Navegación compacta: el escritorio conserva su barra lateral. */
+#main { min-width: 0; }
+#mobile-menu-toggle, #mobile-menu-backdrop { display: none; }
+
+@media screen and (max-width: 800px) {
+  body { height: 100dvh; }
+  #mobile-menu-toggle {
+    display: block;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 40;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    background: var(--card);
+    color: var(--t1);
+    font: inherit;
+    cursor: pointer;
+  }
+  #sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 85vw);
+    min-width: 0;
+    height: 100%;
+    z-index: 60;
+    visibility: hidden;
+    transform: translateX(-100%);
+  }
+  #sidebar, #sidebar * { transition-property: background-color, color, border-color, box-shadow, opacity; }
+  .mobile-menu-open #sidebar { visibility: visible; transform: translateX(0); }
+  .mobile-menu-open #mobile-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    border: 0;
+    padding: 0;
+    background: rgba(0,0,0,.4);
+  }
+  .page-header { padding: 18px 12px 16px 92px; flex-wrap: wrap; gap: 12px; }
+  .page-header > * { min-width: 0; max-width: 100%; }
+  .page-header > div:last-child { flex-wrap: wrap; }
+  .page-content { padding: 16px 12px; }
+  .charts-grid canvas { max-width: 100%; }
+  .cl-item { min-width: 760px; grid-template-columns: minmax(140px,2fr) 110px 55px 55px 130px 135px 38px; }
+  #fact-stats { flex-wrap: wrap; }
+  #module-calendario .page-content { padding: 16px 12px !important; }
+  .cal-period-nav { flex-wrap: wrap; gap: 8px; }
+  .cal-period-nav > div { flex: 1; min-width: 0; max-width: 100%; }
+  #cal-title { min-width: 0 !important; flex: 1; }
+  #cal-grid { overflow-x: auto; }
+  .cal-grid-mes { min-width: 560px; }
+  .cal-grid-sem { min-width: 640px; }
+  .form-row { grid-template-columns: minmax(0,1fr) !important; }
+  .fg { min-width: 0; }
+  .two-col, .charts-grid, .form-row, .ficha-row, .ficha-chk-cols { grid-template-columns: minmax(0,1fr); }
+  .srch-wrap { min-width: 0; flex-basis: 100%; }
+  .srch-select { max-width: 100%; }
+  .ficha-head, .ficha-body { padding: 18px 14px; }
+  .ficha-tabs { padding: 0 14px; }
+  .modal-body, .modal-head, .modal-foot { padding: 14px; }
+}
+
+@media print {
+  #mobile-menu-toggle, #mobile-menu-backdrop { display: none !important; }
+}
