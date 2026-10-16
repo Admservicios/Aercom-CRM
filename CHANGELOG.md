@@ -4,7 +4,14 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
-## Sin publicar — Paso 8: importaciones CSV/Excel sin pérdidas parciales
+## Sin publicar — Paso 10: documentación del estado integrado
+
+- README, guía de desarrollo, arquitectura, notas, índice de funciones y estado de bugs reflejan los PR integrados. Se corrigen descripciones previas de guardado, historial, identificación Excel y alcance de seguridad.
+- Instrucciones de pruebas Node y checklist manual; se distinguen dobles de las verificaciones de Chromium/bibliotecas reales y resultados históricos de la suite integrada de 186 pruebas.
+- Revisión de referencias de helpers obsoletos, conservando funciones con referencias de documentación/pruebas. Sin cambios a código ejecutable ni dependencias.
+- El PR #3 permanece en borrador y la validación de conflictos de Drive sigue pendiente. No se crea una versión nueva ni se certifica seguridad global.
+
+## Paso 8 — PR #6 integrado: importaciones CSV/Excel sin pérdidas parciales
 
 - CSV y Excel construyen el lote sobre una copia de D y comparten validación estructural, comprobaciones de relaciones y aplicación con recuperación. Un error de fila, render o persistencia rechaza el lote sin consumir historial. Un lote sin cambios no guarda ni programa Drive.
 - Reemplazar CSV conserva campos no incluidos y permite vaciar columnas incluidas; Excel conserva campos adicionales y celdas vacías mantienen el valor existente. Los valores 0/false se conservan y admiten explícitamente.
@@ -13,7 +20,7 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 - Fechas Excel: validación de texto y seriales 1900, rechazo del serial ficticio 60 y libros con sistema 1904. Se alinean los diez encabezados de cotizaciones con sus valores y los 21 valores del reporte de clientes con sus encabezados.
 - Verificación: 182 pruebas Node (48 nuevas). Chromium con SheetJS 0.18.5 real verificó archivos XLSX, CSV, conservación de campos, undo/redo, errores de lote/cuota, recarga y exportación/reimportación de tres plantillas y tres reportes. Cero errores JS; Chart simulado y Drive desconectado. Sin dependencias nuevas.
 
-## Sin publicar — Paso 7: deshacer/rehacer y fechas de calendario
+## Paso 7 — PR #5 integrado: deshacer/rehacer y fechas de calendario
 
 - Se conserva un snapshot inicial en memoria para deshacer también la primera edición cuando aún no existe `aercom-data`. El guardado agrega historial y descarta rehacer después de completarse correctamente.
 - Deshacer/rehacer reutiliza la aplicación con recuperación de Storage: un error de parseo, renderizado o persistencia no consume la acción ni confirma éxito. Las restauraciones exitosas programan la sincronización habitual con Drive y mantienen el límite de 30 acciones.
@@ -21,16 +28,16 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 - Hoy se obtiene del calendario local. Las diferencias y sumas de fechas sin hora usan días UTC para evitar offsets y cambios DST. El calendario mensual/semanal construye sus claves y rangos con fechas locales.
 - Validación: 134 pruebas Node (20 nuevas), con cinco zonas horarias y transiciones DST. Chromium aislado en esas cinco zonas comprobó primera edición, botones/atajos, fallo de cuota y recuperación, recarga y fechas/eventos del mes y semana. Cero errores JS; Chart simulado, Drive desconectado y datos ficticios.
 
-## Sin publicar — Paso 9: navegación móvil y contadores de clientes
+## Paso 9 — PR #7 integrado: navegación móvil y contadores de clientes
 
 - Menú desplegable hasta 800 px, con cierre por selección, fondo y Escape, foco y controles inert; el escritorio conserva la barra lateral. Opciones de navegación activables con Enter/Espacio.
 - Formularios y ficha pasan a una columna en pantallas pequeñas; facturación y calendario desplazan sus áreas horizontalmente sin ensanchar el módulo. En 320 px el contenido principal pasa de 104 a 320 px disponibles.
 - Los contadores del listado de clientes se calculan con Map en una pasada por equipos/pedidos, conservando estados, orden, escapado y HTML. No se mantienen cachés entre renders.
-- Verificación: 138 pruebas Node (cuatro nuevas) en la rama basada en main, sin el PR #6 aún abierto. Chromium con Chart.js 4.4.1 real: nueve pantallas en cinco anchos de 320–1440 px, formularios/ficha, edición, menú por teclado/fondo/Escape, cambio a escritorio y temas claro/oscuro, sin errores JS. Drive desconectado.
+- Verificación: 138 pruebas Node (cuatro nuevas) en la rama del paso 9 antes de integrar el PR #6. Chromium con Chart.js 4.4.1 real: nueve pantallas en cinco anchos de 320–1440 px, formularios/ficha, edición, menú por teclado/fondo/Escape, cambio a escritorio y temas claro/oscuro, sin errores JS. Drive desconectado.
 - Combinación de prueba con el PR #6 en snapshot temporal: sin conflictos, 186 pruebas aprobadas; no se fusionó ni publicó esa combinación.
 - Comparación sintética con 2.000 clientes, 20.000 equipos y 20.000 pedidos: HTML idéntico; mediana de tres generaciones en Node de 520 ms antes a 10 ms después. DOM y badges simulados; no representa tiempo total del navegador ni una garantía para otros equipos.
 
-## Sin publicar — Paso 6: proteger borrados y referencias del calendario
+## Paso 6 — PR #4 integrado: proteger borrados y referencias del calendario
 
 - Bloqueo compartido en las seis rutas de borrado de clientes, equipos y cotizaciones cuando existen referencias. Clientes incluye recordatorios, eventos e historial mensual de facturación, incluso estados Pendiente/Excluido; equipos incluye cotizaciones/pedidos; cotizaciones incluye pedidos de cualquier estado.
 - Se informa el número de asociaciones y se revalida al confirmar. No se borran registros en cascada ni se modifica el historial. Los registros sin dependencias mantienen su borrado habitual.
@@ -39,7 +46,7 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 - Tras integrar main con el PR #2: 114 pruebas aprobadas y repetición satisfactoria del flujo de Chromium aislado.
 - Rama creada desde main y actualizada con el PR #2 ya fusionado; no incorpora el PR #3 de conflictos de Drive. No repara huérfanos preexistentes ni valida todas las relaciones en importaciones o cambios de asociación.
 
-## Sin publicar — Paso 4: confirmar guardados de Drive
+## Paso 4 — PR #2 integrado: confirmar guardados de Drive
 
 - Las búsquedas y creaciones de carpetas/archivos y los PATCH de backups/reportes comprueban HTTP. Las respuestas de búsqueda y creación deben contener IDs válidos; un error no se interpreta como archivo ausente.
 - El backup solo muestra guardado exitoso después del PATCH confirmado. Los fallos mantienen el estado pendiente y distinguen si la copia local pudo conservarse. Una edición posterior al snapshot enviado sigue pendiente aunque termine la subida anterior.
@@ -47,7 +54,7 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 - Se conserva el ID creado si falla la subida posterior, para que otro intento en la misma sesión no cree un segundo backup. No se añaden reintentos automáticos ni se resuelven conflictos entre dispositivos.
 - Validación: 24 pruebas nuevas (76 en total con `node --test tests/*.test.js`) y Chromium aislado para indicadores, exportación Excel y conexión fallida. HTTP, OAuth, SheetJS y Chart simulados; no se accedió a una cuenta real.
 
-## Sin publicar — Paso 3: validar backups antes de reemplazar datos
+## Paso 3 — PR #1 integrado: validar backups antes de reemplazar datos
 
 - Validación compartida de JSON local y descargado de Drive: raíz, colecciones, registros, IDs únicos/no reservados, tipos conocidos, fechas y estructura de facturación. Los campos adicionales se conservan y los tipos incompatibles se rechazan sin conversiones silenciosas.
 - Las normalizaciones existentes (arrays opcionales, clientes y migraciones heredadas) se comparten con el arranque. No se cambia el formato de exportación.
@@ -55,14 +62,14 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 - La búsqueda y descarga de Drive comprueban HTTP y rechazan contenido incompatible antes de decidir una subida. No se modifican las reglas de conflictos ni la implementación de subidas.
 - Validación: 52 pruebas con `node --test tests/*.test.js`, más Chromium aislado para importación, recarga, pantallas y fallos de render/cuota. Drive se verificó con respuestas simuladas y Chart con un doble; no se validó acceso a cuentas reales.
 
-## Sin publicar — Paso 2: conservar datos al editar clientes
+## Paso 2 — PR #1 integrado: conservar datos al editar clientes
 
 - El guardado general conserva la prioridad y los campos existentes ajenos al formulario, incluida la configuración detallada de facturación y campos adicionales importados. Las altas mantienen sus valores predeterminados.
 - Los selectores muestran el valor histórico existente aunque no pertenezca al catálogo, evitando sustituir silenciosamente tipos como `Clínica` y descripciones de facturación personalizadas. Esas opciones mantienen el escapado del paso 1.
 - Una modalidad personalizada conserva su día existente al editar otros datos; cambiar explícitamente a una modalidad distinta de `Por fecha` limpia el día. La modalidad `Por fecha` sigue usando el día del formulario.
 - Pruebas: `node --test tests/client-editing.test.js tests/security-rendering.test.js` (16 pruebas). Chromium aislado verificó edición, persistencia y recarga, renombrado y referencias, rechazo de duplicados, modalidades y alta con datos ficticios; sin acceso a Drive.
 
-## Sin publicar — Paso 1: renderizado seguro
+## Paso 1 — PR #1 integrado: renderizado seguro
 
 - Escapado de datos en listados, formularios y ficha de Clientes; listado, formulario y fechas inline de Equipos; vista previa y conflictos CSV; tablas del Reporte de Vencimientos.
 - Serialización de etiquetas del gráfico del reporte que impide cerrar el script desde datos importados, conservando su valor original.

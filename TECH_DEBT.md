@@ -4,6 +4,14 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Cierre documental — paso 10
+
+PR #1, #2 y #4–#7 fusionados en main; 186 pruebas Node en nueve archivos. El PR #3 sigue en borrador: falta comprobar la exposición de ETag y la semántica de If-Match desde un navegador con una cuenta de Drive real. El plan no se considera cerrado en esa parte y no se incorporó su implementación a main.
+
+Se corrigieron descripciones antiguas de persistencia/historial, Excel, identificación de clientes, seguridad y navegación; se documentaron pruebas reproducibles y casos manuales. README, guía de desarrollo, arquitectura e índice de funciones distinguen estado integrado de historial. BUGS.md dejó de presentar checks sin evidencia como problemas resueltos. RELEASE_NOTES.md conserva las notas originales como históricas. Las referencias de versión (2.0.0/2.1.0) siguen desalineadas; se informa sin crear una versión ni alterar CONFIG.
+
+La revisión de helpers sin llamadas conserva cualquier referencia existente, incluidas las pruebas parametrizadas de delFactConfirm. No hubo cambios a archivos ejecutables, dependencias, almacenamiento de la aplicación ni datos de clientes. Los resultados de suites/benchmarks citados dentro de los pasos anteriores corresponden a sus ramas y momentos; la suite integrada actual tiene 186 pruebas.
+
 ## Importación tabular — seguimiento del paso 8
 
 CSV y Excel usan `_applyTableImport()` de Storage: copia temporal síncrona de D, validación completa del candidato mediante `_parseImportedData()`, controles de relaciones sobre registros nuevos/modificados y `_applyImportedData(candidate,persist)` con recuperación de memoria/almacenamiento/pilas ante errores. La copia temporal se descarta en finally. No se aplican filas sueltas ni se guardan lotes sin cambios.
@@ -34,9 +42,9 @@ Antes, el sidebar fijo de 216 px dejaba solo 104 px de contenido principal en un
 
 `renderClientes()` calcula Map de equipos/pedidos activos por cliente una vez por render. Pasa de recorrer equipos y pedidos por cada cliente a una pasada por ambas colecciones y consultas por ID. Los Maps son locales, por lo que altas, bajas y cambios de estado se reflejan al renderizar. Se conserva el HTML byte por byte en la comparación con el código previo.
 
-Verificación: cuatro pruebas nuevas y las 134 de main aprobadas (138; PR #6 aún separado). Chromium con Chart.js 4.4.1 real, nueve pantallas en 320/375/768/1024/1440 px, formularios de clientes/equipos/cotizaciones/pedidos/recordatorios, ficha, edición, menú por teclado/clic/fondo/Escape, resize y temas claro/oscuro; cero errores JS. Sin Drive. Inspección visual de la vista móvil y el menú. Benchmark de generación HTML en Node con DOM/badges simulados, 2.000 clientes y 20.000 equipos/20.000 pedidos, tres ejecuciones por versión: medianas 520 ms/10 ms, HTML idéntico. Es una medición local del generador, no de la pantalla completa. También se generó una combinación temporal con el PR #6: sin conflictos y 186 pruebas aprobadas; esa combinación no se fusionó ni publicó.
+Verificación: cuatro pruebas nuevas y las 134 de main aprobadas (138 en la rama del paso 9; PR #6 entonces separado). Chromium con Chart.js 4.4.1 real, nueve pantallas en 320/375/768/1024/1440 px, formularios de clientes/equipos/cotizaciones/pedidos/recordatorios, ficha, edición, menú por teclado/clic/fondo/Escape, resize y temas claro/oscuro; cero errores JS. Sin Drive. Inspección visual de la vista móvil y el menú. Benchmark de generación HTML en Node con DOM/badges simulados, 2.000 clientes y 20.000 equipos/20.000 pedidos, tres ejecuciones por versión: medianas 520 ms/10 ms, HTML idéntico. Es una medición local del generador, no de la pantalla completa. También se generó una combinación temporal con el PR #6: sin conflictos y 186 pruebas aprobadas; esa combinación no se fusionó ni publicó.
 
-Pendiente: paginación/virtualización del DOM, límites de importación/tamaño y cuota de localStorage, consultas repetidas en otros módulos, renderización de grandes volúmenes en dispositivos físicos, navegación de foco/lectores de pantalla en los modales existentes y evaluación completa en Firefox/Safari. Facturación y calendario mantienen desplazamiento horizontal intencional en móvil. CSS usa inert (HTML) y unidades dvh de navegadores modernos; se comprobó Chromium, sin certificar navegadores antiguos. El PR #6 de importación está separado; el PR #3 de Drive sigue pendiente de validación real. No se cambia persistencia, esquema ni sincronización.
+Pendiente: paginación/virtualización del DOM, límites de importación/tamaño y cuota de localStorage, consultas repetidas en otros módulos, renderización de grandes volúmenes en dispositivos físicos, navegación de foco/lectores de pantalla en los modales existentes y evaluación completa en Firefox/Safari. Facturación y calendario mantienen desplazamiento horizontal intencional en móvil. CSS usa inert (HTML) y unidades dvh de navegadores modernos; se comprobó Chromium, sin certificar navegadores antiguos. En esa revisión el PR #6 todavía estaba separado; hoy está integrado. El PR #3 de Drive sigue pendiente de validación real. No se cambia persistencia, esquema ni sincronización.
 
 ## Integridad — seguimiento del paso 6
 
@@ -44,7 +52,7 @@ Las rutas `delClientConfirm`, `delFactConfirm`, `deleteEquip`, `delEquipConfirm`
 
 Verificación: 38 pruebas nuevas de borrados y ampliación de la prueba de renombrado; 90 pruebas en esta rama basada en main. Chromium aislado verificó las seis rutas, persistencia/recarga, revalidación y edición real del código con eventos. Chart simulado; sin conexión a Drive.
 
-Pendiente: detectar y resolver huérfanos preexistentes, validar referencias de JSON/CSV/Excel y formularios al reasignar cliente/equipo/cotización, y definir archivo lógico para equipos/cotizaciones con historial. No se reparan ni desconectan asociaciones automáticamente. La protección comprueba D en esta pestaña; no resuelve concurrencia entre pestañas/dispositivos ni reemplazos completos de estado. La confirmación de subidas de Drive del PR #2 ya está incorporada desde main. Los conflictos de Drive siguen separados en el PR #3, que requiere validar ETag/If-Match con una cuenta real. El cambio de código puede seguir colisionando con estados mensuales huérfanos cuyo código coincide con el nuevo; requiere validación específica antes de renombrar. Los errores de cuota al guardar siguen siendo un riesgo de los formularios existentes.
+Pendiente: detectar y resolver huérfanos preexistentes y validar referencias de JSON/formularios al reasignar cliente/equipo/cotización (CSV/Excel incorporaron controles para registros nuevos/modificados en el paso 8), y definir archivo lógico para equipos/cotizaciones con historial. No se reparan ni desconectan asociaciones automáticamente. La protección comprueba D en esta pestaña; no resuelve concurrencia entre pestañas/dispositivos ni reemplazos completos de estado. La confirmación de subidas de Drive del PR #2 ya está incorporada desde main. Los conflictos de Drive siguen separados en el PR #3, que requiere validar ETag/If-Match con una cuenta real. El cambio de código puede seguir colisionando con estados mensuales huérfanos cuyo código coincide con el nuevo; requiere validación específica antes de renombrar. Los errores de cuota al guardar siguen siendo un riesgo de los formularios existentes.
 
 ## Drive — seguimiento del paso 4
 
@@ -92,17 +100,22 @@ Pendiente: revisión contextual de los demás módulos y restantes hallazgos de 
 
 ---
 
-## Código muerto vigente
+## Helpers conservados tras revisión de referencias
 
-- `quoteFromEquip(eid)` — `js/modules/equipos.js` (Sprint 6). Sin ningún punto de llamada en el proyecto.
-- `delFactConfirm(cid)` — `js/modules/facturacion.js` (Sprint 7). Sin ningún punto de llamada en el proyecto.
+- `quoteFromEquip(eid)` — `js/modules/equipos.js`: sin llamadas de producción detectadas; tiene referencias en cabeceras/comentarios y documentación. Se conserva.
+- `delFactConfirm(cid)` — `js/modules/facturacion.js`: sin llamada desde la interfaz detectada; figura en `tests/referential-integrity.test.js` mediante una tabla de rutas, además de comentarios/documentación. Se conserva con su protección de referencias.
 - CSS "AERCOM POLISH" dentro del `<style>` del Reporte de Vencimientos (Sprint 13) — `js/modules/reportes.js`. El documento HTML standalone que genera `generarReporteVencimientos()` incluye ~80 líneas de reglas (`.k-col`, `.nav-item`, `.stat-card`, `#modal-overlay`, scrollbar, etc.) que no tienen ningún elemento correspondiente en ese documento — son estilos de la app principal, copiados junto con el resto del `<style>` pero inertes ahí.
+
+- `_snapshot()` — `index.html`: sin llamadas detectadas, referenciado en documentación; se conserva.
+- `openModal()`/`_closeModalById()` — `js/modal.js`: sin llamadas detectadas, referenciados en comentarios/documentación; se conservan. `initializeModals()` sí tiene llamada en `js/ui.js`.
+
+La búsqueda incluyó nombres en código, handlers, pruebas y Markdown. Ausencia de llamadas detectadas no prueba ausencia de consumidores externos de globals. No se eliminaron funciones ni estilos en el paso 10.
 
 ## Duplicaciones funcionales vigentes (no unificadas)
 
 - `deleteEquip(id)` (modal) vs `delEquipConfirm(eid)` (tabla) — `js/modules/equipos.js` (Sprint 6). Mismo efecto, distinta forma de armar el mensaje de confirmación.
 - `deleteQuote(id)` (modal) vs `delQuoteConfirm(qid)` (tarjeta) — `js/modules/cotizaciones.js` (Sprint 8). Mismo patrón que el anterior.
-- `delFactConfirm(cid)` (Facturación, código muerto) vs `delClientConfirm(id)` (Clientes) — ambas eliminan un cliente completo, con textos/refrescos distintos.
+- `delFactConfirm(cid)` (Facturación, sin llamada de interfaz detectada) vs `delClientConfirm(id)` (Clientes) — ambas eliminan un cliente completo, con textos/refrescos distintos.
 
 ## Otras observaciones vigentes
 

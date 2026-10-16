@@ -99,6 +99,7 @@ Aercom-CRM-v2/
 │       ├── recordatorios.js
 │       ├── reportes.js
 │       └── theme.js
+├── tests/              # pruebas Node sin paquetes adicionales
 ├── docs/
 │   ├── ARQUITECTURA.md
 │   ├── BUGS.md
@@ -127,7 +128,7 @@ o cualquier otro servidor estático equivalente (Live Server de VS Code, `npx se
 ## Persistencia
 
 - **LocalStorage** — toda la información del CRM (clientes, equipos, cotizaciones, pedidos, recordatorios, eventos, facturación) se guarda como un único objeto JSON en `localStorage['aercom-data']`. No requiere backend ni base de datos.
-- **Google Drive (opcional)** — conectando una cuenta de Google, los datos se sincronizan automáticamente como `aercom-data.json` en una carpeta propia del Drive del usuario (`Aercom Gestion/`), permitiendo continuar el trabajo desde otro dispositivo. La conexión es opcional; sin ella, la aplicación funciona íntegramente en local.
+- **Google Drive (opcional)** — guarda `aercom-data.json` en `Aercom Gestion/`. Las operaciones de subida comprueban HTTP antes de anunciar éxito. La comparación entre copias de main todavía usa `lastSaved` con precisión de día y no resuelve ediciones simultáneas ni duplicados; el [PR #3](https://github.com/Admservicios/Aercom-CRM/pull/3) permanece en borrador, pendiente de validar ETag/If-Match con Drive real. Exportá un JSON antes de cambiar de dispositivo y evitá editar la misma copia en paralelo. Sin conexión, el CRM funciona con su copia local.
 
 ---
 
@@ -146,4 +147,21 @@ Para sumarte al desarrollo de este proyecto, el orden recomendado de lectura es:
 ## Estado del proyecto
 
 **Versión:** v2.0.0
-**Estado:** Release
+**Estado:** mejoras de los PR #1, #2 y #4–#7 incorporadas a main; conflictos de Drive pendientes. Las referencias de versión heredadas no están unificadas: este README indica v2.0.0 y CONFIG.app.version indica 2.1.0.
+
+
+## Comportamiento actual y comprobaciones
+
+- Los borrados de clientes/equipos/cotizaciones con registros asociados se bloquean; no se elimina historial en cascada.
+- CSV y Excel validan el lote antes de aplicarlo y recuperan datos/almacenamiento/historial ante fallos. CSV conserva columnas ausentes y aplica vacíos/predeterminados si la columna está incluida; Excel conserva el valor existente ante una celda vacía. Los campos adicionales del registro se conservan. Excel requiere IDs de equipos/cotizaciones y un cliente identificado por ID o nombre exacto único. Descargá nuevamente las plantillas antiguas de cotizaciones con columnas desplazadas.
+- Deshacer/rehacer actúa sobre todo D, hasta 30 acciones en la sesión; se pierde al recargar. Dentro de campos editables se conserva el deshacer nativo del navegador.
+- Hasta 800 px se usa el botón Menú; el escritorio conserva el sidebar. Tablas, facturación y calendario pueden desplazarse horizontalmente en su propia área. Verificación realizada en Chromium, sin certificación de otros navegadores.
+- Los datos de localStorage pertenecen al navegador y origen actuales. Servir desde otro puerto/dominio o borrar el almacenamiento no traslada ni conserva esa copia; exportá el JSON para llevarla a otro origen. Las carpetas data/ y backups/ no son una base de datos ni un respaldo automático.
+
+La aplicación no requiere Node. Para ejecutar las pruebas de desarrollo desde la raíz, con Node 24 (versión verificada):
+
+```bash
+node --test tests/*.test.js
+```
+
+186 pruebas aprobadas en el estado integrado. Usan módulos nativos, datos ficticios y dobles de DOM/HTTP/SheetJS; no prueban una cuenta de Drive real. Las comprobaciones adicionales de Chromium y bibliotecas CDN reales se describen en [TECH_DEBT.md](TECH_DEBT.md); los scripts temporales de esas sesiones no forman parte de la suite del repositorio. Consultá [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) para repetir la revisión manual y [docs/BUGS.md](docs/BUGS.md) para pendientes.

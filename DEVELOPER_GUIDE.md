@@ -11,9 +11,9 @@ index.html          → infraestructura compartida (estado global, persistencia,
                        navegación, undo/redo) + carga todos los <script>
 css/style.css        → único stylesheet real del proyecto
 js/
-  utils.js           → helpers sin estado: fechas, formato, _esc()
-  storage.js         → carga/guardado base en localStorage
-  modal.js           → sistema de modal genérico (#modal-overlay)
+  utils.js           → fechas/formato/escapado y canDeleteRecord() (lee D)
+  storage.js         → carga/guardado, validación y aplicación con recuperación
+  modal.js           → helpers por ID heredados; modal real definido en index.html
   config.js, ui.js, app.js → utilidades menores de arranque/UI
   modules/           → 13 módulos de dominio, uno por pantalla
 docs/ARQUITECTURA.md → arquitectura real, diagrama de acoplamiento
@@ -41,9 +41,9 @@ No hay eventos, store centralizado ni sistema de reactividad: cada módulo re-re
 ## Persistencia
 
 - **LocalStorage**: `D` completo se guarda como JSON en `localStorage['aercom-data']` (constante `STORAGE_KEY` en `js/storage.js`). `loadData()` lo lee al arrancar y aplica normalizaciones de retrocompatibilidad (arrays obligatorios, remapeo de estados heredados).
-- **`persist()`** (definida en `index.html`): es el único punto de guardado que debe usar cualquier módulo. Por debajo llama a `_persistBase()` (`js/storage.js`, guarda en localStorage), y además empuja un snapshot a `_history` (undo/redo) y dispara `_scheduleDriveSave()` si Drive está conectado. Llamar a `_persistBase()`/`_origPersist()` directamente salvo en undo/redo salta estos dos mecanismos (ver `TECH_DEBT.md` sobre `xlsImport()`, que hoy tiene ese problema).
-- **Undo/Redo**: `persist()` guarda un `JSON.stringify(D)` en el array `_history` (tope `MAX_HIST = 30`) antes de cada guardado. `undoAction()`/`redoAction()` restauran `D` completo desde un snapshot y llaman a `_origPersist()` directamente (no a `persist()`, para no generar un snapshot nuevo al deshacer). Es undo/redo de estado completo, no por campo ni por módulo.
-- **Google Drive**: conexión OAuth2 opcional (`js/modules/drive.js`). Sincroniza `D` completo como `aercom-data.json` en una carpeta propia del Drive del usuario (`Aercom Gestion/`). `_scheduleDriveSave()` hace debounce de 5s y se invoca desde `persist()`. El token se mantiene solo en memoria, nunca en `localStorage`.
+- **`persist()`** (index.html): guarda mediante `_persistBase()` y agrega al historial la copia local anterior después del guardado exitoso; si no había copia usa el snapshot de arranque. Limpia rehacer y programa Drive. Los módulos llaman a esta función; CSV/Excel la invocan mediante `_applyTableImport()`/`_applyImportedData()`. El guardado ordinario de un formulario aún puede dejar D modificado en memoria si falla por cuota; no todas las ediciones son transaccionales.
+- **Undo/Redo**: `_restoreHistory()` aplica el snapshot mediante `_applyImportedData(candidate,_origPersist)`, mueve las pilas solo tras el éxito y programa Drive. Límite de 30 acciones, estado completo y sesión actual; no persiste al recargar. Los campos editables conservan Ctrl/Meta+Z nativo; fuera de ellos funcionan Ctrl/Meta+Z, Ctrl/Meta+Y y Ctrl/Meta+Shift+Z.
+- **Google Drive**: conexión OAuth2 opcional (`js/modules/drive.js`). Sincroniza `D` completo como `aercom-data.json` en una carpeta propia del Drive del usuario (`Aercom Gestion/`). `_scheduleDriveSave()` hace debounce de 5s y se invoca desde `persist()`. El token se mantiene solo en memoria, nunca en `localStorage`. Main compara fechas de día, sin resolución de conflictos/duplicados. El PR #3 sigue en borrador y necesita comprobar ETag/If-Match con una cuenta real. No usar la conexión como garantía de edición simultánea segura.
 
 ---
 
@@ -52,7 +52,7 @@ No hay eventos, store centralizado ni sistema de reactividad: cada módulo re-re
 - **`showModule(name)`** (en `index.html`): oculta el módulo visible actual, muestra el módulo `name`, actualiza el ítem activo del sidebar, y llama a `renderModule()`.
 - **`renderModule()`** (en `index.html`): dispatcher que, según `curModule`, llama a la función de render propia de ese módulo (`renderDashboard()`, `renderClientes()`, `renderEquipos()`, etc.). Cada módulo define su propia función de render — no hay una convención de componentes reutilizables, cada una reconstruye su porción del DOM vía `innerHTML`.
 - Todas las pantallas están presentes en el DOM desde el arranque (`index.html`); `showModule()` alterna cuál es visible con una clase CSS, no monta/desmonta nada.
-- Los datos de usuario interpolados en ese `innerHTML` deben pasar por `_esc()` (`js/utils.js`) para evitar XSS — es la convención de seguridad establecida en el proyecto (ver `TECH_DEBT.md`, sección "Resueltos", PR-014.1 a PR-014.5).
+- Los datos de usuario interpolados en ese `innerHTML` deben pasar por `_esc()` (`js/utils.js`) para escapar texto/atributos HTML. El código JavaScript embebido requiere serialización y protección contextual propias (por ejemplo, el JSON del reporte impide cerrar su script con `<`). El alcance revisado no certifica todos los módulos; es la convención de seguridad establecida en el proyecto (ver `TECH_DEBT.md`, sección "Resueltos", PR-014.1 a PR-014.5).
 
 ---
 
@@ -76,7 +76,7 @@ Todos viven en `index.html` o `js/utils.js`, y los usan 2 o más módulos — no
 
 1. Crear `js/modules/<nombre>.js` con el header estándar (ver `CONTRIBUTING.md`).
 2. Definir su propia función de render, ej. `render<Nombre>()`.
-3. Agregar el `case` correspondiente en `renderModule()` (`index.html`).
+3. Agregar la rama correspondiente en `renderModule()` (`index.html`).
 4. Agregar el `<script src="js/modules/<nombre>.js">` en `index.html`, respetando que cargue después de `utils.js`/`storage.js` y antes de `config.js`/`ui.js`/`modal.js`/`app.js`.
 5. Si el módulo tiene datos propios, agregar su clave a `D` en `DEFAULT` (`index.html`) y a la normalización de `loadData()` si corresponde (array obligatorio, etc.).
 6. Agregar el ítem de navegación en el sidebar (HTML) y su sección en el `<main>`.
@@ -119,3 +119,33 @@ Si la pantalla es un dominio de negocio genuinamente nuevo (no una vista sobre d
 - Mantener las funciones de un módulo dentro de su propio archivo, aunque lean datos de otros dominios; documentar esa lectura cruzada en el header, no ocultarla.
 - No introducir un segundo mecanismo de guardado, navegación o modal en paralelo al ya existente (el proyecto ya sufrió una colisión real por esto — ver `TECH_DEBT.md`, sección "Resueltos", `closeModal()` PR-007.2).
 - Validar todo cambio abriendo la aplicación en un navegador real, no solo por lectura del código.
+
+
+## Validación reproducible y revisión manual
+
+Desde la raíz, con Node 24 verificado, ejecutar `node --test tests/*.test.js`: 186 pruebas en nueve archivos. No se necesita npm ni instalar dependencias. La suite usa dobles, no un navegador ni una cuenta Google reales.
+
+| Pruebas | Comportamiento cubierto |
+|---|---|
+| security-rendering.test.js | Escapado y serialización de los renderizadores revisados |
+| client-editing.test.js / client-counts.test.js | Conservación de campos, renombrado, contadores y recorridos |
+| data-import.test.js / table-import.test.js | Validación, recuperación y lotes JSON/CSV/Excel |
+| referential-integrity.test.js | Borrados con asociaciones y revalidación al confirmar |
+| undo-redo.test.js / calendar-dates.test.js | Historial, fallos, atajos, zonas horarias y DST |
+| drive-save.test.js | Respuestas HTTP y confirmaciones de subida simuladas |
+
+Para una comprobación manual, usar un perfil temporal del navegador y datos ficticios. Servir la raíz con `python3 -m http.server 8000 --bind 127.0.0.1` y abrir la aplicación localmente. Chart.js 4.4.1 y SheetJS 0.18.5 se cargan desde cdnjs.cloudflare.com. Drive requiere además configurar el origen autorizado del cliente OAuth y conectarse explícitamente; no es necesario para los casos locales.
+
+1. Editar y recargar un cliente con campos adicionales/facturación; comprobar conservación y renombrado de referencias.
+2. Intentar borrar registros con asociaciones y comprobar el bloqueo; eliminar uno independiente y comprobar persistencia.
+3. Importar JSON/CSV/Excel válidos e inválidos, verificar que un error no aplica filas parcialmente y que una importación exitosa se puede deshacer. Exportar/reimportar las plantillas y reportes de clientes/equipos/cotizaciones.
+4. Probar undo/redo desde la primera edición y atajos dentro/fuera de campos; recordar que recargar vacía las pilas.
+5. Revisar las nueve pantallas, formularios y navegación a 320/375/768/1024/1440 px, temas claro/oscuro y calendario mes/semana en distintas zonas horarias. Las revisiones previas usaron UTC, Buenos Aires, Nueva York, Berlín y Kiritimati.
+
+Los scripts de Chromium/benchmarks de las sesiones anteriores vivían en /tmp y no están incluidos. La suite Node sí es reproducible con los archivos del repositorio. Los resultados históricos de navegador no sustituyen volver a revisar la versión que se quiera publicar.
+
+## Límites y código conservado
+
+Los controles referenciales de importación tabular revisan registros nuevos/modificados; JSON y formularios no tienen todavía la misma cobertura. No se reparan huérfanos históricos automáticamente. Antes de agregar un campo, revisar también `_parseImportedData()` y la política de conservación del lote, además de formularios, plantillas y exportaciones.
+
+`quoteFromEquip()`, `delFactConfirm()`, `_snapshot()`, `openModal()` y `_closeModalById()` se revisaron por referencias. No se encontraron llamadas de producción para esos helpers, pero existen referencias en comentarios/documentación y, para `delFactConfirm`, pruebas compartidas. Se conservan. `initializeModals()` sí se invoca desde initializeUI(); no debe confundirse con un helper sin uso.
