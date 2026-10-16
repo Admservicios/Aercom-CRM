@@ -4,6 +4,15 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — Paso 8: importaciones CSV/Excel sin pérdidas parciales
+
+- CSV y Excel construyen el lote sobre una copia de D y comparten validación estructural, comprobaciones de relaciones y aplicación con recuperación. Un error de fila, render o persistencia rechaza el lote sin consumir historial. Un lote sin cambios no guarda ni programa Drive.
+- Reemplazar CSV conserva campos no incluidos y permite vaciar columnas incluidas; Excel conserva campos adicionales y celdas vacías mantienen el valor existente. Los valores 0/false se conservan y admiten explícitamente.
+- CSV admite BOM, comillas escapadas, comas y saltos de línea dentro de campos. Rechaza encabezados inválidos/desconocidos, filas desalineadas y claves repetidas. Lecturas antiguas no reemplazan selecciones nuevas; seleccionar otro CSV restablece Saltar existentes tanto en los controles como en el estado interno.
+- Números/booleanos/fechas inválidos y asociaciones inexistentes/ambiguas se rechazan. Excel exige ID para equipos/cotizaciones, usa ID o nombre exacto único para identificar clientes y deja de asignar por coincidencia parcial. No se permite reasignar equipos con cotizaciones/pedidos ni cotizaciones con pedidos.
+- Fechas Excel: validación de texto y seriales 1900, rechazo del serial ficticio 60 y libros con sistema 1904. Se alinean los diez encabezados de cotizaciones con sus valores y los 21 valores del reporte de clientes con sus encabezados.
+- Verificación: 182 pruebas Node (48 nuevas). Chromium con SheetJS 0.18.5 real verificó archivos XLSX, CSV, conservación de campos, undo/redo, errores de lote/cuota, recarga y exportación/reimportación de tres plantillas y tres reportes. Cero errores JS; Chart simulado y Drive desconectado. Sin dependencias nuevas.
+
 ## Sin publicar — Paso 7: deshacer/rehacer y fechas de calendario
 
 - Se conserva un snapshot inicial en memoria para deshacer también la primera edición cuando aún no existe `aercom-data`. El guardado agrega historial y descarta rehacer después de completarse correctamente.

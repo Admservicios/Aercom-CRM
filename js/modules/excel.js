@@ -18,6 +18,7 @@
  * sin mover — no son responsabilidad de este módulo):
  *   XLSX (CDN SheetJS), D, curMonth, today(), clientName(),
  *   toast(), persist(), renderModule() (index.html)
+ *   _applyTableImport(), _importNumber(), _importBoolean() (js/storage.js)
  *
  * Decisiones de límite de módulo:
  *   - `xlsExport(tipo,'drive')` depende de `_gdriveReady`,
@@ -33,7 +34,7 @@
 const XLS_HEADERS = {
   clientes:     ['ID','Nombre','Tipo','Ciudad','Contacto','Telefono','Email','Frecuencia Visita','Presupuesto Mensual','Ajuste','Requiere OC','Requiere HES','Facturacion','Facturacion Dia','Estado','Incluye NS','Incluye Preventivo','Incluye Combustible','Incluye Plataforma','Incluye Bateria','Incluye Otro'],
   equipos:      ['ID','Cliente ID','Cliente (nombre)','Tipo','Marca','Ubicacion','Ultimo Preventivo','Proximo Preventivo','Ultimo Aceite','Ultima Bateria','Ultimo Refrigerante','Horometro','Observaciones'],
-  cotizaciones: ['ID','Cliente (nombre)','Descripcion','Monto','Fecha Envio','Fecha Followup','Responsable','Estado','Notas'],
+  cotizaciones: ['ID','Cliente ID','Cliente (nombre)','Descripcion','Monto','Fecha Envio','Fecha Followup','Responsable','Estado','Notas'],
   facturacion:  ['Cliente','Tipo','Ajuste','Requiere OC','Requiere HES','Facturacion','Estado Mes']
 };
 
@@ -110,8 +111,11 @@ function xlsDownloadPlantilla(tipo){
   }
 }
 
+let _xlsReadVersion=0;
 function xlsImport(ev, tipo){
+  const version=++_xlsReadVersion;
   const f=ev.target.files[0]; if(!f) return;
+  if(!['clientes','equipos','cotizaciones'].includes(tipo)){toast('⚠ Tipo de importación inválido');return;}
   // Confirmar si ya hay datos cargados
   const existentes = tipo==='clientes'?D.clientes.length : tipo==='equipos'?D.equipos.length : D.cotizaciones.length;
   if(existentes>0 && !confirm(`Ya tenés ${existentes} ${tipo} cargados.\n\nLa importación AGREGA nuevos y ACTUALIZA los que coincidan por ID.\nNo borra nada.\n\n¿Continuar?`)){
@@ -119,15 +123,23 @@ function xlsImport(ev, tipo){
   }
   const r=new FileReader();
   r.onload=e=>{
+    if(version!==_xlsReadVersion) return;
     try{
       const wb=XLSX.read(e.target.result,{type:'binary'});
+      if(wb.Workbook?.WBProps?.date1904) throw new Error('El libro usa fechas de 1904; convertí la planilla al sistema de fechas de 1900.');
       const ws=wb.Sheets[wb.SheetNames[0]];
       const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-      if(!rows.length){toast('⚠ El archivo está vacío');return;}
+      _validateXlsRows(rows,tipo);
+      // En Excel, una celda vacía conserva el valor existente; 0/false son explícitos.
+      rows.forEach(row=>Object.keys(row).forEach(key=>{if(row[key]==='') delete row[key];}));
+      if(!rows.length){ev.target.value='';toast('⚠ El archivo está vacío');return;}
       let importados=0;
+      _applyTableImport(()=>{
+      const touched=new Set();
+      const touch=obj=>{if(touched.has(obj.id)) throw new Error('El lote actualiza el mismo registro más de una vez.');touched.add(obj.id);};
       if(tipo==='clientes'){
         // Helper: convierte SI/true/1 → true
-        function _bool(v){ return v==='SI'||v===true||v==='1'||v===1; }
+        function _bool(v){ return _importBoolean(v,'Booleano'); }
         // Helper: genera ID secuencial si está vacío
         function _nextCliId(){
           const nums=D.clientes.map(c=>parseInt((c.id||'').replace(/\D/g,''))||0);
@@ -139,7 +151,9 @@ function xlsImport(ev, tipo){
           const idXls = String(r['ID']||'').trim();
           let existe = idXls ? D.clientes.find(c=>c.id===idXls) : null;
           if(!existe) existe = D.clientes.find(c=>c.nombre===r['Nombre']);
+          if(existe && idXls && existe.id!==idXls) throw new Error('El ID y nombre identifican clientes distintos.');
           const obj={
+            ...existe,
             id:                 existe ? existe.id : (idXls||_nextCliId()),
             nombre:             r['Nombre']||'',
             tipo:               r['Tipo']||existe?.tipo||'Otro',
@@ -166,14 +180,15 @@ function xlsImport(ev, tipo){
             incluyeBateria:     r['Incluye Bateria']!==undefined ? _bool(r['Incluye Bateria']) : existe?.incluyeBateria||false,
             incluyeOtro:        r['Incluye Otro']||existe?.incluyeOtro||'',
             // Preservar datos de facturación detallada que no están en el Excel
-            tipoAbono:          existe?.tipoAbono||'Abono',
-            codigoServicio:     existe?.codigoServicio||'',
-            descripcionServicio:existe?.descripcionServicio||'',
-            precioAbono:        existe?.precioAbono||null,
-            monedaAbono:        existe?.monedaAbono||'Pesos',
-            cantidadAbono:      existe?.cantidadAbono||1,
-            mesesFacturacion:   existe?.mesesFacturacion||[],
+            tipoAbono:          existe && Object.prototype.hasOwnProperty.call(existe,'tipoAbono') ? existe.tipoAbono : 'Abono',
+            codigoServicio:     existe && Object.prototype.hasOwnProperty.call(existe,'codigoServicio') ? existe.codigoServicio : '',
+            descripcionServicio:existe && Object.prototype.hasOwnProperty.call(existe,'descripcionServicio') ? existe.descripcionServicio : '',
+            precioAbono:        existe && Object.prototype.hasOwnProperty.call(existe,'precioAbono') ? existe.precioAbono : null,
+            monedaAbono:        existe && Object.prototype.hasOwnProperty.call(existe,'monedaAbono') ? existe.monedaAbono : 'Pesos',
+            cantidadAbono:      existe && Object.prototype.hasOwnProperty.call(existe,'cantidadAbono') ? existe.cantidadAbono : 1,
+            mesesFacturacion:   existe && Object.prototype.hasOwnProperty.call(existe,'mesesFacturacion') ? existe.mesesFacturacion : [],
           };
+          touch(obj);
           if(existe){ const i=D.clientes.indexOf(existe); D.clientes[i]=obj; }
           else D.clientes.push(obj);
           importados++;
@@ -185,32 +200,18 @@ function xlsImport(ev, tipo){
           'MOTOBOMBA':'Motobomba','SECADORA DE AIRE':'Secadora de Aire','SECADORA':'Secadora de Aire',
           'TABLERO ELECTRICO':'Tablero Electrico'
         };
-        function _normStr(s){ return (s||'').toUpperCase().replace(/[ÁÀÂÄ]/g,'A').replace(/[ÉÈÊË]/g,'E').replace(/[ÍÌÎÏ]/g,'I').replace(/[ÓÒÔÖ]/g,'O').replace(/[ÚÙÛÜ]/g,'U').replace(/\s+/g,' ').trim(); }
         function _findCliente(row){
-          const byId = row['Cliente ID'] ? D.clientes.find(c=>c.id===String(row['Cliente ID']).trim()) : null;
-          if(byId) return byId;
-          const nombre = (row['Cliente (nombre)']||'').trim();
-          if(!nombre) return null;
-          const byName = D.clientes.find(c=>c.nombre===nombre);
-          if(byName) return byName;
-          const normNombre = _normStr(nombre);
-          const byFuzzy = D.clientes.find(c=>_normStr(c.nombre)===normNombre);
-          if(byFuzzy) return byFuzzy;
-          const byPartial = D.clientes.find(c=>{
-            const cn=_normStr(c.nombre), rn=_normStr(nombre);
-            return cn.includes(rn)||rn.includes(cn);
-          });
-          return byPartial||null;
+          return _xlsFindCliente(row);
         }
-        let sinMatch=[];
         rows.forEach(r=>{
           const cli=_findCliente(r);
-          if(!cli){ sinMatch.push(r['Cliente (nombre)']||r['Cliente ID']||'?'); return; }
+          if(!cli) throw new Error('Equipo sin cliente identificable.');
           const existe=D.equipos&&D.equipos.find(e=>e.id===String(r['ID']||'').trim());
           const tipoRaw=(r['Tipo']||'').trim();
-          const tipo=TIPO_MAP[tipoRaw.toUpperCase()]||tipoRaw||'Grupo Electrógeno';
+          const tipo=TIPO_MAP[tipoRaw.toUpperCase()]||tipoRaw||existe?.tipo||'Grupo Electrógeno';
           const obj={
-            id: existe?existe.id:(String(r['ID']||'').trim()||'EQ'+String(Date.now()).slice(-6)),
+            ...existe,
+            id: existe?existe.id:String(r['ID']).trim(),
             clienteId: cli.id, tipo,
             marca: r['Marca']||existe?.marca||'',
             ubicacion: r['Ubicacion']||existe?.ubicacion||'',
@@ -219,56 +220,107 @@ function xlsImport(ev, tipo){
             ultimoAceite: _xlsDate(r['Ultimo Aceite'])||existe?.ultimoAceite||'',
             ultimoBateria: _xlsDate(r['Ultima Bateria'])||existe?.ultimoBateria||'',
             ultimoRefrigerante: _xlsDate(r['Ultimo Refrigerante'])||existe?.ultimoRefrigerante||'',
-            horometro: Number(r['Horometro'])||existe?.horometro||0,
+            horometro: r['Horometro']!==undefined ? Number(r['Horometro']) : existe?.horometro??0,
             observaciones: r['Observaciones']||existe?.observaciones||'',
             ultimaVisita: existe?.ultimaVisita||'', proximaVisita: existe?.proximaVisita||''
           };
+          touch(obj);
           if(!D.equipos) D.equipos=[];
           if(existe){ const i=D.equipos.indexOf(existe); D.equipos[i]=obj; }
           else D.equipos.push(obj);
           importados++;
         });
-        if(sinMatch.length) toast(`⚠ ${sinMatch.length} equipos sin cliente: ${sinMatch.slice(0,3).join(', ')}${sinMatch.length>3?'...':''}`);
       } else if(tipo==='cotizaciones'){
         rows.forEach(r=>{
-          if(!r['Cliente (nombre)']) return;
-          const cli=D.clientes.find(c=>c.nombre===r['Cliente (nombre)']);
-          if(!cli) return;
+          const cli=_xlsFindCliente(r);
+          if(!cli) throw new Error('Cotización sin cliente identificable.');
           const existe=D.cotizaciones&&D.cotizaciones.find(c=>c.id===r['ID']);
           const obj={
-            id: existe?existe.id:(r['ID']||'COT-'+String(Date.now()).slice(-6)),
+            ...existe,
+            id: existe?existe.id:String(r['ID']).trim(),
             clienteId: cli.id,
-            descripcion: r['Descripcion']||'',
-            monto: Number(r['Monto'])||0,
-            fechaEnvio: _xlsDate(r['Fecha Envio']),
-            fechaFollowup: _xlsDate(r['Fecha Followup']),
-            responsable: r['Responsable']||'',
-            estado: r['Estado']||'Solicitud',
-            notas: r['Notas']||''
+            descripcion: r['Descripcion']||existe?.descripcion||'',
+            monto: r['Monto']!==undefined ? Number(r['Monto']) : existe?.monto??0,
+            fechaEnvio: _xlsDate(r['Fecha Envio'])||existe?.fechaEnvio||'',
+            fechaFollowup: _xlsDate(r['Fecha Followup'])||existe?.fechaFollowup||'',
+            responsable: r['Responsable']||existe?.responsable||'',
+            estado: r['Estado']||existe?.estado||'Solicitud',
+            notas: r['Notas']||existe?.notas||''
           };
+          touch(obj);
           if(!D.cotizaciones) D.cotizaciones=[];
           if(existe) Object.assign(existe,obj);
           else D.cotizaciones.push(obj);
           importados++;
         });
       }
-      persist();
-      renderModule();
+      });
       updateExcelCounts();
       toast(`✓ ${importados} registros importados correctamente`);
     }catch(err){console.error(err);toast('⚠ Error al importar: '+err.message);}
     ev.target.value='';
   };
+  r.onerror=()=>{if(version!==_xlsReadVersion) return;ev.target.value='';toast('⚠ No se pudo leer el archivo Excel');};
   r.readAsBinaryString(f);
 }
 
 function _xlsDate(v){
-  if(!v) return '';
-  if(typeof v==='number') return new Date(Math.round((v-25569)*86400000)).toISOString().split('T')[0];
-  const s=String(v).trim();
-  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)){const[d,m,y]=s.split('/');return `${y}-${m}-${d}`;}
-  return '';
+  if(v==null || v==='') return '';
+  let value;
+  if(typeof v==='number'){
+    if(!Number.isFinite(v) || v<1 || Math.floor(v)===60) throw new Error('Fecha Excel inválida.');
+    // Excel inventó 1900-02-29 (serial 60); antes de ese día el offset difiere.
+    value=new Date((Math.floor(v)-(v<60?25568:25569))*86400000).toISOString().slice(0,10);
+  }else{
+    const text=String(v).trim();
+    if(/^\d{4}-\d{2}-\d{2}$/.test(text)) value=text;
+    else if(/^\d{2}\/\d{2}\/\d{4}$/.test(text)){
+      const[d,m,y]=text.split('/');value=`${y}-${m}-${d}`;
+    }
+  }
+  if(!value || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString().slice(0,10)!==value) throw new Error('Fecha Excel inválida: usá YYYY-MM-DD o DD/MM/YYYY.');
+  return value;
+}
+
+// Identificación conservadora: ID explícito prevalece; nombre exacto único como alternativa.
+function _xlsFindCliente(row){
+  if(row['Cliente ID']){
+    const client=D.clientes.find(c=>c.id===String(row['Cliente ID']).trim());
+    if(!client) throw new Error('Cliente ID inexistente.');
+    if(row['Cliente (nombre)'] && client.nombre!==row['Cliente (nombre)']) throw new Error('Cliente ID y nombre no coinciden.');
+    return client;
+  }
+  const matches=D.clientes.filter(c=>c.nombre===row['Cliente (nombre)']);
+  if(matches.length!==1) throw new Error('Nombre de cliente inexistente o ambiguo; usá Cliente ID.');
+  return matches[0];
+}
+
+function _validateXlsRows(rows,tipo){
+  const keys=new Set();
+  rows.forEach((row,index)=>{
+    for(const key of Object.keys(row)){
+      if(!XLS_HEADERS[tipo].includes(key) && !(tipo==='cotizaciones' && key==='Cliente ID') && !(tipo==='clientes' && key==='Prioridad')) throw new Error(`Columna desconocida: ${key}.`);
+      if(typeof row[key]==='string') row[key]=row[key].trim();
+    }
+    const id=String(row.ID??'').trim(),name=row.Nombre;
+    if(tipo==='clientes' ? !name : !id) throw new Error(`Fila ${index+2}: falta ${tipo==='clientes'?'Nombre':'ID'}.`);
+    const key=id||name;
+    if(keys.has(key)) throw new Error(`Fila ${index+2}: clave repetida.`);
+    keys.add(key);
+    if(tipo==='clientes' && D.clientes.filter(c=>c.nombre===name).length>1 && !D.clientes.some(c=>c.id===id)) throw new Error('Nombre de cliente ambiguo.');
+    for(const field of ['Presupuesto Mensual','Horometro','Monto','Facturacion Dia']){
+      if(row[field]!==undefined && row[field]!=='') row[field]=_importNumber(row[field],field);
+    }
+    if(row['Facturacion Dia']!==undefined && row['Facturacion Dia']!=='' && (!Number.isInteger(row['Facturacion Dia']) || row['Facturacion Dia']<1 || row['Facturacion Dia']>31)) throw new Error('Facturacion Dia debe estar entre 1 y 31.');
+    for(const field of ['Requiere OC','Requiere HES','Incluye NS','Incluye Preventivo','Incluye Combustible','Incluye Plataforma','Incluye Bateria']){
+      if(row[field]!==undefined && row[field]!=='') row[field]=_importBoolean(row[field],field);
+    }
+    for(const field of ['Ultimo Preventivo','Proximo Preventivo','Ultimo Aceite','Ultima Bateria','Ultimo Refrigerante','Fecha Envio','Fecha Followup']){
+      if(row[field]!==undefined && row[field]!=='') _xlsDate(row[field]);
+    }
+    // Identificadores y datos de contacto de celdas numéricas se conservan como texto.
+    for(const field of ['ID','Cliente ID','Telefono']) if(row[field]!==undefined) row[field]=String(row[field]);
+  });
 }
 
 // ─── EXCEL: EXPORTAR ─────────────────────────────────────────────────────────
@@ -281,7 +333,9 @@ async function xlsExport(tipo, destino){
 
   if(tipo==='clientes'){
     const rows=D.clientes.map(c=>[c.id,c.nombre,c.tipo,c.ciudad,c.contacto,c.telefono,c.email,
-      c.frecuenciaVisita,c.presupuesto,c.ajuste,c.requiereOC?'SI':'NO',c.requiereHES?'SI':'NO',c.facturacion,c.estadoCliente]);
+      c.frecuenciaVisita,c.presupuesto,c.ajuste,c.requiereOC?'SI':'NO',c.requiereHES?'SI':'NO',
+      c.facturacion,c.facturacionDia??'',c.estadoCliente,c.incluyeNS?'SI':'NO',c.incluyePreventivo?'SI':'NO',
+      c.incluyeCombustible?'SI':'NO',c.incluyePlataforma?'SI':'NO',c.incluyeBateria?'SI':'NO',c.incluyeOtro||'']);
     ws=XLSX.utils.aoa_to_sheet([XLS_HEADERS.clientes,...rows]);
   } else if(tipo==='equipos'){
     const rows=(D.equipos||[]).map(e=>[
@@ -291,7 +345,7 @@ async function xlsExport(tipo, destino){
     ]);
     ws=XLSX.utils.aoa_to_sheet([XLS_HEADERS.equipos,...rows]);
   } else if(tipo==='cotizaciones'){
-    const rows=(D.cotizaciones||[]).map(c=>[c.id,clientName(c.clienteId),c.descripcion,
+    const rows=(D.cotizaciones||[]).map(c=>[c.id,c.clienteId,clientName(c.clienteId),c.descripcion,
       c.monto,c.fechaEnvio,c.fechaFollowup,c.responsable,c.estado,c.notas]);
     ws=XLSX.utils.aoa_to_sheet([XLS_HEADERS.cotizaciones,...rows]);
   } else if(tipo==='facturacion'){
