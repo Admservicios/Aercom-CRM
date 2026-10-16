@@ -4,15 +4,31 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Drive — seguimiento del paso 5
+
+Se agregó conciliación por contenido normalizado y última base compartida. `lastSaved` se conserva en el formato, pero ya no decide qué copia prevalece. Una base de otra carpeta/archivo no autoriza sobrescrituras. Cada pestaña mantiene su base en memoria, sin adoptar ciegamente la metadata escrita posteriormente por otra pestaña.
+
+Política aprobada: conservar ambas copias y pedir elección ante diferencias incompatibles. La elección afecta al objeto CRM completo; no mezcla registros. El diálogo permite descargar cada JSON, posponer y reabrir. Antes de reemplazar se guardan snapshots de ambos lados en `aercom-drive-recovery`. El botón de respaldos exporta el historial como una lista de entradas con `local` y `drive`; esa lista no es un backup único importable directamente. Para restaurar una versión, se debe extraer su objeto `local` o `drive` y validarlo como JSON del CRM. Las copias se conservan sin poda automática; falta definir una política de retención. Si no hay espacio, el reemplazo queda bloqueado y se mantienen disponibles las descargas individuales y el reintento.
+
+`aercom-drive-sync-base` guarda carpeta, archivo y SHA-256 de la base, sin credenciales. Se requiere Web Crypto en un contexto seguro (HTTPS o localhost). Los dos nuevos almacenes, como el resto del CRM, están en localStorage sin cifrado de aplicación.
+
+Las operaciones de sincronización se serializan dentro de una sesión. Cada sesión invalida respuestas antiguas al desconectar o cambiar token. Antes de sobrescribir se lee el remoto y se envía el ETag en `If-Match`; 412 produce un conflicto nuevo y la ausencia de ETag bloquea la escritura. El alta usa multipart para no dejar un archivo vacío entre creación y carga. Las búsquedas ambiguas detienen el flujo sin seleccionar ni eliminar duplicados. Un backup conocido que desapareció no se recrea automáticamente.
+
+Verificación: 26 pruebas nuevas más las 76 anteriores (102 aprobadas). Se actualizaron pruebas anteriores para aislar transporte y para exigir una base conocida cuando solo cambia Drive. Chromium verificó el flujo de elección y respaldos con HTTP/ETag simulados y Chart sustituido. No se usó una cuenta real.
+
+Antes de fusionar: validar en una cuenta de prueba que Drive expone ETag al navegador y respeta If-Match en las subidas de JSON. No se pudo consultar la documentación oficial desde este entorno (destino bloqueado) ni verificar el servidor real; las pruebas simulan el contrato condicional. Si no hay ETag, el código falla de forma cerrada y conserva las copias en lugar de sobrescribir.
+
+Límites: la exclusión de escrituras es por sesión, no un bloqueo distribuido. Dos dispositivos pueden crear simultáneamente el primer archivo/carpeta; Drive permite nombres repetidos y la siguiente consulta se detiene ante esa ambigüedad. No se cancela una escritura ya recibida por el servidor al desconectar; se impide aplicar su respuesta a la sesión nueva. No hay fusión por entidad, limpieza de duplicados, retención automática de respaldos ni renovación automática de tokens. Continúa pendiente coordinar undo/redo con la sincronización.
+
 ## Drive — seguimiento del paso 4
 
 Las operaciones de preparación y subida verifican respuestas HTTP y la estructura mínima de listas/IDs. Un fallo de búsqueda no dispara creación; un fallo de PATCH no confirma el backup ni devuelve éxito al exportador Excel. El indicador conserva los cambios pendientes y solo afirma que hay una copia local cuando su escritura terminó. La confirmación se compara con el snapshot enviado para no limpiar cambios realizados mientras esperaba la red.
 
-Los callbacks manual y automático capturan errores de preparación y no dejan Drive listo en ese caso. La reconexión ya no muestra tras tres segundos un mensaje de ausencia de cambios sin verificarlos. Se conservó la lógica de no descargar al reconectar automáticamente.
+Los callbacks manual y automático capturan errores de preparación y no dejan Drive listo en ese caso. La reconexión ya no muestra tras tres segundos un mensaje de ausencia de cambios sin verificarlos. En el paso 4 se conservó la lógica de no descargar al reconectar automáticamente; el paso 5 la reemplaza por conciliación protegida.
 
 Verificación: 24 pruebas con HTTP/OAuth/DOM/almacenamiento simulados y las 52 anteriores (76 aprobadas). Chromium comprobó copia local y estado pendiente tras 403, confirmación 204, cambios durante una subida, mensajes del exportador Excel y preparación fallida. No se probó una cuenta real; SheetJS y Chart se sustituyeron por dobles en el navegador.
 
-Pendiente: conflictos y duplicados entre dispositivos/sesiones, respuestas fuera de orden entre subidas simultáneas, desconexión durante una petición y renovación de credenciales. La comparación de snapshots evita un indicador falso, pero no serializa ni fusiona escrituras remotas. Un error no se reintenta automáticamente; el siguiente guardado puede volver a intentar la subida.
+El paso 5 agrega conciliación, detección de duplicados, serialización y protección de sesión. Las limitaciones y la validación real pendiente se detallan arriba; sigue pendiente la renovación de credenciales. La comparación de snapshots evita un indicador falso, pero no serializa ni fusiona escrituras remotas. Un error no se reintenta automáticamente; el siguiente guardado puede volver a intentar la subida.
 
 ## Integridad — seguimiento del paso 3
 
@@ -22,7 +38,7 @@ La normalización existente se extrajo a `_normalizeData()` para compartir migra
 
 Verificación: 36 pruebas nuevas en `tests/data-import.test.js`, más las 16 anteriores (52 en total). Cubren casos incompatibles, backup semilla, migración heredada, exportación/reimportación, errores de lectura, cuota, render y restauración, y descargas de Drive simuladas. Chromium comprobó importación y recarga local, nueve pantallas con un backup representativo, recuperación ante render/cuota y carga remota simulada. No se usó Drive real ni se verificó el dibujo de gráficos.
 
-Pendiente: integridad referencial entre entidades, reglas de conflictos/duplicados de Drive y endurecimiento de la carga inicial de localStorage corrupto. La validación estructural no certifica seguridad del renderizado en los módulos restantes ni limita el tamaño de los archivos. Los backups con tipos incompatibles requieren revisión; no se reparan automáticamente.
+Pendiente: integridad referencial entre entidades, validación real de las protecciones de Drive y endurecimiento de la carga inicial de localStorage corrupto. La validación estructural no certifica seguridad del renderizado en los módulos restantes ni limita el tamaño de los archivos. Los backups con tipos incompatibles requieren revisión; no se reparan automáticamente.
 
 ## Integridad — seguimiento del paso 2
 
@@ -65,7 +81,7 @@ Pendiente: revisión contextual de los demás módulos y restantes hallazgos de 
 ## Otras observaciones vigentes
 
 - La carga y el guardado de Drive usan `STORAGE_KEY` desde los pasos 3 y 4; la observación anterior sobre literales duplicados quedó resuelta.
-- La descarga JSON de Drive valida su estructura desde el paso 3. Siguen pendientes los conflictos entre dispositivos y la revisión de todos los contextos de renderizado; validar la forma no autentica el origen del contenido del archivo.
+- La descarga JSON de Drive valida su estructura desde el paso 3. El paso 5 agrega detección de conflictos entre dispositivos; sigue pendiente la revisión de todos los contextos de renderizado; validar la forma no autentica el origen del contenido del archivo.
 
 ---
 
