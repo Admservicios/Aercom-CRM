@@ -40,6 +40,10 @@ No hay eventos, store centralizado ni sistema de reactividad: cada módulo re-re
 
 ## Persistencia
 
+Contrato de guardado: `persist()` devuelve `true` al completar la operación y `false` al fallar. Los consumidores directos deben detener su flujo con `if(persist()===false) return;` antes de cerrar formularios o anunciar éxito. La recuperación restaura el estado confirmado y las pilas; si el navegador impide restaurar/verificar la copia local, la interfaz pide exportar antes de recargar. El borrador visible sigue sin estar guardado.
+
+`_lastSavedSnapshot` (Storage) se actualiza en arranque, guardados base y aplicaciones exitosas de backups, y se restaura si falla una aplicación. `_applyImportedData()` trata un callback que devuelve false como fallo. No omitir esta comprobación al agregar un nuevo consumidor ni mezclar scripts anteriores con el contrato nuevo: las URLs afectadas están versionadas en index.html.
+
 - **LocalStorage**: `D` completo se guarda como JSON en `localStorage['aercom-data']` (constante `STORAGE_KEY` en `js/storage.js`). `loadData()` lo lee al arrancar y aplica normalizaciones de retrocompatibilidad (arrays obligatorios, remapeo de estados heredados).
 - **`persist()`** (index.html): guarda mediante `_persistBase()` y agrega al historial la copia local anterior después del guardado exitoso; si no había copia usa el snapshot de arranque. Limpia rehacer y programa Drive. Los módulos llaman a esta función; CSV/Excel la invocan mediante `_applyTableImport()`/`_applyImportedData()`. El guardado ordinario de un formulario aún puede dejar D modificado en memoria si falla por cuota; no todas las ediciones son transaccionales.
 - **Undo/Redo**: `_restoreHistory()` aplica el snapshot mediante `_applyImportedData(candidate,_origPersist)`, mueve las pilas solo tras el éxito y programa Drive. Límite de 30 acciones, estado completo y sesión actual; no persiste al recargar. Los campos editables conservan Ctrl/Meta+Z nativo; fuera de ellos funcionan Ctrl/Meta+Z, Ctrl/Meta+Y y Ctrl/Meta+Shift+Z.

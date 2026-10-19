@@ -11,15 +11,15 @@
      principal: éste llama a loadData() y renderDashboard() de forma síncrona
      durante la inicialización -->
 <script src="js/utils.js"></script>
-<script src="js/storage.js"></script>
+<script src="js/storage.js?v=local-save-recovery-20261019"></script>
 <script src="js/modules/dashboard.js"></script>
-<script src="js/modules/clientes.js"></script>
-<script src="js/modules/equipos.js"></script>
-<script src="js/modules/facturacion.js"></script>
-<script src="js/modules/cotizaciones.js"></script>
-<script src="js/modules/pedidos.js"></script>
-<script src="js/modules/calendario.js"></script>
-<script src="js/modules/recordatorios.js"></script>
+<script src="js/modules/clientes.js?v=local-save-recovery-20261019"></script>
+<script src="js/modules/equipos.js?v=local-save-recovery-20261019"></script>
+<script src="js/modules/facturacion.js?v=local-save-recovery-20261019"></script>
+<script src="js/modules/cotizaciones.js?v=local-save-recovery-20261019"></script>
+<script src="js/modules/pedidos.js?v=local-save-recovery-20261019"></script>
+<script src="js/modules/calendario.js?v=local-save-recovery-20261019"></script>
+<script src="js/modules/recordatorios.js?v=local-save-recovery-20261019"></script>
 <script src="js/modules/theme.js"></script>
 <script src="js/modules/reportes.js"></script>
 <script src="js/modules/excel.js"></script>
@@ -952,21 +952,60 @@ document.addEventListener('keydown', e => {
 const _origPersist=_persistBase;
 let _inPersist=false;
 function persist(){
-  if(_inPersist) return;
+  if(_inPersist) return false;
   _inPersist=true;
+  const history=_history.slice(), future=_future.slice();
+  const unsaved=typeof _unsaved==='boolean' ? _unsaved : null;
+  let stored, read=false;
+  let previous=_lastSavedSnapshot || (typeof _initialSnapshot==='string' ? _initialSnapshot : null);
+  let recovery=previous;
   try{
-    // Snapshot para undo ANTES de guardar: D ya fue mutado por el módulo
-    // llamante antes de llegar acá, así que el estado previo a este cambio
-    // es el que todavía está guardado en localStorage, no el D actual.
-    const prevSaved = localStorage.getItem(STORAGE_KEY);
-    const previous=prevSaved !== null ? prevSaved : (_initialSnapshot || JSON.stringify(D));
+    stored=localStorage.getItem(STORAGE_KEY);
+    read=true;
+    if(stored!==null){
+      const parsed=JSON.parse(stored);
+      if(!parsed || typeof parsed!=='object' || Array.isArray(parsed)) throw new Error('Copia local incompatible.');
+      previous=stored;
+      if(!recovery) recovery=stored;
+    }
+    if(!previous) throw new Error('No hay una copia anterior para recuperar.');
     _origPersist();
     _history.push(previous);
     if(_history.length > MAX_HIST) _history.shift();
     _future.length = 0;
-  } finally { _inPersist=false; }
+  }catch(error){
+    let recovered=false, restored=read;
+    try{if(recovery){D=JSON.parse(recovery);_lastSavedSnapshot=recovery;recovered=true;}}catch{}
+    _history.splice(0,_history.length,...history);
+    _future.splice(0,_future.length,...future);
+    if(read){
+      try{
+        if(localStorage.getItem(STORAGE_KEY)!==stored){
+          if(stored===null) localStorage.removeItem(STORAGE_KEY);
+          else localStorage.setItem(STORAGE_KEY,stored);
+        }
+      }catch{restored=false;}
+    }
+    // Actualizar el fondo sin reconstruir el formulario: conservar el borrador.
+    try{renderModule();updateSidebarBadges();}catch{}
+    try{
+      if(!restored && recovered) markUnsaved();
+      else if(unsaved!==null){if(unsaved) markUnsaved();else markSaved();}
+      _updateUndoBtn();
+    }catch{}
+    const message=!recovered
+      ? '⚠ No se pudo guardar ni recuperar el estado anterior. Exportá los datos antes de recargar.'
+      : !restored
+        ? '⚠ No se pudo verificar o restaurar la copia local. Exportá los datos recuperados antes de recargar.'
+        : '⚠ No se guardó el cambio. Se recuperaron los datos anteriores; revisá el almacenamiento y reintentá.';
+    const status=document.getElementById('sb-saved');
+    if(status) status.textContent=message;
+    toast(message);
+    return false;
+  }finally{_inPersist=false;}
   _scheduleDriveSave();
   _updateUndoBtn();
+  return true;
 }
 
 

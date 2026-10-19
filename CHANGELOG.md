@@ -4,6 +4,14 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — recuperación de guardados locales fallidos
+
+- persist() devuelve true al completar el guardado y false ante fallo, recuperando D, las pilas e intentando restaurar la copia local. Se mantiene un checkpoint del estado confirmado de esta pestaña para recuperarse incluso si la lectura está bloqueada.
+- Los consumidores de Clientes/Equipos/Cotizaciones/Pedidos/Recordatorios/Calendario/Facturación detienen el cierre y los mensajes de éxito ante false. El formulario queda abierto con el borrador. Importaciones detectan false como fallo y mantienen su recuperación; el reset conserva la copia anterior hasta confirmar el reemplazo.
+- Se restablecen indicadores y se informa si la copia local no pudo verificarse/restaurarse, indicando exportar el estado recuperado antes de recargar. No se programa un nuevo guardado de Drive en el camino de fallo.
+- URLs versionadas de Storage y los siete módulos afectados evitan combinar el contrato nuevo con scripts anteriores en caché.
+- Verificación: 227 pruebas Node (20 nuevas y actualización del contrato en una prueba de historial). Chromium aislado: siete formularios con cuota simulada, borrador, reintento y recarga, estado mensual, lectura bloqueada, error posterior a escritura, recuperación impedida y undo/redo. Cero errores JS; datos ficticios, Chart simulado y Drive desconectado.
+
 ## Sin publicar — conservar campos al editar equipos y cotizaciones
 
 - Los guardados parten del registro existente y reemplazan los campos del formulario, conservando marca, ubicación, metadatos importados, valores 0/false/null y datos de facturación. Las altas mantienen sus valores predeterminados sin heredar datos de otro registro.

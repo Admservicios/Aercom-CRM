@@ -178,7 +178,7 @@ function setupDrag(){
       const newEst=body.dataset.estado;
       if(cot){
         if(newEst==='Facturada') confirmFacturacion(cot.id);
-        else { cot.estado=newEst; persist(); renderPipeline(); }
+        else { cot.estado=newEst; if(persist()===false) return; renderPipeline(); }
       }
       dragId=null;
     });
@@ -211,7 +211,7 @@ function doFacturar(cotId){
   cot.estado='Facturada';
   cot.nroFactura=(document.getElementById('fact-nro')||{}).value.trim()||'';
   cot.fechaFactura=(document.getElementById('fact-fecha')||{}).value||today();
-  persist();
+  if(persist()===false) return;
   closeModal();
   renderPipeline();
   toast(`${cotId} marcada como Facturada`);
@@ -343,7 +343,7 @@ function saveQuote(){
     if(D.cotizaciones.find(c=>c.id===id)){toast('⚠ Ya existe una cotización con ese número');return;}
     D.cotizaciones.push(obj);
   }
-  persist(); closeModal(); renderModule();
+  if(persist()===false) return; closeModal(); renderModule();
   toast(`Cotización ${id} guardada`);
 }
 
@@ -352,7 +352,7 @@ function deleteQuote(id){
   confirmDel(`Cotización ${_esc(id)}`,()=>{
     if(!canDeleteRecord('cotizaciones',id)) return;
     D.cotizaciones=D.cotizaciones.filter(c=>c.id!==id);
-    persist(); closeModal(); renderModule();
+    if(persist()===false) return; closeModal(); renderModule();
     toast(`Cotización ${id} eliminada`);
   });
 }
@@ -363,6 +363,6 @@ function delQuoteConfirm(qid){
   confirmDel(c?`${_esc(c.id)} — ${_esc(clientName(c.clienteId))}`:_esc(qid),()=>{
     if(!canDeleteRecord('cotizaciones',qid)) return;
     D.cotizaciones=D.cotizaciones.filter(x=>x.id!==qid);
-    persist();renderPipeline();toast(`Cotización ${qid} eliminada`);
+    if(persist()===false) return;renderPipeline();toast(`Cotización ${qid} eliminada`);
   });
 }

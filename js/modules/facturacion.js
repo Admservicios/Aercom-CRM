@@ -179,7 +179,7 @@ function setFactEst(cid,st){
   if(!curMonth) curMonth=nowMonthStr();
   if(!D.facturacion_estados[curMonth]) D.facturacion_estados[curMonth]={};
   D.facturacion_estados[curMonth][cid]=st;
-  persist();
+  if(persist()===false) return;
   renderFacturacion();
 }
 
@@ -187,13 +187,13 @@ function excludeFactMonth(cid){
   if(!curMonth) curMonth=nowMonthStr();
   if(!D.facturacion_estados[curMonth]) D.facturacion_estados[curMonth]={};
   D.facturacion_estados[curMonth][cid]='Excluido';
-  persist();renderFacturacion();toast('Cliente excluido del mes');
+  if(persist()===false) return;renderFacturacion();toast('Cliente excluido del mes');
 }
 
 function restoreFactMonth(cid){
   if(!curMonth) curMonth=nowMonthStr();
   if(D.facturacion_estados[curMonth]) delete D.facturacion_estados[curMonth][cid];
-  persist();renderFacturacion();toast('Cliente restablecido');
+  if(persist()===false) return;renderFacturacion();toast('Cliente restablecido');
 }
 
 function delFactConfirm(cid){
@@ -202,6 +202,6 @@ function delFactConfirm(cid){
   confirmDel(c?_esc(c.nombre):_esc(cid),()=>{
     if(!canDeleteRecord('clientes',cid)) return;
     D.clientes=D.clientes.filter(x=>x.id!==cid);
-    persist();renderFacturacion();toast('Cliente eliminado');
+    if(persist()===false) return;renderFacturacion();toast('Cliente eliminado');
   });
 }

@@ -345,7 +345,7 @@ function saveClient(id,nextId){
   };
   const i=D.clientes.findIndex(x=>x.id===id);
   if(i>-1) D.clientes[i]=obj; else D.clientes.push(obj);
-  persist(); closeModal(); renderClientes();
+  if(persist()===false) return; closeModal(); renderClientes();
   toast(`Cliente "${nombre}" guardado`);
 }
 
@@ -355,7 +355,7 @@ function delClientConfirm(id){
   confirmDel(c?_esc(c.nombre):_esc(id),()=>{
     if(!canDeleteRecord('clientes',id)) return;
     D.clientes=D.clientes.filter(x=>x.id!==id);
-    persist(); renderClientes(); toast('Cliente eliminado');
+    if(persist()===false) return; renderClientes(); toast('Cliente eliminado');
   });
 }
 
@@ -858,7 +858,7 @@ function saveFichaFacturacion(){
     incluyeBateria:     (document.getElementById('ff-inc-bat') ||{checked:false}).checked,
     incluyeOtro:        ((document.getElementById('ff-inc-otro')||{value:''}).value||'').trim(),
   });
-  persist();
+  if(persist()===false) return;
   fichaTab('facturacion');
 }
 

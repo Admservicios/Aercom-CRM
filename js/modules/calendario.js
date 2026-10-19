@@ -378,7 +378,7 @@ function saveCalEvento(eventoId){
   } else {
     D.eventos.push({ id:`EV-${Date.now()}`, ...datos });
   }
-  persist();
+  if(persist()===false) return;
   closeModal();
   renderCalendario();
   toast(eventoId ? `✓ Evento "${titulo}" actualizado` : `✓ Evento "${titulo}" agregado`);
@@ -388,7 +388,7 @@ function delCalEvento(eventoId){
   const ev=(D.eventos||[]).find(e=>e.id===eventoId);
   confirmDel(ev?_esc(ev.titulo):_esc(eventoId),()=>{
     D.eventos=D.eventos.filter(e=>e.id!==eventoId);
-    persist();
+    if(persist()===false) return;
     closeModal();
     renderCalendario();
     toast('Evento eliminado');
