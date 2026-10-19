@@ -4,6 +4,12 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Publicación — versión del enlace CSS
+
+El index usa css/style.css?v=calendar-cells-20261019 para que la publicación de las celdas uniformes no reutilice la URL anterior. Se comprobó que el CSS de main en 9c52ee9 contiene la corrección. La consulta del dominio de Pages devolvió 403 desde el entorno, por lo que el estado servido al usuario no pudo inspeccionarse directamente.
+
+En Chromium con caché HTTP habilitada y max-age, una navegación reutilizó el CSS anterior y mantuvo una columna sobredimensionada; cambiar el enlace versionado produjo una nueva petición y columnas iguales. El calendario completo volvió a pasar las comprobaciones a tres anchos. Esta prueba demuestra la protección frente a caché; no diagnostica definitivamente la captura sin conocer su URL/recursos cargados. Si el HTML publicado también está en caché, puede requerir recarga completa. No limpiar localStorage ni los datos del navegador para resolver estilos.
+
 ## Calendario — dimensiones independientes del contenido
 
 Corregida la expansión de columnas por el tamaño mínimo intrínseco de tracks 1fr y de filas por alturas mínimas abiertas. css/style.css usa siete columnas minmax(0,1fr), filas mensuales de 120 px y eventos semanales de 180 px. Las celdas tienen mínimo cero y overflow vertical interno. El ancho se adapta al contenedor, con columnas iguales; el contenido no modifica la geometría. No se modificó JavaScript, persistencia ni formato de eventos.
