@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — restauración validada desde recuperación
+
+- Pantalla de recuperación con motivo de rechazo y restauración explícita desde un archivo validado, previa descarga/verificación del original y confirmación del reemplazo completo. Se conserva el bloqueo de edición mientras los datos no carguen correctamente.
+- Validación antes de confirmar y al aplicar, control de sesión/copia actual y manejo de cancelación, cuota y errores de lectura. El reemplazo usa una única escritura de datos; recarga manual indicada si la recarga automática falla después de guardar.
+- Pausa de reconexión automática a Drive en esta pestaña tras recuperar; no se toca la preferencia compartida ni se conecta una cuenta real. Storage tiene URL versionada.
+- 265 pruebas Node aprobadas (17 nuevas). Chromium aislado verificó el flujo, reintentos, pausa y nueve vistas con una copia de usuario revisada, sin errores JS. Los archivos del usuario y sus correcciones particulares quedan fuera del repositorio.
+
 ## Sin publicar — inicio seguro con almacenamiento dañado o bloqueado
 
 - Carga validada antes de asignar D; DEFAULT se utiliza únicamente si la clave no existe. Los datos incompatibles o inaccesibles bloquean la edición y la reconexión automática con Drive sin sustituir la copia local.

@@ -11,6 +11,8 @@ const STORAGE_KEY = "aercom-data";
 let _lastSavedSnapshot = null;
 // Un arranque rechazado nunca habilita edición ni sincronización con semillas.
 let _storageLoadError = null;
+let _storageRecoveryExported = false;
+let _storageRecoveryBusy = false;
 
 /**
  * NOTA: la variable global `D` ya es declarada por el script
@@ -34,6 +36,7 @@ let _storageLoadError = null;
 function loadData() {
 
     let raw = null;
+    _storageRecoveryExported = false;
     try {
         raw = localStorage.getItem(STORAGE_KEY);
         const candidate = _parseImportedData(raw === null ? JSON.stringify(DEFAULT) : raw);
@@ -42,9 +45,9 @@ function loadData() {
         _lastSavedSnapshot = snapshot;
         _storageLoadError = null;
         return true;
-    } catch {
+    } catch (error) {
         _lastSavedSnapshot = null;
-        _storageLoadError = { raw };
+        _storageLoadError = { raw, reason: error.message };
         return false;
     }
 }
@@ -61,6 +64,9 @@ function _showStorageRecovery() {
         ? 'La copia local contiene datos dañados o incompatibles. No se reemplazó por datos de ejemplo. Descargá el original y conservá una copia antes de revisarlo.'
         : 'El navegador no permite leer el almacenamiento local. No se cargaron datos de ejemplo. Revisá los permisos del sitio y reintentá; no borres los datos del navegador.';
     document.getElementById('storage-recovery-download').disabled = !readable;
+    document.getElementById('storage-recovery-restore').disabled = !readable;
+    document.getElementById('storage-recovery-detail').textContent = readable
+        ? 'Detalle: ' + _storageLoadError.reason : '';
     dialog.addEventListener('cancel', event => event.preventDefault());
     dialog.showModal();
     document.getElementById('storage-recovery-retry').focus();
@@ -77,12 +83,67 @@ function _downloadStorageOriginal() {
         link.href = url;
         link.download = 'aercom-data-original.txt';
         link.click();
+        _storageRecoveryExported = true;
         status.textContent = 'Descarga solicitada. Verificá el archivo antes de revisar la copia local. El CRM sigue bloqueado.';
     } catch {
         status.textContent = 'No se pudo iniciar la descarga. La copia local sigue intacta; no borres los datos del navegador.';
     } finally {
         if (url) setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
+}
+
+/** Reemplazo explícito desde recuperación; no inferir ni reparar relaciones. */
+function _restoreStorageBackup(text, session) {
+    if (!session || session !== _storageLoadError || session.raw === null) {
+        throw new Error('La recuperación ya no corresponde a la copia actual. Reintentá la carga.');
+    }
+    const candidate = _parseImportedData(text);
+    const serialized = JSON.stringify(candidate);
+    if (localStorage.getItem(STORAGE_KEY) !== session.raw) {
+        throw new Error('La copia local cambió desde otra pestaña. No se reemplazó; reintentá la carga.');
+    }
+    // Pausar la reconexión automática de esta pestaña tras recargar.
+    // La restauración no debe iniciar una sobrescritura remota sin revisión.
+    sessionStorage.setItem('aercom-recovery-pause-drive', '1');
+    // setItem es atómico: si falla por cuota/permisos conserva la cadena anterior.
+    localStorage.setItem(STORAGE_KEY, serialized);
+}
+
+function _importStorageRecovery(ev) {
+    const input = ev.target, file = input.files[0];
+    const status = document.getElementById('storage-recovery-status');
+    if (!file || _storageRecoveryBusy) { input.value = ''; return; }
+    if (!_storageRecoveryExported || !document.getElementById('storage-recovery-backed-up').checked) {
+        status.textContent = 'Primero descargá el original y confirmá que guardaste la copia.';
+        input.value = '';
+        return;
+    }
+    const session = _storageLoadError;
+    const reader = new FileReader();
+    _storageRecoveryBusy = true;
+    const finish = () => { _storageRecoveryBusy = false; input.value = ''; };
+    reader.onload = event => {
+        let restored = false;
+        try {
+            // Validar antes de pedir confirmación; validar de nuevo al aplicar.
+            const candidate = _parseImportedData(event.target.result);
+            const counts = ['clientes', 'equipos', 'cotizaciones'].map(key => `${candidate[key].length} ${key}`).join(', ');
+            if (!window.confirm(`La copia seleccionada contiene ${counts}. Se reemplazará toda la copia local, no se fusionarán registros. ¿Restaurar y recargar el CRM?`)) return;
+            _restoreStorageBackup(event.target.result, session);
+            restored = true;
+            status.textContent = 'Copia restaurada. Recargando; Drive quedará desconectado hasta que lo conectes manualmente.';
+        } catch (error) {
+            status.textContent = 'No se restauró la copia: ' + error.message;
+        } finally { finish(); }
+        if (restored) {
+            try { location.reload(); }
+            catch { status.textContent = 'La copia se restauró. Recargá el CRM manualmente; Drive seguirá sin conexión automática en esta pestaña.'; }
+        }
+    };
+    reader.onerror = () => { status.textContent = 'No se pudo leer el archivo. La copia local se conserva.'; finish(); };
+    reader.onabort = () => { status.textContent = 'Lectura cancelada. La copia local se conserva.'; finish(); };
+    try { reader.readAsText(file); }
+    catch { status.textContent = 'No se pudo leer el archivo. La copia local se conserva.'; finish(); }
 }
 
 /** Normalización existente compartida por el arranque y los backups validados. */

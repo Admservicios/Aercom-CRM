@@ -11,7 +11,7 @@
      principal: éste llama a loadData() y renderDashboard() de forma síncrona
      durante la inicialización -->
 <script src="js/utils.js"></script>
-<script src="js/storage.js?v=safe-startup-20261019"></script>
+<script src="js/storage.js?v=validated-recovery-20261019"></script>
 <script src="js/modules/dashboard.js"></script>
 <script src="js/modules/clientes.js?v=local-save-recovery-20261019"></script>
 <script src="js/modules/equipos.js?v=local-save-recovery-20261019"></script>
@@ -30,11 +30,15 @@
 <dialog id="storage-recovery" aria-labelledby="storage-recovery-title" aria-describedby="storage-recovery-message" style="--t1:#0f172a;--t2:#334155;--border:#cbd5e1;--hover:#f1f5f9;color-scheme:light;box-sizing:border-box;width:calc(100% - 32px);max-width:520px;max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #cbd5e1;border-radius:12px;padding:24px;background:#fff;color:#0f172a">
   <h2 id="storage-recovery-title" style="margin-top:0">No se pudieron cargar los datos</h2>
   <p id="storage-recovery-message"></p>
-  <p>La edición, las importaciones y la conexión con Drive permanecerán bloqueadas hasta que la copia pueda cargarse correctamente.</p>
+  <p id="storage-recovery-detail" style="overflow-wrap:anywhere"></p>
+  <p>La edición y la conexión con Drive permanecerán bloqueadas hasta cargar una copia válida. Podés restaurar una copia revisada después de guardar el original.</p>
   <div style="display:flex;flex-wrap:wrap;gap:10px">
     <button id="storage-recovery-download" class="btn btn-ghost" type="button" onclick="_downloadStorageOriginal()">Descargar original</button>
     <button id="storage-recovery-retry" class="btn btn-primary" type="button" onclick="location.reload()">Reintentar carga</button>
   </div>
+  <p><label><input id="storage-recovery-backed-up" type="checkbox"> Guardé y verifiqué una copia del original descargado.</label></p>
+  <button id="storage-recovery-restore" class="btn btn-outline" type="button" onclick="document.getElementById('storage-recovery-file').click()">Restaurar copia validada…</button>
+  <input id="storage-recovery-file" type="file" accept=".json,.txt,application/json,text/plain" hidden onchange="_importStorageRecovery(event)">
   <p id="storage-recovery-status" role="status" style="margin-bottom:0"></p>
 </dialog>
 
@@ -1104,7 +1108,7 @@ if(loadData()){
   markSaved();
   // La preferencia opcional de Drive no debe interrumpir un inicio válido.
   try{
-    if(localStorage.getItem('aercom-drive-connected')==='1') setTimeout(_tryAutoConnectDrive, 1500);
+    if(sessionStorage.getItem('aercom-recovery-pause-drive')!=='1' && localStorage.getItem('aercom-drive-connected')==='1') setTimeout(_tryAutoConnectDrive, 1500);
   }catch{ /* Conexión manual disponible; no asumir que ya estaba conectado. */ }
 }else{
   _showStorageRecovery();
