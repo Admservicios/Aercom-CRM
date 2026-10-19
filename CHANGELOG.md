@@ -4,6 +4,12 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — seguridad de la confirmación de facturación
+
+- Escapado contextual del ID en texto HTML y del número/fecha de factura en sus atributos value. Los datos originales y el guardado de la factura se conservan; no se alteran estados ni lógica de persistencia.
+- Seis pruebas nuevas reproducen las tres interpolaciones sin protección y cubren también valores vacíos, ausencia de mutación al abrir, guardado literal, campos adicionales y cotización inexistente. Antes de corregir fallaban los tres casos de renderizado; después pasan 192 pruebas Node.
+- Chromium aislado verificó que etiquetas/atributos manipulados no crean imágenes ni manejadores en el formulario; cancelar no modifica datos y confirmar/recargar conserva los valores literales. Cero errores JS; Chart simulado, datos ficticios y Drive desconectado.
+
 ## Sin publicar — recarga de estilos del calendario
 
 - El enlace de css/style.css incluye una versión para solicitar una URL nueva tras publicar las celdas uniformes. La corrección de geometría ya está en main; una copia anterior de CSS en caché puede conservar la distribución vieja.

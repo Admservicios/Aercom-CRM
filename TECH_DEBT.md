@@ -4,6 +4,14 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Seguridad — confirmación de facturación
+
+Corregidas tres interpolaciones de confirmFacturacion() en js/modules/cotizaciones.js: cotId se escapa dentro de strong; nroFactura y fechaFactura se escapan en atributos HTML entre comillas. El título usa textContent y el botón sigue leyendo el ID desde su data-id escapado. doFacturar conserva los valores originales, sin guardar entidades HTML.
+
+Seis pruebas nuevas en tests/invoice-confirmation.test.js; tres casos fallaban contra el código anterior y pasan después de corregir. Suite completa: 192 aprobadas, ninguna fallida/omitida. Chromium aislado comprobó ausencia de etiquetas y atributos ejecutables en el formulario ante datos manipulados, foco, cancelación sin mutación, confirmación y recarga con ID y número literales, campos adicionales y otra cotización intacta. Sin errores JS; Chart simulado y sin Drive real. El script de navegador es temporal y no integra la suite versionada.
+
+Alcance limitado a este formulario. Siguen pendientes la revisión de otras interpolaciones de Cotizaciones/Pedidos, conservación de campos al editar equipos/cotizaciones, transacciones de formularios, carga local corrupta e integridad referencial. No se valida toda fecha por este cambio: se evita que su texto construya HTML adicional. Los conflictos de Drive del PR #3 continúan fuera de main.
+
 ## Publicación — versión del enlace CSS
 
 El index usa css/style.css?v=calendar-cells-20261019 para que la publicación de las celdas uniformes no reutilice la URL anterior. Se comprobó que el CSS de main en 9c52ee9 contiene la corrección. La consulta del dominio de Pages devolvió 403 desde el entorno, por lo que el estado servido al usuario no pudo inspeccionarse directamente.
