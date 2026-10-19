@@ -7,6 +7,8 @@
  */
 
 const STORAGE_KEY = "aercom-data";
+// Última copia confirmada en esta pestaña: recuperación si no se puede leer storage.
+let _lastSavedSnapshot = null;
 
 /**
  * NOTA: la variable global `D` ya es declarada por el script
@@ -41,6 +43,7 @@ function loadData() {
     const legacy = D.facturacion_clientes && D.facturacion_clientes.length;
     D = _normalizeData(D);
     if (legacy) localStorage.setItem(STORAGE_KEY, JSON.stringify(D));
+    _lastSavedSnapshot = JSON.stringify(D);
 
 }
 
@@ -192,6 +195,7 @@ function _parseImportedData(text) {
 /** Reemplazo con recuperación de datos e historial ante errores de render o guardado. */
 function _applyImportedData(candidate, save) {
     const previous = D;
+    const previousSnapshot = _lastSavedSnapshot;
     const stored = localStorage.getItem(STORAGE_KEY);
     const history = typeof _history === 'undefined' ? null : _history.slice();
     const future = typeof _future === 'undefined' ? null : _future.slice();
@@ -200,9 +204,11 @@ function _applyImportedData(candidate, save) {
         // Render antes de persistir: un fallo no debe guardar datos incompatibles.
         renderModule();
         updateSidebarBadges();
-        save();
+        if (save() === false) throw new Error("No se pudo guardar el cambio. Los datos anteriores se conservan.");
+        _lastSavedSnapshot = JSON.stringify(D);
     } catch (error) {
         D = previous;
+        _lastSavedSnapshot = previousSnapshot;
         if (history) _history.splice(0, _history.length, ...history);
         if (future) _future.splice(0, _future.length, ...future);
         let restored = true;
@@ -241,14 +247,16 @@ function _applyImportedData(candidate, save) {
 function _persistBase() {
 
     D.lastSaved = today();
+    const serialized = JSON.stringify(D);
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(D));
+    localStorage.setItem(STORAGE_KEY, serialized);
 
     document.getElementById("sb-saved").textContent = "Guardado en memoria ✓";
 
     markUnsaved();
 
     updateSidebarBadges();
+    _lastSavedSnapshot = serialized;
 
 }
 
@@ -306,11 +314,10 @@ function importData(ev) {
 
 function resetStorage() {
 
-    localStorage.removeItem(STORAGE_KEY);
-
+    // Conservar la copia anterior hasta que el reemplazo termine correctamente.
     D = JSON.parse(JSON.stringify(DEFAULT));
 
-    persist();
+    return persist();
 
 }
 

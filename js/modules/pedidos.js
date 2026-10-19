@@ -255,7 +255,7 @@ function savePedido(pid, newId){
     const cot=D.cotizaciones.find(c=>c.id===obj.cotizacionId);
     if(cot&&!['A facturar','Facturada','Ejecutada'].includes(cot.estado)){cot.estado='A facturar';toast(`Servicio realizado — ${cot.id} lista para facturar`);}
   }
-  persist();
+  if(persist()===false) return;
   closeModal();
   if(curModule==='pedidos') renderPedidos();
   else toast(`Pedido ${obj.id} guardado`);
@@ -264,7 +264,7 @@ function savePedido(pid, newId){
 function delPedidoConfirm(id){
   confirmDel(`Pedido ${id}`, ()=>{
     D.pedidos=D.pedidos.filter(p=>p.id!==id);
-    persist();
+    if(persist()===false) return;
     closeModal();
     if(curModule==='pedidos') renderPedidos();
     toast(`Pedido ${id} eliminado`);
@@ -284,7 +284,7 @@ function advancePedido(id){
       else toast(`Pedido ${id} marcado como Realizado`);
     } else toast(`Pedido ${id} marcado como Realizado`);
   } else toast(`Pedido ${id} → ${next}`);
-  persist();
+  if(persist()===false) return;
   renderPedidos();
 }
 

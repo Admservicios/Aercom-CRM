@@ -66,7 +66,7 @@ function equipInlineDate(el, equipId, fieldKey){
       const d=FD[cli?.frecuenciaVisita||''];
       eq.proximaVisita=v&&d?addDays(v,d):null;
     }
-    persist();
+    if(persist()===false) return;
     toast('✓ Fecha actualizada');
     if(inMain) renderEquipos(); else fichaTab('equipos');
     setTimeout(()=>{
@@ -278,7 +278,7 @@ function saveEquip(){
   }
   const i=D.equipos.findIndex(e=>e.id===id);
   if(i>-1) D.equipos[i]=obj; else D.equipos.push(obj);
-  persist(); closeModal(); renderEquipos();
+  if(persist()===false) return; closeModal(); renderEquipos();
   toast(`Equipo ${id} guardado`);
 }
 
@@ -287,7 +287,7 @@ function deleteEquip(id){
   confirmDel(`Equipo ${_esc(id)}`,()=>{
     if(!canDeleteRecord('equipos',id)) return;
     D.equipos=D.equipos.filter(e=>e.id!==id);
-    persist(); closeModal(); renderEquipos();
+    if(persist()===false) return; closeModal(); renderEquipos();
     toast(`Equipo ${id} eliminado`);
   });
 }
@@ -298,6 +298,6 @@ function delEquipConfirm(eid){
   confirmDel(e?`${_esc(e.id)} — ${_esc(clientName(e.clienteId))}`:_esc(eid),()=>{
     if(!canDeleteRecord('equipos',eid)) return;
     D.equipos=D.equipos.filter(x=>x.id!==eid);
-    persist();renderEquipos();toast(`Equipo ${eid} eliminado`);
+    if(persist()===false) return;renderEquipos();toast(`Equipo ${eid} eliminado`);
   });
 }

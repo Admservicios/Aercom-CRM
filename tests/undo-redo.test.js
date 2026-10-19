@@ -30,7 +30,7 @@ function fixture(stored = true) {
   history: () => vm.runInContext('JSON.stringify([_history,_future])',c),
   sizes: () => JSON.parse(vm.runInContext('JSON.stringify([_history.length,_future.length])',c)) };
 }
-function edit(f, name) { f.c.D.clientes[0].nombre=name; f.c.persist(); }
+function edit(f, name) { f.c.D.clientes[0].nombre=name; return f.c.persist(); }
 for (const stored of [true,false]) test(`Primera edición reversible y rehacible, con copia local=${stored}`, () => {
  const f=fixture(stored);edit(f,'Editado');
  f.c.undoAction();assert.equal(f.c.D.clientes[0].nombre,'Inicial');
@@ -75,7 +75,7 @@ test('Sin acciones no se guarda ni se programa Drive', () => {
 });
 test('Guardado fallido no agrega historial ni descarta rehacer', () => {
  const f=fixture();edit(f,'A');f.c.undoAction();const before=f.history();f.control.quotaFailure=true;
- assert.throws(()=>edit(f,'Fallido'),/Cuota/);assert.equal(f.history(),before);
+ assert.equal(edit(f,'Fallido'),false);assert.equal(f.history(),before);assert.equal(f.c.D.clientes[0].nombre,'Inicial');
 });
 function keyboard(f) {
  let handler;

@@ -141,7 +141,7 @@ function saveRem(id){
   };
   const i=D.recordatorios.findIndex(x=>x.id===id);
   if(i>-1) D.recordatorios[i]=obj; else D.recordatorios.push(obj);
-  persist(); closeModal(); renderRecordatorios();
+  if(persist()===false) return; closeModal(); renderRecordatorios();
   toast(`Recordatorio "${titulo}" guardado`);
 }
 
@@ -149,7 +149,7 @@ function toggleRemDone(id){
   const r=D.recordatorios.find(x=>x.id===id);
   if(!r) return;
   r.estado=r.estado==='Hecho'?'Pendiente':'Hecho';
-  persist(); renderRecordatorios();
+  if(persist()===false) return; renderRecordatorios();
   toast(r.estado==='Hecho'?'Recordatorio marcado como hecho':'Recordatorio marcado como pendiente');
 }
 
@@ -157,6 +157,6 @@ function delRemConfirm(id){
   const r=D.recordatorios.find(x=>x.id===id);
   confirmDel(r?_esc(r.titulo):_esc(id),()=>{
     D.recordatorios=D.recordatorios.filter(x=>x.id!==id);
-    persist(); renderRecordatorios(); toast('Recordatorio eliminado');
+    if(persist()===false) return; renderRecordatorios(); toast('Recordatorio eliminado');
   });
 }

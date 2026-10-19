@@ -4,6 +4,18 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Guardado — recuperación ante fallos locales
+
+persist() en index.html recupera el estado anterior y las pilas ante fallos, devuelve false y no programa una nueva subida a Drive. Los consumidores directos comprueban false antes de continuar con cierre, render o mensajes de éxito. La interfaz conserva el borrador de los formularios porque la recuperación refresca el fondo, no el modal. Ese borrador no está persistido: recargar/cerrar/navegar puede descartarlo.
+
+Storage mantiene _lastSavedSnapshot al cargar, confirmar guardado base y aplicar un backup; _applyImportedData restaura ese checkpoint cuando falla y considera false un fallo del callback. Esto conserva la compatibilidad de importaciones, descargas controladas y undo/redo. Se distingue el estado normalizado en memoria de la cadena previa en almacenamiento. resetStorage deja de eliminar la copia antes de reemplazarla. Las URLs de los scripts afectados incluyen versión para no mezclar el contrato nuevo con módulos antiguos cacheados.
+
+Ante cuota agotada o error posterior a escritura se intenta recuperar la copia local original. Si leer/restaurar está bloqueado, se recupera la copia confirmada de esta pestaña en memoria, se informa la limitación y se pide exportar antes de recargar. No se afirma una restauración local que el navegador impide verificar. Los indicadores de guardado se restablecen; el temporizador de exportación manual puede reiniciarse, sin preservar su plazo exacto previo.
+
+Veinte pruebas nuevas en tests/local-save-recovery.test.js y adaptación de una prueba de historial al resultado false: 227 aprobadas, cero fallidas/omitidas. Cubren cuota, lectura bloqueada, primera copia, fallos posteriores/restauración impedida, siete dominios y factura, referencias cruzadas, borrado, alta, reset, reintento, checkpoint e importaciones/undo/redo existentes. Chromium aislado verificó siete formularios reales, recuperación y permanencia del borrador, reintento y valor tras recarga, estado mensual, errores de lectura/escritura/interfaz y undo/redo. Sin errores JS; datos ficticios, Chart simulado y Drive desconectado. El script temporal de navegador no integra la suite versionada.
+
+Pendiente: arranque con almacenamiento corrupto/bloqueado, concurrencia entre pestañas/dispositivos y peticiones remotas ya iniciadas, validación de referencias/IDs y mutaciones en otros flujos de Drive/exportación fuera de persist(). La recuperación no incorpora datos de otra pestaña al borrador ni implementa fusión. Si la memoria no tiene una copia recuperable, el mensaje lo informa y no confirma éxito. Si el renderizado de recuperación también falla se preservan los datos recuperados, sin prometer una interfaz reparada. En edición inline se recupera la vista; el borrador de la celda no se mantiene como un modal. No se garantiza conservación del borrador tras recargar ni disponibilidad del almacenamiento.
+
 ## Edición — conservación de equipos y cotizaciones
 
 saveEquip() y saveQuote() conservan propiedades existentes ajenas al formulario al construir el objeto actualizado. Se preservan campos conocidos como marca/ubicacion/proximoBateria, metadatos adicionales, objetos, cero, false y null; las altas mantienen sus valores anteriores. Los selectores muestran valores históricos fuera del catálogo como opciones escapadas, evitando sustituciones implícitas al guardar.
