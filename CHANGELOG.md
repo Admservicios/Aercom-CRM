@@ -4,6 +4,12 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — recarga de estilos del calendario
+
+- El enlace de css/style.css incluye una versión para solicitar una URL nueva tras publicar las celdas uniformes. La corrección de geometría ya está en main; una copia anterior de CSS en caché puede conservar la distribución vieja.
+- Chromium reprodujo caché HTTP real: la URL sin versión reutilizó el CSS anterior; al cambiar a la URL versionada se solicitaron los estilos actuales y las columnas quedaron iguales. Se repitieron las pruebas de calendario en 375/768/1440 px con 40 eventos, detalles y scroll, sin errores JS.
+- No se pudo consultar la publicación de Pages desde este entorno (403); la prueba de caché es local y no confirma por sí sola qué versión está viendo cada usuario. No se modifican datos, lógica ni sincronización.
+
 ## Sin publicar — celdas uniformes del calendario
 
 - Las columnas de mes/semana usan minmax(0,1fr) para que el texto no ensanche un día. La vista mensual conserva seis filas de 120 px y la semanal una fila de eventos de 180 px, con desplazamiento interno si hace falta.
