@@ -194,7 +194,8 @@ function openEquipModal(eid){
   const eq=eid?D.equipos.find(e=>e.id===eid):null;
   document.getElementById('modal-title').textContent=eq?`Editar Equipo — ${eid}`:'Nuevo Equipo';
   const tipos=['Grupo Electrógeno','Electrocompresor','Motocompresor','Motobomba','Secadora de Aire'];
-  const tipoOpts=tipos.map(t=>`<option ${eq?.tipo===t?'selected':''}>${t}</option>`).join('');
+  if(eq?.tipo && !tipos.includes(eq.tipo)) tipos.push(eq.tipo);
+  const tipoOpts=tipos.map(t=>`<option value="${_esc(t)}" ${eq?.tipo===t?'selected':''}>${_esc(t)}</option>`).join('');
   const cliOpts=D.clientes.map(c=>`<option value="${_esc(c.id)}" ${eq?.clienteId===c.id?'selected':''}>${_esc(c.nombre)}</option>`).join('');
   const _vfd={'Semanal':7,'Quincenal':15,'Mensual':30,'Bimestral':60,'Trimestral':90,'Semestral':180,'Anual':365};
   const _vcli=D.clientes.find(c=>c.id===(eq?.clienteId||''));
@@ -270,7 +271,11 @@ function saveEquip(){
   const uvisita=(document.getElementById('e-uvisita')||{value:''}).value;
   const nvisita=(document.getElementById('e-nvisita')||{value:''}).value;
   if(!id||!cliId){toast('⚠ Completá ID y cliente');return;}
-  const obj={id,clienteId:cliId,tipo,ultimoPreventivo:uprev,proximoPreventivo:nprev,ultimoAceite:ace,proximoAceite:nace,ultimoBateria:bat,ultimoRefrigerante:ref,horometro:hor,observaciones:obs,ultimaVisita:uvisita,proximaVisita:nvisita};
+  const existing=D.equipos.find(e=>e.id===id);
+  const obj={...existing,id,clienteId:cliId,tipo,ultimoPreventivo:uprev,proximoPreventivo:nprev,ultimoAceite:ace,proximoAceite:nace,ultimoBateria:bat,ultimoRefrigerante:ref,horometro:hor,observaciones:obs,ultimaVisita:uvisita,proximaVisita:nvisita};
+  if(existing && (existing.ultimoBateria||'')!==bat && Object.prototype.hasOwnProperty.call(existing,'proximoBateria')){
+    obj.proximoBateria=bat?addDays(bat,730):null;
+  }
   const i=D.equipos.findIndex(e=>e.id===id);
   if(i>-1) D.equipos[i]=obj; else D.equipos.push(obj);
   persist(); closeModal(); renderEquipos();

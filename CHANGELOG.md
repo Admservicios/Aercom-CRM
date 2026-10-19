@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — conservar campos al editar equipos y cotizaciones
+
+- Los guardados parten del registro existente y reemplazan los campos del formulario, conservando marca, ubicación, metadatos importados, valores 0/false/null y datos de facturación. Las altas mantienen sus valores predeterminados sin heredar datos de otro registro.
+- Los selectores conservan tipos de equipo y estados históricos fuera del catálogo con valores escapados; editar otro dato no sustituye silenciosamente ese valor.
+- La próxima batería existente se conserva si la última fecha no cambia (incluida una fecha previa vacía/null/ausente). Si se cambia explícitamente, se recalcula con +730 días o se limpia al vaciarla, como en edición inline.
+- Verificación: 207 pruebas Node, 15 nuevas. Chromium aislado comprobó edición/cancelación, conservación completa, valores históricos, cambios explícitos, batería, altas, undo/redo y recarga. Cero errores JS; Chart simulado, datos ficticios y Drive desconectado.
+
 ## Sin publicar — seguridad de la confirmación de facturación
 
 - Escapado contextual del ID en texto HTML y del número/fecha de factura en sus atributos value. Los datos originales y el guardado de la factura se conservan; no se alteran estados ni lógica de persistencia.

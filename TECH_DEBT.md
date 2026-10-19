@@ -4,6 +4,16 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Edición — conservación de equipos y cotizaciones
+
+saveEquip() y saveQuote() conservan propiedades existentes ajenas al formulario al construir el objeto actualizado. Se preservan campos conocidos como marca/ubicacion/proximoBateria, metadatos adicionales, objetos, cero, false y null; las altas mantienen sus valores anteriores. Los selectores muestran valores históricos fuera del catálogo como opciones escapadas, evitando sustituciones implícitas al guardar.
+
+La próxima batería guardada se conserva cuando no se cambia la fecha de último cambio. Comparar una fecha anterior null/ausente como vacía evita borrar una próxima fecha importada al guardar otro dato. Cambiar explícitamente el último cambio recalcula la próxima fecha +730 días o null al vaciarla, de acuerdo con la edición inline existente. Las fechas de próximo refrigerante/visita siguen siendo campos editables con las sugerencias actuales del formulario.
+
+Quince pruebas nuevas en tests/equipment-quote-editing.test.js; suite completa: 207 aprobadas. Los casos originales reprodujeron pérdida de campos y sustitución de selectores antes del cambio. Chromium aislado verificó formularios reales, cancelación, conservación exacta al editar otro dato, tipos/estados históricos, valores cero, batería, altas sin herencia, undo/redo y recarga, sin errores JS. Chart simulado; sin Drive real. Script de navegador temporal, no incluido en la suite versionada.
+
+Pendiente: recuperación transaccional ante cuota/fallos de guardado, validación de asociaciones e IDs en formularios (incluido el comportamiento de alta de equipo con ID existente), pérdida de campos en otros dominios y revisión de interpolaciones restantes. Conservar un tipo/estado histórico no certifica su validez de negocio ni lo agrega al catálogo global. No se reparan datos perdidos antes del cambio y no se modifica el formato del backup.
+
 ## Seguridad — confirmación de facturación
 
 Corregidas tres interpolaciones de confirmFacturacion() en js/modules/cotizaciones.js: cotId se escapa dentro de strong; nroFactura y fechaFactura se escapan en atributos HTML entre comillas. El título usa textContent y el botón sigue leyendo el ID desde su data-id escapado. doFacturar conserva los valores originales, sin guardar entidades HTML.
