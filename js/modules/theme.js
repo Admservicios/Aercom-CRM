@@ -23,7 +23,9 @@
  */
 
 function initTheme() {
-  const stored = localStorage.getItem('theme');
+  // Una preferencia opcional no debe impedir mostrar la recuperación de datos.
+  let stored = null;
+  try { stored = localStorage.getItem('theme'); } catch { /* usar preferencia del sistema */ }
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isDark = stored === 'dark' || (!stored && prefersDark);
   document.body.classList.toggle('dark-theme', isDark);
@@ -59,7 +61,8 @@ function initTheme() {
 
 function toggleTheme() {
   const isDark = document.body.classList.toggle('dark-theme');
-  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); }
+  catch { toast('Tema aplicado en esta pestaña; no se pudo guardar la preferencia.'); }
   updateThemeIcon(isDark);
 
   // Re-render dashboard charts to update dynamic grid and text colors
