@@ -4,6 +4,14 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Calendario — dimensiones independientes del contenido
+
+Corregida la expansión de columnas por el tamaño mínimo intrínseco de tracks 1fr y de filas por alturas mínimas abiertas. css/style.css usa siete columnas minmax(0,1fr), filas mensuales de 120 px y eventos semanales de 180 px. Las celdas tienen mínimo cero y overflow vertical interno. El ancho se adapta al contenedor, con columnas iguales; el contenido no modifica la geometría. No se modificó JavaScript, persistencia ni formato de eventos.
+
+Reproducción previa con títulos largos: una columna podía crecer hasta unos 13.149 px; con 40 eventos la fila semanal alcanzaba unos 989 px. Después se mantuvieron las mismas dimensiones antes/después de cargar eventos en 375/768/1440 px. Chromium comprobó detalles completos, «+37 más» mensual, último evento semanal mediante scroll y texto ampliado en mes; sin errores JS. Chart simulado, Drive desconectado y datos ficticios. Las 186 pruebas Node siguen pasando; no cubren geometría CSS. El script temporal de navegador no forma parte de la suite versionada.
+
+Pendiente independiente: calPrev/calNext aún usan setMonth conservando el día y pueden saltar un mes desde los días 29–31. Este cambio es visual y no corrige ese comportamiento. Alturas elegidas: 120/180 px; un ajuste posterior de densidad debe conservar scroll y acceso a todos los eventos. No se certificaron otros motores de navegador.
+
 ## Cierre documental — paso 10
 
 PR #1, #2 y #4–#7 fusionados en main; 186 pruebas Node en nueve archivos. El PR #3 sigue en borrador: falta comprobar la exposición de ETag y la semántica de If-Match desde un navegador con una cuenta de Drive real. El plan no se considera cerrado en esa parte y no se incorporó su implementación a main.

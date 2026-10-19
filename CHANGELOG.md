@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — celdas uniformes del calendario
+
+- Las columnas de mes/semana usan minmax(0,1fr) para que el texto no ensanche un día. La vista mensual conserva seis filas de 120 px y la semanal una fila de eventos de 180 px, con desplazamiento interno si hace falta.
+- Se conserva el truncado de títulos, sus detalles completos, los tres eventos visibles y el acceso «+ más» mensual. El ancho sigue respondiendo al contenedor y al desplazamiento horizontal móvil.
+- Verificación: 186 pruebas Node aprobadas; Chromium aislado en 375/768/1440 px, con y sin 40 eventos, títulos largos sin espacios, comparación de dimensiones, apertura de detalles, acceso al último evento semanal, «+ más» y texto ampliado en mes. Sin errores JS; Chart simulado y Drive desconectado.
+- Solo CSS y documentación. La navegación mensual desde días 29–31 continúa como pendiente independiente.
+
 ## Sin publicar — Paso 10: documentación del estado integrado
 
 - README, guía de desarrollo, arquitectura, notas, índice de funciones y estado de bugs reflejan los PR integrados. Se corrigen descripciones previas de guardado, historial, identificación Excel y alcance de seguridad.
