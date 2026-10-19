@@ -194,10 +194,10 @@ function confirmFacturacion(cotId){
   if(!cot) return;
   document.getElementById('modal-title').textContent=`Confirmar facturación — ${cotId}`;
   document.getElementById('modal-body').innerHTML=`
-    <p style="color:var(--t2);margin:0 0 16px;font-size:13.5px">¿Confirmar que la cotización <strong>${cotId}</strong> fue facturada?</p>
+    <p style="color:var(--t2);margin:0 0 16px;font-size:13.5px">¿Confirmar que la cotización <strong>${_esc(cotId)}</strong> fue facturada?</p>
     <div class="form-row">
-      <div class="fg"><label class="fl">N° de factura <span style="color:var(--t3);font-weight:400">(opcional)</span></label><input class="fc" id="fact-nro" placeholder="Ej: A-0001-00012345" value="${cot.nroFactura||''}"></div>
-      <div class="fg"><label class="fl">Fecha de factura</label><input class="fc" type="date" id="fact-fecha" value="${cot.fechaFactura||today()}"></div>
+      <div class="fg"><label class="fl">N° de factura <span style="color:var(--t3);font-weight:400">(opcional)</span></label><input class="fc" id="fact-nro" placeholder="Ej: A-0001-00012345" value="${_esc(cot.nroFactura||'')}"></div>
+      <div class="fg"><label class="fl">Fecha de factura</label><input class="fc" type="date" id="fact-fecha" value="${_esc(cot.fechaFactura||today())}"></div>
     </div>`;
   document.getElementById('modal-foot').innerHTML=`
     <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
