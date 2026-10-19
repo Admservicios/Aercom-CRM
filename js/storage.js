@@ -9,6 +9,8 @@
 const STORAGE_KEY = "aercom-data";
 // Última copia confirmada en esta pestaña: recuperación si no se puede leer storage.
 let _lastSavedSnapshot = null;
+// Un arranque rechazado nunca habilita edición ni sincronización con semillas.
+let _storageLoadError = null;
 
 /**
  * NOTA: la variable global `D` ya es declarada por el script
@@ -24,27 +26,63 @@ let _lastSavedSnapshot = null;
  */
 
 /**
- * Carga los datos desde LocalStorage a `D`, migrado tal cual desde
- * index.html (Sprint 3). Incluye la migración de retrocompatibilidad
- * de `facturacion_clientes` y la normalización de arrays/objetos
- * obligatorios y de estados de cotización heredados.
+ * Valida una copia antes de asignar D. Solo la ausencia de la clave
+ * permite usar DEFAULT. La normalización/migración se hace en memoria:
+ * el inicio no sobrescribe el original ni requiere cuota para escribir.
+ * Devuelve false ante datos incompatibles o almacenamiento inaccesible.
  */
 function loadData() {
 
-    const s = localStorage.getItem(STORAGE_KEY);
-
-    if (s) {
-        try { D = JSON.parse(s); }
-        catch { D = JSON.parse(JSON.stringify(DEFAULT)); }
-    } else {
-        D = JSON.parse(JSON.stringify(DEFAULT));
+    let raw = null;
+    try {
+        raw = localStorage.getItem(STORAGE_KEY);
+        const candidate = _parseImportedData(raw === null ? JSON.stringify(DEFAULT) : raw);
+        const snapshot = JSON.stringify(candidate);
+        D = candidate;
+        _lastSavedSnapshot = snapshot;
+        _storageLoadError = null;
+        return true;
+    } catch {
+        _lastSavedSnapshot = null;
+        _storageLoadError = { raw };
+        return false;
     }
+}
 
-    const legacy = D.facturacion_clientes && D.facturacion_clientes.length;
-    D = _normalizeData(D);
-    if (legacy) localStorage.setItem(STORAGE_KEY, JSON.stringify(D));
-    _lastSavedSnapshot = JSON.stringify(D);
+function _assertStorageReady() {
+    if (_storageLoadError) throw new Error("El inicio está bloqueado para proteger la copia local.");
+}
 
+/** Pantalla bloqueante: no interpretar el original como HTML ni como un backup válido. */
+function _showStorageRecovery() {
+    const dialog = document.getElementById('storage-recovery');
+    const readable = _storageLoadError.raw !== null;
+    document.getElementById('storage-recovery-message').textContent = readable
+        ? 'La copia local contiene datos dañados o incompatibles. No se reemplazó por datos de ejemplo. Descargá el original y conservá una copia antes de revisarlo.'
+        : 'El navegador no permite leer el almacenamiento local. No se cargaron datos de ejemplo. Revisá los permisos del sitio y reintentá; no borres los datos del navegador.';
+    document.getElementById('storage-recovery-download').disabled = !readable;
+    dialog.addEventListener('cancel', event => event.preventDefault());
+    dialog.showModal();
+    document.getElementById('storage-recovery-retry').focus();
+}
+
+function _downloadStorageOriginal() {
+    if (!_storageLoadError || _storageLoadError.raw === null) return;
+    const status = document.getElementById('storage-recovery-status');
+    let url;
+    try {
+        const blob = new Blob([_storageLoadError.raw], { type: 'text/plain;charset=utf-8' });
+        url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'aercom-data-original.txt';
+        link.click();
+        status.textContent = 'Descarga solicitada. Verificá el archivo antes de revisar la copia local. El CRM sigue bloqueado.';
+    } catch {
+        status.textContent = 'No se pudo iniciar la descarga. La copia local sigue intacta; no borres los datos del navegador.';
+    } finally {
+        if (url) setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
 }
 
 /** Normalización existente compartida por el arranque y los backups validados. */
@@ -194,6 +232,7 @@ function _parseImportedData(text) {
 
 /** Reemplazo con recuperación de datos e historial ante errores de render o guardado. */
 function _applyImportedData(candidate, save) {
+    _assertStorageReady();
     const previous = D;
     const previousSnapshot = _lastSavedSnapshot;
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -245,6 +284,7 @@ function _applyImportedData(candidate, save) {
  * La API pública sigue siendo `persist()` (la función decorada).
  */
 function _persistBase() {
+    _assertStorageReady();
 
     D.lastSaved = today();
     const serialized = JSON.stringify(D);
@@ -265,6 +305,7 @@ function _persistBase() {
  * desde index.html (Sprint 3).
  */
 function exportData() {
+    _assertStorageReady();
 
     D.lastSaved = today();
 
@@ -313,6 +354,7 @@ function importData(ev) {
 }
 
 function resetStorage() {
+    _assertStorageReady();
 
     // Conservar la copia anterior hasta que el reemplazo termine correctamente.
     D = JSON.parse(JSON.stringify(DEFAULT));
@@ -336,6 +378,7 @@ function loadStorage() {
 
 /** CSV/Excel construyen un lote síncrono sobre una copia; solo se aplica al validar todo. */
 function _applyTableImport(build) {
+    _assertStorageReady();
     const previous = D;
     let candidate, result;
     try {

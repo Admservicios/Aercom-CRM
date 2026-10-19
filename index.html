@@ -11,7 +11,7 @@
      principal: éste llama a loadData() y renderDashboard() de forma síncrona
      durante la inicialización -->
 <script src="js/utils.js"></script>
-<script src="js/storage.js?v=local-save-recovery-20261019"></script>
+<script src="js/storage.js?v=safe-startup-20261019"></script>
 <script src="js/modules/dashboard.js"></script>
 <script src="js/modules/clientes.js?v=local-save-recovery-20261019"></script>
 <script src="js/modules/equipos.js?v=local-save-recovery-20261019"></script>
@@ -20,13 +20,23 @@
 <script src="js/modules/pedidos.js?v=local-save-recovery-20261019"></script>
 <script src="js/modules/calendario.js?v=local-save-recovery-20261019"></script>
 <script src="js/modules/recordatorios.js?v=local-save-recovery-20261019"></script>
-<script src="js/modules/theme.js"></script>
+<script src="js/modules/theme.js?v=safe-startup-20261019"></script>
 <script src="js/modules/reportes.js"></script>
 <script src="js/modules/excel.js"></script>
 <script src="js/modules/drive.js"></script>
 <script src="js/modules/csv.js"></script>
 </head>
 <body>
+<dialog id="storage-recovery" aria-labelledby="storage-recovery-title" aria-describedby="storage-recovery-message" style="--t1:#0f172a;--t2:#334155;--border:#cbd5e1;--hover:#f1f5f9;color-scheme:light;box-sizing:border-box;width:calc(100% - 32px);max-width:520px;max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #cbd5e1;border-radius:12px;padding:24px;background:#fff;color:#0f172a">
+  <h2 id="storage-recovery-title" style="margin-top:0">No se pudieron cargar los datos</h2>
+  <p id="storage-recovery-message"></p>
+  <p>La edición, las importaciones y la conexión con Drive permanecerán bloqueadas hasta que la copia pueda cargarse correctamente.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px">
+    <button id="storage-recovery-download" class="btn btn-ghost" type="button" onclick="_downloadStorageOriginal()">Descargar original</button>
+    <button id="storage-recovery-retry" class="btn btn-primary" type="button" onclick="location.reload()">Reintentar carga</button>
+  </div>
+  <p id="storage-recovery-status" role="status" style="margin-bottom:0"></p>
+</dialog>
 
 <button id="mobile-menu-toggle" type="button" aria-controls="sidebar" aria-expanded="false" onclick="toggleMobileMenu()">☰ Menú</button>
 <button id="mobile-menu-backdrop" type="button" aria-label="Cerrar menú" onclick="setMobileMenu(false,true)"></button>
@@ -913,6 +923,7 @@ function updateSidebarBadges(){
 
 // ─── ATAJOS DE TECLADO ───────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
+  if(_storageLoadError) return;
   const inInput = ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName) || e.target.isContentEditable;
   const key=e.key.toLowerCase();
   const nav=e.target.closest?.('#sidebar .nav-item');
@@ -952,6 +963,7 @@ document.addEventListener('keydown', e => {
 const _origPersist=_persistBase;
 let _inPersist=false;
 function persist(){
+  if(_storageLoadError) return false;
   if(_inPersist) return false;
   _inPersist=true;
   const history=_history.slice(), future=_future.slice();
@@ -1084,14 +1096,19 @@ function redoAction(){
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 initTheme();
-loadData();
-_initialSnapshot=JSON.stringify(D);
-curMonth=nowMonthStr();
-renderDashboard();
-updateSidebarBadges();
-markSaved();
-// Auto-reconexión silenciosa con Drive
-if(localStorage.getItem('aercom-drive-connected')==='1') setTimeout(_tryAutoConnectDrive, 1500);
+if(loadData()){
+  _initialSnapshot=JSON.stringify(D);
+  curMonth=nowMonthStr();
+  renderDashboard();
+  updateSidebarBadges();
+  markSaved();
+  // La preferencia opcional de Drive no debe interrumpir un inicio válido.
+  try{
+    if(localStorage.getItem('aercom-drive-connected')==='1') setTimeout(_tryAutoConnectDrive, 1500);
+  }catch{ /* Conexión manual disponible; no asumir que ya estaba conectado. */ }
+}else{
+  _showStorageRecovery();
+}
 window.addEventListener('beforeunload',ev=>{
   if(_unsaved){ev.preventDefault();ev.returnValue='Tenés cambios sin guardar. ¿Seguro que querés salir?';}
 });

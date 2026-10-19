@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — inicio seguro con almacenamiento dañado o bloqueado
+
+- Carga validada antes de asignar D; DEFAULT se utiliza únicamente si la clave no existe. Los datos incompatibles o inaccesibles bloquean la edición y la reconexión automática con Drive sin sustituir la copia local.
+- Pantalla de recuperación con descarga del texto original y reintento sin limpiar datos; Escape y los atajos no habilitan operaciones sobre datos sin cargar. Guardas en las rutas compartidas de almacenamiento impiden reemplazos/exportaciones en ese estado.
+- Las migraciones heredadas se realizan en memoria, sin escribir al iniciar. Las preferencias opcionales del tema y de conexión no interrumpen el arranque si no pueden leerse. URLs de Storage/Theme versionadas.
+- Verificación: 248 pruebas Node (21 nuevas). Chromium aislado comprueba recuperación, texto descargado, bloqueo, reintento y carga normal, incluidos cuota, tema/preferencia Drive y migración; 375/1440 px, cero errores JS. Datos ficticios, Chart simulado y ninguna cuenta real de Drive.
+
 ## Sin publicar — recuperación de guardados locales fallidos
 
 - persist() devuelve true al completar el guardado y false ante fallo, recuperando D, las pilas e intentando restaurar la copia local. Se mantiene un checkpoint del estado confirmado de esta pestaña para recuperarse incluso si la lectura está bloqueada.
