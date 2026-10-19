@@ -288,7 +288,9 @@ function openQuoteModal(qid,prefillEquip){
   document.getElementById('modal-title').textContent=q?`Editar — ${qid}`:'Nueva Cotización';
 
   const clientOpts=D.clientes.map(c=>`<option value="${c.id}" ${(q?.clienteId===c.id||prefillEquip?.clienteId===c.id)?'selected':''}>${_esc(c.nombre)}</option>`).join('');
-  const stOpts=ESTADOS.map(s=>`<option value="${s}" ${(q?.estado===s)||(s==='Solicitud'&&!q)?'selected':''}>${s}</option>`).join('');
+  const estados=[...ESTADOS];
+  if(q?.estado && !estados.includes(q.estado)) estados.push(q.estado);
+  const stOpts=estados.map(s=>`<option value="${_esc(s)}" ${(q?.estado===s)||(s==='Solicitud'&&!q)?'selected':''}>${_esc(s)}</option>`).join('');
   const nextId=`COT-${new Date().getFullYear()}-${String(D.cotizaciones.length+1).padStart(3,'0')}`;
 
   document.getElementById('modal-body').innerHTML=`
@@ -333,7 +335,7 @@ function saveQuote(){
   const notas=document.getElementById('f-notas').value.trim();
   if(!id||!cliId||!desc){toast('⚠ Completá N° cotización, cliente y descripción');return;}
   const existing=editingQuoteId?D.cotizaciones.find(c=>c.id===editingQuoteId):null;
-  const obj={id,clienteId:cliId,equipoId:eqId,descripcion:desc,monto,fechaEnvio:env,fechaFollowup:fup,responsable:resp,estado:est,notas,nroFactura:existing?.nroFactura||'',fechaFactura:existing?.fechaFactura||''};
+  const obj={nroFactura:'',fechaFactura:'',...existing,id,clienteId:cliId,equipoId:eqId,descripcion:desc,monto,fechaEnvio:env,fechaFollowup:fup,responsable:resp,estado:est,notas};
   if(editingQuoteId){
     const i=D.cotizaciones.findIndex(c=>c.id===editingQuoteId);
     if(i>-1) D.cotizaciones[i]=obj;
