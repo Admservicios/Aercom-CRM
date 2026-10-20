@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — revisión de Drive antes de sincronizar
+
+- Autenticación separada de verificación del backup: conexión manual y automática comparan contenido normalizado antes de habilitar guardados del CRM. Ninguna fecha elige una versión.
+- Diferencias, JSON rechazado, duplicados/paginación o errores de lectura pausan la sincronización conservando el local y el texto remoto leído. Se pueden descargar ambas copias y seguir editando localmente; un guardado posterior no crea un backup como alternativa a un rechazo. Resolución/aplicación de una copia diferente queda pendiente.
+- Se rechazan carpetas ambiguas y se invalidan respuestas de revisión/preparación y confirmaciones de otra sesión. Reportes independientes y creación del primer backup tras ausencia verificada mantienen su comportamiento. URL de Drive versionada.
+- Verificación: 319 pruebas Node, 25 nuevas y expectativas de importación por fecha actualizadas. Chromium aislado: backup anterior rechazado, versiones válidas distintas/iguales, duplicados/HTTP, revisión automática, descargas y edición local en pausa; sin errores JS. OAuth/HTTP/Chart simulados, sin validar una cuenta real ni integrar el PR #3.
+
 ## Sin publicar — aplicar un plan de sucursales sin archivo nuevo
 
 - Recuperación mediante un plan JSON revisado pegado en la pantalla: huella SHA-256 exacta del original, códigos únicos por sucursal y asignaciones explícitas a registros. Sin descargar el backup corregido ni usar la consola del navegador.

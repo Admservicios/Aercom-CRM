@@ -128,7 +128,7 @@ o cualquier otro servidor estático equivalente (Live Server de VS Code, `npx se
 ## Persistencia
 
 - **LocalStorage** — toda la información del CRM (clientes, equipos, cotizaciones, pedidos, recordatorios, eventos, facturación) se guarda como un único objeto JSON en `localStorage['aercom-data']`. No requiere backend ni base de datos.
-- **Google Drive (opcional)** — guarda `aercom-data.json` en `Aercom Gestion/`. Las operaciones de subida comprueban HTTP antes de anunciar éxito. La comparación entre copias de main todavía usa `lastSaved` con precisión de día y no resuelve ediciones simultáneas ni duplicados; el [PR #3](https://github.com/Admservicios/Aercom-CRM/pull/3) permanece en borrador, pendiente de validar ETag/If-Match con Drive real. Exportá un JSON antes de cambiar de dispositivo y evitá editar la misma copia en paralelo. Sin conexión, el CRM funciona con su copia local.
+- **Google Drive (opcional)** — guarda `aercom-data.json` en `Aercom Gestion/`. Las operaciones de subida comprueban HTTP antes de anunciar éxito. Al conectar o reconectar se valida y compara el contenido: si difiere, es inválido o hay backups/carpetas duplicados, la sincronización se pausa sin reemplazar datos locales ni elegir automáticamente una versión. Las copias pueden descargarse para revisión; resolver la diferencia y las ediciones simultáneas sigue pendiente; el [PR #3](https://github.com/Admservicios/Aercom-CRM/pull/3) permanece en borrador, pendiente de validar ETag/If-Match con Drive real. Exportá un JSON antes de cambiar de dispositivo y evitá editar la misma copia en paralelo. Sin conexión, el CRM funciona con su copia local.
 
 ---
 

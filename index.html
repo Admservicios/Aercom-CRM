@@ -23,7 +23,7 @@
 <script src="js/modules/theme.js?v=safe-startup-20261019"></script>
 <script src="js/modules/reportes.js"></script>
 <script src="js/modules/excel.js"></script>
-<script src="js/modules/drive.js"></script>
+<script src="js/modules/drive.js?v=preflight-20261020"></script>
 <script src="js/modules/csv.js"></script>
 </head>
 <body>
@@ -47,6 +47,18 @@
     <button id="storage-recovery-repair" class="btn btn-outline" type="button" onclick="_applyStorageBranchRepair()">Validar y aplicar corrección…</button>
   </details>
   <p id="storage-recovery-status" role="status" style="margin-bottom:0"></p>
+</dialog>
+
+<dialog id="drive-review-dialog" aria-labelledby="drive-review-title" style="--t1:#0f172a;--t2:#334155;--border:#cbd5e1;--hover:#f1f5f9;color-scheme:light;box-sizing:border-box;width:calc(100% - 32px);max-width:520px;max-height:calc(100dvh - 32px);overflow:auto;padding:24px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;color:#0f172a">
+  <h2 id="drive-review-title">Sincronización con Drive pausada</h2>
+  <p id="drive-review-message" style="overflow-wrap:anywhere"></p>
+  <p>El CRM no reemplazó tus datos locales ni sobrescribió el backup. Podés seguir trabajando localmente. Descargá las copias para revisarlas antes de decidir cuál usar.</p>
+  <p>La descarga de Drive conserva el texto leído, aunque contenga errores. No se aplica al CRM ni se considera un backup validado.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+    <button class="btn btn-outline" type="button" onclick="_gdriveDownloadReview('local')">Descargar local actual</button>
+    <button id="drive-review-remote" class="btn btn-outline" type="button" onclick="_gdriveDownloadReview('remote')">Descargar copia de Drive</button>
+    <button class="btn btn-primary" type="button" onclick="document.getElementById('drive-review-dialog').close()">Seguir trabajando localmente</button>
+  </div>
 </dialog>
 
 <button id="mobile-menu-toggle" type="button" aria-controls="sidebar" aria-expanded="false" onclick="toggleMobileMenu()">☰ Menú</button>
@@ -101,6 +113,7 @@
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
       <span id="btn-drive-text">Conectar Drive</span>
     </button>
+    <button id="btn-drive-review" class="btn btn-ghost" type="button" hidden style="display:none" onclick="_gdriveShowReview()">Revisar sincronización pausada</button>
     <button id="btn-guardar" class="btn btn-ghost" onclick="saveDataAndMark()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <span id="btn-guardar-text">Guardar JSON</span>
