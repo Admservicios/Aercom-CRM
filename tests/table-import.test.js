@@ -5,14 +5,14 @@ const read=file=>fs.readFileSync(path.join(__dirname,'..',file),'utf8');
 const copy=data=>JSON.parse(JSON.stringify(data));
 function fixture(){
  const nodes=new Map(),messages=[];
- const control={writes:0,uploads:0,render:false,quota:false,readers:[],defer:false};
+ const control={writes:0,render:false,quota:false,readers:[],defer:false};
  const memory=new Map();
  const c=vm.createContext({console:{error(){}},ESTADOS:['Solicitud','Aprobada','A facturar','Facturada','Ejecutada','Rechazada'],
   _history:[],_future:[],_inPersist:false,MAX_HIST:30,
   document:{getElementById(id){if(!nodes.has(id))nodes.set(id,{style:{},innerHTML:'',textContent:''});return nodes.get(id);}},
   localStorage:{getItem:key=>memory.get(key)??null,setItem(key,value){if(control.quota)throw Error('Cuota');control.writes++;memory.set(key,value);},removeItem:key=>memory.delete(key)},
   renderModule(){if(control.render)throw Error('Render');},updateSidebarBadges(){},updateExcelCounts(){},
-  markUnsaved(){},_updateUndoBtn(){},_scheduleDriveSave(){control.uploads++;},closeModal(){},confirm:()=>true,toast:message=>messages.push(message),
+  markUnsaved(){},_updateUndoBtn(){},closeModal(){},confirm:()=>true,toast:message=>messages.push(message),
   FileReader:class{
    readAsText(file){if(control.defer)control.readers.push({reader:this,file});else if(file.error)this.onerror();else this.onload({target:{result:file.text}});}
    readAsBinaryString(file){if(control.defer)control.readers.push({reader:this,file});else if(file.error)this.onerror();else this.onload({target:{result:file}});}
@@ -25,7 +25,7 @@ function fixture(){
  vm.runInContext(read('index.html').match(/function persist\(\)\{[\s\S]*?\n\}/)[0],c);
  const csv=(type,text,mode='reemplazar')=>{vm.runInContext(`csvModule=${JSON.stringify(type)};csvConflictMode=${JSON.stringify(mode)}`,c);c.csvFileSelected({target:{files:[{text}]}});vm.runInContext(`csvConflictMode=${JSON.stringify(mode)}`,c);c.confirmCsvImport();};
  const xls=(type,rows,extra={})=>{const target={value:'archivo',files:[{rows,...extra}]};c.xlsImport({target},type);return target;};
- const snapshot=()=>JSON.stringify([c.D,memory.get('aercom-data'),c._history,c._future,control.writes,control.uploads]);
+ const snapshot=()=>JSON.stringify([c.D,memory.get('aercom-data'),c._history,c._future,control.writes]);
  return{c,csv,xls,control,messages,nodes,memory,snapshot};
 }
 
@@ -122,7 +122,7 @@ test('Plantillas y reportes tienen un encabezado por valor en los tres dominios'
  for(const type of ['clientes','equipos','cotizaciones']){
   sheets.length=0;f.c.xlsDownloadPlantilla(type);const template=sheets[0];
   for(const row of template.slice(1))assert.equal(row.length,template[0].length);
-  sheets.length=0;await f.c.xlsExport(type,'download');const report=sheets[0];
+  sheets.length=0;await f.c.xlsExport(type);const report=sheets[0];
   for(const row of report.slice(1))assert.equal(row.length,report[0].length);
   if(type==='cotizaciones'){assert.equal(report[0][1],'Cliente ID');assert.equal(report[1][1],'C1');}
  }

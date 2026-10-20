@@ -16,9 +16,8 @@ Desarrollado para uso interno del equipo de Servicios: alta y seguimiento de cli
 - **Facturación** — Estado de facturación mensual por cliente (Pendiente/Facturado/Cobrado/Excluido) con navegación entre meses.
 - **Calendario** — Vistas de mes y semana que unifican en un solo feed los vencimientos de equipos, follow-ups de cotizaciones, recordatorios, pedidos y eventos propios.
 - **Recordatorios** — Listado con filtros, alta/edición/eliminación y toggle Pendiente↔Hecho.
-- **Excel** — Plantillas de importación y exportación de reportes (Clientes, Equipos, Cotizaciones, Facturación), en descarga local o subida a Google Drive.
+- **Excel** — Plantillas de importación y exportación de reportes (Clientes, Equipos, Cotizaciones, Facturación), con descarga local.
 - **CSV Import** — Importación masiva de Clientes, Equipos y Cotizaciones con detección de conflictos (saltar/reemplazar).
-- **Google Drive** — Conexión OAuth opcional para sincronizar los datos del CRM y guardar reportes/importaciones en la nube.
 - **Reportes PDF** — Informe de vencimientos con KPIs, gráficos y tablas, generado como documento HTML para imprimir o guardar como PDF.
 - **Tema Claro/Oscuro** — Detección automática y toggle manual, persistido en el navegador.
 
@@ -36,7 +35,6 @@ Desarrollado para uso interno del equipo de Servicios: alta y seguimiento de cli
 - Recordatorios
 - Exportación a Excel
 - Importación desde CSV
-- Sincronización con Google Drive
 - Reportes en PDF
 - Undo / Redo (deshacer y rehacer sobre el estado completo)
 - Persistencia local (sin servidor)
@@ -50,15 +48,13 @@ Desarrollado para uso interno del equipo de Servicios: alta y seguimiento de cli
 - JavaScript Vanilla (sin framework, sin build step)
 - SheetJS (`xlsx`) — lectura/escritura de archivos Excel
 - Chart.js — gráficos del Dashboard y de Reportes
-- Google Identity Services — autenticación OAuth2
-- Google Drive API — sincronización y almacenamiento de archivos
 - LocalStorage — persistencia de datos en el navegador
 
 ---
 
 ## Arquitectura
 
-El proyecto está dividido en **13 módulos de dominio** (`js/modules/`), cada uno con una responsabilidad de negocio específica: Dashboard, Clientes, Equipos, Facturación, Cotizaciones, Pedidos, Calendario, Recordatorios, Theme, Reportes, Excel, Drive y CSV Import.
+El proyecto está dividido en **12 módulos de dominio** (`js/modules/`), cada uno con una responsabilidad de negocio específica: Dashboard, Clientes, Equipos, Facturación, Cotizaciones, Pedidos, Calendario, Recordatorios, Theme, Reportes, Excel y CSV Import.
 
 Además existe una **infraestructura compartida** (estado global `D`, persistencia, navegación entre módulos, undo/redo, helpers de dominio y de formato) que vive en `index.html` y en `js/utils.js`, `js/storage.js`, `js/modal.js`, `js/config.js`, `js/ui.js` y `js/app.js`.
 
@@ -91,7 +87,6 @@ Aercom-CRM-v2/
 │       ├── cotizaciones.js
 │       ├── csv.js
 │       ├── dashboard.js
-│       ├── drive.js
 │       ├── equipos.js
 │       ├── excel.js
 │       ├── facturacion.js
@@ -128,7 +123,8 @@ o cualquier otro servidor estático equivalente (Live Server de VS Code, `npx se
 ## Persistencia
 
 - **LocalStorage** — toda la información del CRM (clientes, equipos, cotizaciones, pedidos, recordatorios, eventos, facturación) se guarda como un único objeto JSON en `localStorage['aercom-data']`. No requiere backend ni base de datos.
-- **Google Drive (opcional)** — guarda `aercom-data.json` en `Aercom Gestion/`. Las operaciones de subida comprueban HTTP antes de anunciar éxito. Al conectar o reconectar se valida y compara el contenido: si difiere, es inválido o hay backups/carpetas duplicados, la sincronización se pausa sin reemplazar datos locales ni elegir automáticamente una versión. Las copias pueden descargarse para revisión; resolver la diferencia y las ediciones simultáneas sigue pendiente; el [PR #3](https://github.com/Admservicios/Aercom-CRM/pull/3) permanece en borrador, pendiente de validar ETag/If-Match con Drive real. Exportá un JSON antes de cambiar de dispositivo y evitá editar la misma copia en paralelo. Sin conexión, el CRM funciona con su copia local.
+- **Respaldo y traslado** — usá Guardar JSON para descargar todos los datos y conservá copias periódicas fuera del navegador. Importar JSON restaura una copia validada en otra computadora/navegador. No hay sincronización entre dispositivos ni escritura automática de respaldos en las carpetas del repositorio. Los archivos que ya existan en Google Drive no se modifican.
+- **Acceso a bibliotecas** — los datos permanecen locales, pero Chart.js y SheetJS todavía se cargan desde un CDN. No se garantiza un arranque completo sin conexión; esta modificación no instala una aplicación de escritorio ni un modo offline.
 
 ---
 
@@ -137,7 +133,7 @@ o cualquier otro servidor estático equivalente (Live Server de VS Code, `npx se
 Para sumarte al desarrollo de este proyecto, el orden recomendado de lectura es:
 
 1. [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) — guía práctica: cómo está organizado el código, cómo fluye la información, persistencia, render, helpers compartidos y ejemplos paso a paso para agregar un módulo, un campo, una pantalla o un botón.
-2. [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) — arquitectura completa: los 13 módulos, la infraestructura compartida y el acoplamiento real entre dominios.
+2. [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) — arquitectura completa: los 12 módulos, la infraestructura compartida y el acoplamiento real entre dominios.
 3. [`CONTRIBUTING.md`](CONTRIBUTING.md) — filosofía, convenciones y checklist a seguir antes de hacer, crear o eliminar algo.
 4. [`TECH_DEBT.md`](TECH_DEBT.md) — bugs conocidos, código muerto y duplicaciones vigentes, para no re-descubrir lo ya documentado.
 5. [`CHANGELOG.md`](CHANGELOG.md) — historial completo de cambios por PR.
@@ -147,7 +143,7 @@ Para sumarte al desarrollo de este proyecto, el orden recomendado de lectura es:
 ## Estado del proyecto
 
 **Versión:** v2.0.0
-**Estado:** mejoras de los PR #1, #2 y #4–#7 incorporadas a main; conflictos de Drive pendientes. Las referencias de versión heredadas no están unificadas: este README indica v2.0.0 y CONFIG.app.version indica 2.1.0.
+**Estado:** funcionamiento local con respaldo/restauración JSON, importación CSV/Excel y exportación de reportes. La integración de Drive fue retirada; el PR #3 no forma parte del funcionamiento actual. Las referencias de versión heredadas no están unificadas: este README indica v2.0.0 y CONFIG.app.version indica 2.1.0.
 
 
 ## Comportamiento actual y comprobaciones
@@ -164,4 +160,4 @@ La aplicación no requiere Node. Para ejecutar las pruebas de desarrollo desde l
 node --test tests/*.test.js
 ```
 
-186 pruebas aprobadas en el estado integrado. Usan módulos nativos, datos ficticios y dobles de DOM/HTTP/SheetJS; no prueban una cuenta de Drive real. Las comprobaciones adicionales de Chromium y bibliotecas CDN reales se describen en [TECH_DEBT.md](TECH_DEBT.md); los scripts temporales de esas sesiones no forman parte de la suite del repositorio. Consultá [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) para repetir la revisión manual y [docs/BUGS.md](docs/BUGS.md) para pendientes.
+265 pruebas aprobadas del funcionamiento local. Se retiraron 54 casos exclusivos de Drive y se adaptaron las pruebas locales relacionadas. Usan módulos nativos, datos ficticios y dobles de DOM/SheetJS. Las comprobaciones adicionales de Chromium y bibliotecas CDN reales se describen en [TECH_DEBT.md](TECH_DEBT.md); los scripts temporales de esas sesiones no forman parte de la suite del repositorio. Consultá [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) para repetir la revisión manual y [docs/BUGS.md](docs/BUGS.md) para pendientes.

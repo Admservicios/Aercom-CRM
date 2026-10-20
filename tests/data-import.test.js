@@ -18,7 +18,7 @@ function fixture() {
     facturacion_estados: {}, lastSaved: '2000-01-01' };
   const memory = new Map([['aercom-data', JSON.stringify(old)]]);
   const control = { writes: 0, renderFailure: false, quotaFailure: false,
-    badgeFailure: false, uploads: 0, requests: [] };
+    badgeFailure: false, requests: [] };
   const messages = [];
   const c = vm.createContext({ D: old, DEFAULT: valid(), _history: ['previo'],
     _future: ['futuro'], _inPersist: false, MAX_HIST: 30,
@@ -48,30 +48,18 @@ function fixture() {
     },
     fetch: async url => { control.requests.push(url); throw new Error('HTTP no preparado'); }
   });
-  for (const file of ['js/utils.js', 'js/storage.js', 'js/modules/drive.js']) {
+  for (const file of ['js/utils.js', 'js/storage.js']) {
     vm.runInContext(source(file), c, { filename: file });
   }
   c._origPersist = c._persistBase;
   // Ejercitar el decorador real, incluyendo su manejo de undo/redo.
   vm.runInContext(source('index.html').match(/function persist\(\)\{[\s\S]*?\n\}/)[0], c);
-  c._scheduleDriveSave = () => { control.uploads++; };
   const importFile = text => {
     const event = { target: { value: 'archivo', files: [{ text }] } };
     c.importData(event);
     assert.equal(event.target.value, '');
   };
-  vm.runInContext("_folderRootId='folder'; _gdriveToken='test-only'", c);
-  const remote = (data, status = 200) => {
-    control.requests.length = 0;
-    c.fetch = async url => {
-      control.requests.push(url);
-      return url.includes('?alt=media')
-        ? { ok: status === 200, text: async () => data }
-        : { ok: true, json: async () => ({ files: [{ id: 'file' }] }) };
-    };
-    c._gdriveSaveData = async () => { control.uploads++; };
-  };
-  return { c, old, memory, control, messages, importFile, remote };
+  return { c, old, memory, control, messages, importFile };
 }
 
 const invalid = [
@@ -105,7 +93,6 @@ for (const [name, text] of invalid) {
     assert.deepEqual(c._history, ['previo']);
     assert.deepEqual(c._future, ['futuro']);
     assert.equal(control.writes, 0);
-    assert.equal(control.uploads, 0);
     assert.match(messages.at(-1), /rechazada/);
   });
 }
@@ -117,7 +104,6 @@ test('Importar backup válido normaliza arrays opcionales y conserva campos adic
   assert.deepEqual(copy(c.D.clientes[0].campoAdicional), { conservar: true });
   for (const field of ['pedidos', 'eventos', 'recordatorios']) assert.deepEqual(copy(c.D[field]), []);
   assert.equal(JSON.parse(memory.get('aercom-data')).clientes[0].id, 'C1');
-  assert.equal(control.uploads, 1);
   assert.equal(c._history.length, 2);
   assert.equal(c._future.length, 0);
 });
@@ -145,7 +131,6 @@ for (const failure of ['renderFailure', 'quotaFailure', 'badgeFailure']) {
     assert.equal(memory.get('aercom-data'), stored);
     assert.deepEqual(c._history, ['previo']);
     assert.deepEqual(c._future, ['futuro']);
-    assert.equal(control.uploads, 0);
     assert.match(messages.at(-1), /rechazada/);
   });
 }
@@ -205,61 +190,4 @@ test('Un backup producido por exportData se puede validar sin perder sus campos'
   c.document.createElement = () => ({ click() {} });
   c.exportData();
   assert.deepEqual(copy(c._parseImportedData(await exported.text())), copy(c.D));
-});
-
-test('Drive: JSON inválido no reemplaza el local ni dispara subida', async () => {
-  const { c, old, memory, control, messages, remote } = fixture();
-  const stored = memory.get('aercom-data');
-  remote(JSON.stringify({ lastSaved: '2099-01-01' }));
-  await c._gdriveLoadData();
-  assert.equal(c.D, old);
-  assert.equal(memory.get('aercom-data'), stored);
-  assert.equal(control.writes, 0);
-  assert.equal(control.uploads, 0);
-  assert.equal(vm.runInContext('_gdriveDataFileId', c), null);
-  assert.match(messages.at(-1), /No se pudo verificar/);
-});
-
-test('Drive: tampoco se sube la copia local si el backup inválido parece más antiguo', async () => {
-  const { c, old, control, remote } = fixture();
-  remote(JSON.stringify({ lastSaved: '1900-01-01' }));
-  await c._gdriveLoadData();
-  assert.equal(c.D, old);
-  assert.equal(control.uploads, 0);
-});
-
-test('Drive: backup válido más reciente y distinto pausa sin reemplazar ni subir', async () => {
-  const { c, old, memory, control, remote } = fixture();
-  const stored=memory.get('aercom-data');
-  remote(JSON.stringify(valid()));
-  await c._gdriveLoadData();
-  assert.equal(c.D,old);
-  assert.equal(memory.get('aercom-data'),stored);
-  assert.equal(control.writes,0);
-  assert.equal(control.uploads,0);
-  assert.equal(vm.runInContext('_gdriveSyncChecked',c),false);
-});
-
-test('Drive: errores HTTP de búsqueda o descarga no se confunden con backup ausente', async () => {
-  for (const stage of ['búsqueda', 'descarga']) {
-    const { c, old, control, remote } = fixture();
-    if (stage === 'búsqueda') c.fetch = async () => ({ ok: false });
-    else remote(JSON.stringify(valid()), 403);
-    await c._gdriveLoadData();
-    assert.equal(c.D, old);
-    assert.equal(control.writes, 0);
-    assert.equal(control.uploads, 0);
-  }
-});
-
-test('Drive: copia distinta no requiere renderizarla y conserva la local', async () => {
-  const { c, old, control, memory, remote } = fixture();
-  const stored = memory.get('aercom-data');
-  remote(JSON.stringify(valid()));
-  control.renderFailure = true;
-  await c._gdriveLoadData();
-  assert.equal(c.D, old);
-  assert.equal(memory.get('aercom-data'), stored);
-  assert.equal(control.uploads, 0);
-  assert.equal(vm.runInContext('_gdriveDataFileId', c), null);
 });

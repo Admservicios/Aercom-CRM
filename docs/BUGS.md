@@ -6,7 +6,7 @@ Este documento reemplaza una lista histórica de checks sin evidencia, versiones
 |---|---|---|
 | Corregido en los flujos revisados | Conservación al editar/importar, validación JSON/CSV/Excel, borrados con referencias, undo/redo y fechas | Suite Node: 186 pruebas; ver [guía de validación](../DEVELOPER_GUIDE.md) |
 | Mejorado con alcance acotado | Rendimiento de contadores de clientes y diseño móvil | Comparación de HTML y Chromium en cinco anchos; no incorpora paginación ni certifica dispositivos físicos |
-| Pendiente | Conflictos, duplicados y concurrencia de Drive | [PR #3](https://github.com/Admservicios/Aercom-CRM/pull/3) en borrador, requiere cuenta real y validación ETag/If-Match |
+| Retirado de alcance | Conflictos, duplicados y concurrencia de Drive | La integración fue eliminada por decisión del usuario; PR #3 no debe incorporarse al modo local |
 | Pendiente | Guardado ordinario de formularios ante cuota y carga inicial corrupta | Los mecanismos de recuperación no cubren todas las mutaciones de la aplicación |
 | Pendiente | Integridad referencial de JSON/formularios y huérfanos históricos | La validación tabular revisa registros nuevos/modificados; no repara datos antiguos |
 | Pendiente | Límites de tamaño, rendimiento de otros módulos y bibliotecas CDN | Sin límites de importación ni paginación/virtualización; revisar SheetJS y disponibilidad del CDN |

@@ -37,7 +37,7 @@ for(const [name,mutate] of [
  const f=fixture(mutate);await assert.rejects(f.prepare());assert.equal(f.control.writes,0);assert.equal(f.memory.get('aercom-data'),f.raw);
 });
 test('Aplicar exige copia original guardada y confirmación antes de escribir',async()=>{
- const f=fixture();await f.apply();assert.equal(f.control.writes,0);assert.equal(f.control.confirms,0);f.backup();f.node('storage-recovery-backed-up').checked=false;await f.apply();assert.equal(f.control.writes,0);f.node('storage-recovery-backed-up').checked=true;f.control.confirmed=false;await f.apply();assert.equal(f.control.confirms,1);assert.equal(f.control.writes,0);f.control.confirmed=true;await f.apply();assert.equal(f.control.writes,1);assert.equal(f.control.reloads,1);assert.equal(f.sessionMemory.get('aercom-recovery-pause-drive'),'1');assert.equal(JSON.parse(f.memory.get('aercom-data')).clientes[0].extra.conservar,true);
+ const f=fixture();await f.apply();assert.equal(f.control.writes,0);assert.equal(f.control.confirms,0);f.backup();f.node('storage-recovery-backed-up').checked=false;await f.apply();assert.equal(f.control.writes,0);f.node('storage-recovery-backed-up').checked=true;f.control.confirmed=false;await f.apply();assert.equal(f.control.confirms,1);assert.equal(f.control.writes,0);f.control.confirmed=true;await f.apply();assert.equal(f.control.writes,1);assert.equal(f.control.reloads,1);assert.equal(f.sessionMemory.size,0);assert.equal(JSON.parse(f.memory.get('aercom-data')).clientes[0].extra.conservar,true);
 });
 test('Copia cambiada durante preparación se rechaza sin sobrescribirla',async()=>{
  const f=fixture();f.backup();f.memory.set('aercom-data','otra copia');await f.apply();assert.equal(f.memory.get('aercom-data'),'otra copia');assert.equal(f.control.writes,0);assert.match(f.status(),/otra pestaña/);
@@ -48,12 +48,16 @@ test('Cambio de sesión mientras se calcula el hash impide aplicar el plan',asyn
 test('Doble aplicación concurrente solo confirma y escribe una vez',async()=>{
  const f=fixture();f.backup();await Promise.all([f.apply(),f.apply()]);assert.equal(f.control.confirms,1);assert.equal(f.control.writes,1);assert.equal(f.control.reloads,1);
 });
-for(const error of ['quota','session'])test(`Fallo ${error} conserva original y permite reintento`,async()=>{
+for(const error of ['quota'])test(`Fallo ${error} conserva original y permite reintento`,async()=>{
  const f=fixture();f.backup();f.control[error]=true;await f.apply();assert.equal(f.memory.get('aercom-data'),f.raw);assert.equal(f.control.writes,0);assert.equal(f.control.reloads,0);f.control[error]=false;await f.apply();assert.equal(f.control.writes,1);assert.equal(f.control.reloads,1);
 });
 test('JSON de plan inválido o hash no disponible no habilita ni modifica datos',async()=>{
  const f=fixture();f.backup();f.node('storage-recovery-plan').value='{';await f.c._applyStorageBranchRepair();assert.equal(f.control.writes,0);f.c.crypto={};await f.apply();assert.equal(f.control.writes,0);assert.equal(f.memory.get('aercom-data'),f.raw);assert.equal(f.control.reloads,0);
 });
-test('Recarga impedida informa la escritura exitosa y conserva pausa de Drive',async()=>{
- const f=fixture();f.backup();f.control.reloadFailure=true;await f.apply();assert.equal(f.control.writes,1);assert.match(f.status(),/La corrección se guardó/);assert.match(f.status(),/manualmente/);assert.equal(f.sessionMemory.get('aercom-recovery-pause-drive'),'1');
+test('Recarga impedida informa la escritura exitosa sin depender de sesión',async()=>{
+ const f=fixture();f.backup();f.control.reloadFailure=true;await f.apply();assert.equal(f.control.writes,1);assert.match(f.status(),/La corrección se guardó/);assert.match(f.status(),/manualmente/);assert.equal(f.sessionMemory.size,0);
+});
+
+test('Restauración local funciona aunque sessionStorage esté bloqueado',async()=>{
+ const f=fixture();f.control.session=true;f.backup();await f.apply();assert.equal(f.control.writes,1);assert.equal(f.control.reloads,1);assert.equal(f.sessionMemory.size,0);
 });

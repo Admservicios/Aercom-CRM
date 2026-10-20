@@ -10,9 +10,7 @@
  * plantillas prellenadas (Clientes/Equipos/Cotizaciones) con
  * hojas de instrucciones y referencia, importación con matching
  * por ID/nombre y merge no destructivo, exportación de reportes
- * (Clientes/Equipos/Cotizaciones/Facturación) a descarga local o
- * a Google Drive, y el contador de registros de la pantalla
- * "Excel / Drive".
+ * (Clientes/Equipos/Cotizaciones/Facturación) a descarga local, y el contador de registros de la pantalla Excel.
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
@@ -21,10 +19,6 @@
  *   _applyTableImport(), _importNumber(), _importBoolean() (js/storage.js)
  *
  * Decisiones de límite de módulo:
- *   - `xlsExport(tipo,'drive')` depende de `_gdriveReady`,
- *     `_gdriveUploadFile()` y `_folderReportId` — todas viven en
- *     la integración de Google Drive (index.html) y no se migran
- *     acá; Excel solo las invoca cuando el destino es Drive.
  *   - `generarReporteVencimientos()` y `_LOGO_RPT` NO son parte de
  *     este módulo: son del Reporte PDF, ya migrados a
  *     js/modules/reportes.js (Sprint 13).
@@ -324,8 +318,7 @@ function _validateXlsRows(rows,tipo){
 }
 
 // ─── EXCEL: EXPORTAR ─────────────────────────────────────────────────────────
-async function xlsExport(tipo, destino){
-  if(destino==='drive'&&!_gdriveReady){toast('⚠ Conectate a Drive primero');return;}
+function xlsExport(tipo){
   const fecha=today();
   const nombre=`reporte-${tipo}-${fecha}.xlsx`;
   const wb=XLSX.utils.book_new();
@@ -360,18 +353,8 @@ async function xlsExport(tipo, destino){
   ws['!cols']=XLS_HEADERS[tipo].map(()=>({wch:22}));
   XLSX.utils.book_append_sheet(wb,ws,'Reporte');
 
-  if(destino==='download'){
-    XLSX.writeFile(wb,nombre);
-    toast(`✓ ${nombre} descargado`);
-  } else {
-    // Subir a Drive
-    const xlsData=XLSX.write(wb,{bookType:'xlsx',type:'array'});
-    const blob=new Blob([xlsData],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    toast('Subiendo a Drive...');
-    const ok=await _gdriveUploadFile(nombre,blob,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',_folderReportId);
-    if(ok) toast(`✓ ${nombre} guardado en Drive/Aercom Gestion/Reportes/`);
-    else toast('⚠ No se pudo subir a Drive');
-  }
+  XLSX.writeFile(wb,nombre);
+  toast(`✓ ${nombre} descargado`);
 }
 
 // ─── EXCEL COUNTS ────────────────────────────────────────────────────────────

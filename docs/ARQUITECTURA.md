@@ -6,12 +6,12 @@ Este documento refleja el estado real del código a la fecha, verificado archivo
 
 ## 1. Visión general
 
-La aplicación es un CRM de página única (`index.html`) sin build step ni framework: HTML + CSS + JS vanilla, cargado directamente por el navegador vía `<script src>`. No hay backend — toda la persistencia es `localStorage`, con sincronización opcional a Google Drive.
+La aplicación es un CRM de página única (`index.html`) sin build step ni framework: HTML + CSS + JS vanilla, cargado directamente por el navegador vía `<script src>`. No hay backend — toda la persistencia es `localStorage`, sin sincronización remota.
 
 El código está dividido en dos capas:
 
 - **Infraestructura compartida** — vive en `index.html` (el bloque `<script>` principal) y en `js/utils.js`, `js/storage.js`, `js/modal.js`, `js/config.js`, `js/ui.js`, `js/app.js`. No pertenece a ningún módulo de dominio; la usan todos.
-- **Módulos de dominio** — 13 archivos en `js/modules/`, cada uno con una responsabilidad de negocio específica y un header de documentación que declara sus dependencias externas y sus decisiones de límite.
+- **Módulos de dominio** — 12 archivos en `js/modules/`, cada uno con una responsabilidad de negocio específica y un header de documentación que declara sus dependencias externas y sus decisiones de límite.
 
 ---
 
@@ -29,8 +29,7 @@ El código está dividido en dos capas:
 | Recordatorios | `recordatorios.js` | Listado con filtros, alta/edición/eliminación, toggle Pendiente↔Hecho |
 | Theme | `theme.js` | Detección de tema claro/oscuro, toggle, persistencia en `localStorage` (clave separada de los datos del CRM) |
 | Reportes PDF | `reportes.js` | Documento HTML standalone (KPIs + 2 gráficos + tablas) para imprimir/guardar como PDF, abierto en ventana nueva |
-| Excel | `excel.js` | Plantillas de importación, importación con matching por ID/nombre, exportación de reportes (local o a Drive) |
-| Google Drive | `drive.js` | OAuth (Google Identity Services), estructura de carpetas, sincronización de `aercom-data.json`, subida de archivos |
+| Excel | `excel.js` | Plantillas de importación, importación con matching por ID/nombre, exportación de reportes con descarga local |
 | CSV Import | `csv.js` | Importación masiva vía CSV para Clientes/Equipos/Cotizaciones, con detección de conflictos y elección Saltar/Reemplazar |
 
 Todos siguen el mismo patrón de header: **Responsabilidad**, **Dependencias externas** (qué usan de fuera y por qué no se movió), **Decisiones de límite de módulo** (qué se dejó fuera y por qué).
@@ -46,7 +45,7 @@ Nada de esto pertenece a un módulo — lo usan 2 o más:
 | `D` | Objeto de estado global — toda la data del CRM vive acá (clientes, equipos, cotizaciones, pedidos, recordatorios, eventos, facturación) |
 | `curModule` | Módulo actualmente visible |
 | `loadData()` / `_persistBase()` (`js/storage.js`) | Carga/guardado base en `localStorage` (clave `STORAGE_KEY = "aercom-data"`) |
-| `persist()` (`index.html`) | Decorador sobre `_persistBase()`: agrega snapshot de undo/redo y dispara `_scheduleDriveSave()` — punto de guardado que deben usar los módulos; la infraestructura de restauración conserva sus rutas controladas |
+| `persist()` (`index.html`) | Decorador sobre `_persistBase()`: agrega snapshot de undo/redo  — punto de guardado que deben usar los módulos; la infraestructura de restauración conserva sus rutas controladas |
 | `showModule()` / `renderModule()` | Dispatcher de navegación entre módulos |
 | `equipStatus()`, `clientName()`, `clientCritical()`, `critBadge()` | Helpers de dominio usados por 3+ módulos (Equipos, Dashboard, Clientes, Calendario, Reportes) |
 | `ESTADOS`, `E_COLOR` | Constantes del pipeline de Cotizaciones, usadas también por Dashboard (gráfico) y Clientes (ficha) |
@@ -95,11 +94,6 @@ No es una cadena lineal. El acoplamiento real es:
            (lee TODOS los         (lee Equipos+Clientes  (lee/escribe Clientes+
             dominios, no          para el informe de     Equipos+Cotizaciones+
             escribe nada)          vencimientos)          Facturación)
-                                                                 │
-                                                            Google Drive
-                                                        (sincroniza D completo,
-                                                         sube archivos de Excel
-                                                         y Reportes)
 
 Theme: sin acoplamiento a datos de dominio — solo toca localStorage['theme'] y el DOM.
 ```
@@ -109,7 +103,6 @@ Theme: sin acoplamiento a datos de dominio — solo toca localStorage['theme'] y
 - **Pedidos ↔ Cotizaciones**: `openPedidoModal(null, cotId, null)` se invoca desde el kanban de Cotizaciones; `savePedido()`/`advancePedido()` mutan `cot.estado` de Cotizaciones al marcar un pedido como Realizado. Es acoplamiento funcional documentado, no accidental.
 - **Calendario** es puramente de lectura sobre 4 dominios ajenos (Equipos, Cotizaciones, Recordatorios, Pedidos) — no los muta, solo arma un feed unificado. Su único dominio propio es `D.eventos`.
 - **CSV Import** mantiene acoplamiento con los modelos de dominio: `CSV_SCHEMAS` escribe directamente en `D.clientes`/`D.equipos`/`D.cotizaciones` desde fuera de sus módulos propios — conocido y documentado, no corregido (ver TECH_DEBT.md).
-- **Excel** exportación a Drive (`xlsExport(tipo,'drive')`) depende de `_gdriveReady`/`_gdriveUploadFile`/`_folderReportId`, todos definidos en Drive — Excel llama a Drive, nunca al revés.
 - **Dashboard** y **Reportes PDF** son consumidores puros: leen de todos los dominios relevantes, no escriben en ninguno.
 
 ---
@@ -118,8 +111,7 @@ Theme: sin acoplamiento a datos de dominio — solo toca localStorage['theme'] y
 
 - **`localStorage['aercom-data']`** — único almacén de datos del CRM (clientes, equipos, cotizaciones, pedidos, recordatorios, eventos, facturación). Formato: JSON de `D` completo, sin particionar por módulo.
 - **`localStorage['theme']`** — clave separada, solo Theme la usa.
-- **`localStorage['aercom-drive-connected']`** — flag booleano que recuerda si el usuario conectó Drive, para reintentar reconexión silenciosa al arrancar.
-- **Guardado**: los módulos usan `persist()` para mantener historial y programación de Drive. CSV/Excel lo invocan mediante `_applyTableImport()` y `_applyImportedData()`. Undo/redo usa `_origPersist()` dentro de la restauración controlada y programa Drive tras el éxito. La descarga desde Drive usa su ruta de aplicación local, sin convertirla en una nueva edición.
+- **Guardado**: los módulos usan `persist()` para mantener historial. CSV/Excel lo invocan mediante `_applyTableImport()` y `_applyImportedData()`. Undo/redo usa `_origPersist()` dentro de la restauración controlada tras el éxito.
 - **Sin particionado ni versionado de esquema**: un cambio de forma en cualquier entidad de `D` es responsabilidad del módulo dueño de esa entidad; no hay migraciones automáticas más allá de las normalizaciones que hace `loadData()` (retrocompatibilidad de `facturacion_clientes`, arrays obligatorios, remapeo de estados heredados de Cotizaciones).
 
 ---
@@ -129,24 +121,19 @@ Theme: sin acoplamiento a datos de dominio — solo toca localStorage['theme'] y
 Implementado en `index.html`, no en ningún módulo — es infraestructura transversal:
 
 - `persist()` conserva la copia local anterior (o el snapshot de arranque si no había copia), guarda y después agrega el snapshot a `_history` (tope `MAX_HIST = 30`).
-- `undoAction()`/`redoAction()` delegan en `_restoreHistory()`: aplicación con recuperación de datos/pilas/almacenamiento, guardado base sin generar otra acción, movimiento de pilas tras el éxito y programación de Drive. Las pilas solo viven en memoria y desaparecen al recargar.
+- `undoAction()`/`redoAction()` delegan en `_restoreHistory()`: aplicación con recuperación de datos/pilas/almacenamiento, guardado base sin generar otra acción, movimiento de pilas tras el éxito. Las pilas solo viven en memoria y desaparecen al recargar.
 - Es undo/redo de **estado completo**, no por-módulo ni por-campo — deshacer una acción en Clientes también revierte cualquier cambio no relacionado que haya ocurrido después.
 - Atajos Ctrl/Meta+Z, Ctrl/Meta+Y y Ctrl/Meta+Shift+Z fuera de campos editables; dentro de estos se conserva el deshacer nativo.
 
 ---
 
-## 7. Google Drive
+## 7. Funcionamiento local y respaldo
 
-- Autenticación OAuth2 implícita vía Google Identity Services (`_loadGIS()` carga el script de `accounts.google.com` on-demand).
-- Scope `drive.file`: acceso a los archivos autorizados para esta aplicación, no al Drive completo.
-- Estructura de carpetas creada automáticamente: `Aercom Gestion/` → `Reportes/` + `Importaciones/`.
-- Backup de D completo como `aercom-data.json`. La conexión manual y automática ejecuta una revisión antes de permitir guardados del CRM: valida el remoto y compara copias normalizadas por contenido, ignorando solo lastSaved y orden de propiedades. Una diferencia no se resuelve por fecha; se conserva la copia local y se pausa la sincronización.
-- `_gdriveReady` indica autenticación/carpetas listas; `_gdriveSyncChecked` indica revisión del backup completada en esta conexión. `_gdriveSaveData()` y `_scheduleDriveSave()` exigen ambas condiciones. Si no hay backup y la lista es válida/única, se permite crear el primero. Backups/carpetas duplicados, resultados paginados, archivos incompatibles y errores de lectura no se interpretan como ausencia.
-- La revisión pausada conserva el texto remoto leído en memoria y ofrece descargarlo como .txt, aun si está rechazado, y descargar D actual como JSON sin mutarlo. El modal se abre en conexión manual; en reconexión automática queda un botón para revisarlo sin interrumpir la edición. Se puede seguir trabajando localmente. No se incluye elección/aplicación de una copia distinta: la resolución completa del PR #3 sigue en borrador y sin validar ETag/If-Match con Drive real.
-- El token OAuth se mantiene solo en memoria (`_gdriveToken`), nunca se persiste en localStorage. La preferencia de conexión permite reconectar, salvo la pausa de recuperación de esta pestaña. Cambios de sesión/revisión invalidan lecturas anteriores y evitan confirmar/resignar IDs tras desconectar; una petición remota ya enviada no puede deshacerse.
-- `_scheduleDriveSave()` hace debounce de 5s después de una revisión válida, invocado por persist() y restauraciones de undo/redo. Las subidas posteriores siguen sin serializarse ni realizar comparación condicional contra una revisión remota: no garantiza concurrencia entre dispositivos/pestañas ni detecta cambios remotos posteriores a la conexión.
-- Preparación y subidas comprueban HTTP/IDs. `_gdriveSaveData()` confirma el snapshot solo tras PATCH exitoso, conserva pendiente si D cambió durante el envío y devuelve false ante errores. `_gdriveUploadFile()` informa fallos a Excel; los reportes son archivos independientes, disponibles con autenticación aunque el backup del CRM esté pausado.
-- La validación estructural `_parseImportedData()` también se usa en arranque e importación local. Conserva campos adicionales y normalizaciones heredadas, rechaza incompatibilidades sin reparación automática y no verifica toda referencia ni certifica renderizadores. La revisión de Drive no aplica un candidato remoto a D. El reemplazo por archivo sigue protegido por `_applyImportedData()`; los procedimientos de recuperación requieren revisión/confirmación.
+- Los datos del CRM solo se guardan en localStorage del navegador/origen actual. No hay autenticación, reconexión ni sincronización de Google. La clave aercom-data y el esquema se conservan.
+- Guardar JSON descarga D completo para respaldo/traslado; Importar JSON valida y restaura. No se escriben automáticamente las carpetas data/ o backups/ del repositorio. Mantener una copia fuera del navegador y exportarla antes de borrar almacenamiento/cambiar de equipo.
+- La recuperación conserva su validación, confirmación y protección ante fallos de cuota/copia cambiada. Ya no depende de sessionStorage. Las preferencias antiguas de Drive quedan ignoradas, sin limpiar datos ni acceder a archivos remotos.
+- Excel exporta solo a descarga local. Se retiraron el módulo Drive, sus controles, callbacks y pruebas exclusivas. El PR #3 y los trabajos históricos de Drive quedan fuera del alcance actual; no reintroducirlos como si fueran pendientes del CRM local.
+- El guardado local no implica una aplicación offline: Chart.js/SheetJS siguen cargando desde CDN. No se garantiza arranque completo sin conexión ni se cambia el origen del sitio o instala un backend.
 
 ---
 
@@ -155,7 +142,7 @@ Implementado en `index.html`, no en ningún módulo — es infraestructura trans
 - Librería externa: SheetJS (`xlsx.full.min.js`, CDN, sin Subresource Integrity).
 - Plantillas de descarga (`xlsDownloadPlantilla`) para Clientes/Equipos/Cotizaciones, con hoja de instrucciones y hoja de referencia de IDs.
 - Importación (`xlsImport`) por ID o nombre exacto único de cliente; equipos/cotizaciones requieren ID explícito. El lote se prepara y valida sobre una copia, preserva campos adicionales y se rechaza completo ante error. No usa coincidencia parcial/fuzzy. Las celdas vacías conservan valores existentes; se rechazan fechas inválidas y libros 1904.
-- Exportación de reportes (`xlsExport`) para Clientes/Equipos/Cotizaciones/Facturación, a descarga local o subida a Drive.
+- Exportación de reportes (`xlsExport`) para Clientes/Equipos/Cotizaciones/Facturación, a descarga local.
 - No usa `_esc()` en ningún lado — no genera HTML, solo estructuras de datos para SheetJS.
 
 ---
@@ -214,7 +201,7 @@ En anchos hasta 800 px, CSS muestra el control de menú y usa el sidebar existen
 
 ## Historial y fechas (paso 7)
 
-`index.html` conserva un snapshot del estado normalizado de arranque, usado cuando la primera edición todavía no tiene copia previa en localStorage. El decorador de persistencia agrega historial después del guardado exitoso. `_restoreHistory()` usa `_applyImportedData()` de Storage para recuperar memoria, copia local y pilas ante errores; solo mueve la acción entre pilas tras el éxito y entonces llama al programador de Drive. Undo/redo no crea una acción adicional mediante `persist()`. Los atajos respetan campos editables y el historial mantiene su límite de 30 acciones por sesión.
+`index.html` conserva un snapshot del estado normalizado de arranque, usado cuando la primera edición todavía no tiene copia previa en localStorage. El decorador de persistencia agrega historial después del guardado exitoso. `_restoreHistory()` usa `_applyImportedData()` de Storage para recuperar memoria, copia local y pilas ante errores; solo mueve la acción entre pilas tras el éxito sin programar subidas remotas. Undo/redo no crea una acción adicional mediante `persist()`. Los atajos respetan campos editables y el historial mantiene su límite de 30 acciones por sesión.
 
 `_localDateString(Date)` serializa año/mes/día locales sin convertirlos a UTC; lo usan `today()` y el calendario. `daysDiff()` compara fechas YYYY-MM-DD como días UTC respecto de hoy local; `addDays()` suma sobre días UTC. Esta distinción conserva el día civil y evita duraciones de 23/25 horas en la aritmética. No convierte horas ni altera el formato de datos existente.
 

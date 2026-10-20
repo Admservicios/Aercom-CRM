@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — CRM con datos exclusivamente locales
+
+- Retirada la integración de Google Drive por decisión del usuario: módulo, autenticación, reconexión, avisos, programación del guardado y destinos de exportación remotos. Excel conserva importaciones, plantillas y descarga de reportes; JSON/CSV y las funcionalidades actuales se mantienen.
+- La clave aercom-data y el esquema no cambian. Preferencias antiguas se ignoran, sin eliminar datos locales ni acceder a archivos de Google. La recuperación deja de depender de sessionStorage. URLs de Storage/Excel versionadas.
+- Documentación activa actualizada al modo local y al respaldo/traslado manual JSON. Las entradas de Drive anteriores son históricas; no se reintroduce PR #3.
+- Validación: 265 pruebas locales aprobadas. Retirados 54 casos exclusivos de la integración eliminada; pruebas locales adaptadas sin reducir controles de persistencia/recuperación. Chromium aislado: nueve vistas, edición/historial/recarga, JSON, CSV, cuatro reportes y tres plantillas XLSX reales, cuota/borrador, flags antiguos y sessionStorage bloqueado; 375/1440 px, cero errores JS y solicitudes de autenticación/API Google. Chart simulado; SheetJS 0.18.5 desde la fuente de cdnjs. No se incluyen archivos de usuario en Git.
+
 ## Sin publicar — revisión de Drive antes de sincronizar
 
 - Autenticación separada de verificación del backup: conexión manual y automática comparan contenido normalizado antes de habilitar guardados del CRM. Ninguna fecha elige una versión.

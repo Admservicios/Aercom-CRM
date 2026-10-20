@@ -2290,7 +2290,7 @@ tr:hover td {
     color: #000000 !important;
     font-size: 12px !important;
   }
-  #sidebar, .page-header button, .sb-footer, #btn-drive, #btn-guardar, .srch-bar, .filters-bar, .btn {
+  #sidebar, .page-header button, .sb-footer, #btn-guardar, .srch-bar, .filters-bar, .btn {
     display: none !important;
   }
   #main {
