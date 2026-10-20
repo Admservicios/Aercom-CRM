@@ -4,6 +4,12 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — filtros de cotizaciones completos
+
+- Búsqueda por ID, cliente y descripción completa a partir de los datos, aunque la tarjeta muestre un resumen. El responsable se compara con su nombre completo, evitando leer el texto de toda la tarjeta.
+- Incorporado «A facturar» al selector de estados. Se conservan filtros combinados, limpieza y contadores; URL del módulo versionada para actualizar la caché.
+- Validación: 273 pruebas Node aprobadas (8 nuevas); los casos nuevos reprodujeron los errores antes de corregirlos. Chromium aislado a 375/1440 px verificó responsable, descripción, cliente, ID, estado, combinaciones, sin resultados, limpieza y apertura de edición. Datos ficticios, Chart.js/SheetJS reales, cero errores JS y escrituras de aercom-data. Sin cambios de esquema ni datos de usuario.
+
 ## Sin publicar — CRM con datos exclusivamente locales
 
 - Retirada la integración de Google Drive por decisión del usuario: módulo, autenticación, reconexión, avisos, programación del guardado y destinos de exportación remotos. Excel conserva importaciones, plantillas y descarga de reportes; JSON/CSV y las funcionalidades actuales se mantienen.

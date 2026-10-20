@@ -4,6 +4,14 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Cotizaciones — filtros sobre los datos completos
+
+applyPipeFilter() consulta cotizaciones/clientes mediante mapas por ID; ya no obtiene responsable del contenido completo de la tarjeta ni descripción del resumen de 60 caracteres. Comparación exacta de responsable y búsqueda sin distinguir mayúsculas por ID, nombre de cliente y descripción completa. Se conserva el comportamiento de columnas y contadores y se ofrece A facturar en el selector. No se modifica D ni se llama a persistencia. Una tarjeta sin registro se oculta.
+
+Verificación: 8 pruebas nuevas, 273 aprobadas; reproducción previa de responsable/descripción/estado ausente y Chromium aislado a 375/1440 px con datos ficticios, bibliotecas reales, filtros combinados, limpieza y apertura de edición. Sin errores JS ni escrituras de aercom-data; almacenamiento y D intactos.
+
+Límites: búsqueda por subcadena, sensible a tildes; los montos y el resumen superior conservan su alcance general. No se rediseña el tablero móvil ni se corrigen aquí navegación de fechas, alcance de facturación o accesibilidad de modales; son pasos separados de la revisión visual/funcional. No constituye una certificación de Firefox/Safari.
+
 ## Funcionamiento local — retirada de Google Drive
 
 Por decisión del usuario se retira la integración completa de Drive: script/módulo, OAuth, reconexión, revisión, llamadas de guardado y subida de reportes. Menú/pantalla quedan como Excel, con importaciones y descargas locales. Se eliminan las referencias de impresión obsoletas y se versionan Storage/Excel para evitar scripts antiguos cacheados. Antes de eliminar el módulo se buscaron sus consumidores reales; tras retirar llamadas/cargas solo quedaban las pruebas exclusivas y el propio módulo. No se crea un stub de sincronización ni se conserva código remoto inactivo.
