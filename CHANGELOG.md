@@ -4,6 +4,12 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — aplicar un plan de sucursales sin archivo nuevo
+
+- Recuperación mediante un plan JSON revisado pegado en la pantalla: huella SHA-256 exacta del original, códigos únicos por sucursal y asignaciones explícitas a registros. Sin descargar el backup corregido ni usar la consola del navegador.
+- La preparación no escribe: restringe campos/colecciones, exige cubrir el grupo duplicado y sus referencias conocidas, rechaza facturación que requiera revisión y valida el candidato completo. Descarga/verificación del original y confirmación antes de aplicar con el mecanismo de restauración existente; pausa de Drive, controles de sesión/copia y manejo de fallos conservados.
+- 294 pruebas Node aprobadas (29 nuevas). Chromium aislado verificó la copia revisada, conservación, asignaciones, nueve vistas, cancelación/hash incorrecto/cuota/cambio externo y pausa Drive, sin errores JS; 375/1440 px. Ningún dato o plan particular de usuario se publica en Git.
+
 ## Sin publicar — restauración validada desde recuperación
 
 - Pantalla de recuperación con motivo de rechazo y restauración explícita desde un archivo validado, previa descarga/verificación del original y confirmación del reemplazo completo. Se conserva el bloqueo de edición mientras los datos no carguen correctamente.
