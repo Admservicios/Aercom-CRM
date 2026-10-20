@@ -4,6 +4,12 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — navegación mensual del calendario
+
+- Corregido el salto de meses al avanzar o retroceder desde el día 29, 30 o 31: se visita el mes contiguo y se ajusta el día al último disponible. Ejemplo: 31/01/2026 → 28/02/2026; en 2024, → 29/02/2024.
+- Se conserva la navegación semanal de siete días, los eventos, el diseño de celdas fijas y el botón Hoy. URL del módulo versionada para evitar la caché anterior.
+- Validación: 281 pruebas Node aprobadas, 8 nuevas en cuatro zonas horarias con reproducción previa del error, fin de mes, bisiestos, cambio de año, recorridos de doce meses y cambio de vista. Chromium aislado a 375/1440 px: navegación real, detalle de evento, Hoy y dimensiones de celdas; bibliotecas reales y datos ficticios. Cero errores JS/escrituras de aercom-data; D y almacenamiento intactos.
+
 ## Sin publicar — filtros de cotizaciones completos
 
 - Búsqueda por ID, cliente y descripción completa a partir de los datos, aunque la tarjeta muestre un resumen. El responsable se compara con su nombre completo, evitando leer el texto de toda la tarjeta.

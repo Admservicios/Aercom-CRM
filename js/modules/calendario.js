@@ -49,9 +49,18 @@ function calSetVista(v){
   renderCalendario();
 }
 
+function _calShiftMonth(delta){
+  const day=calFecha.getDate();
+  // Evitar que el día 29/30/31 desborde el mes de destino.
+  calFecha.setDate(1);
+  calFecha.setMonth(calFecha.getMonth()+delta);
+  const lastDay=new Date(calFecha.getFullYear(),calFecha.getMonth()+1,0).getDate();
+  calFecha.setDate(Math.min(day,lastDay));
+}
+
 function calPrev(){
   if(calVista==='mes'){
-    calFecha.setMonth(calFecha.getMonth()-1);
+    _calShiftMonth(-1);
   } else {
     calFecha.setDate(calFecha.getDate()-7);
   }
@@ -59,7 +68,7 @@ function calPrev(){
 }
 function calNext(){
   if(calVista==='mes'){
-    calFecha.setMonth(calFecha.getMonth()+1);
+    _calShiftMonth(1);
   } else {
     calFecha.setDate(calFecha.getDate()+7);
   }
