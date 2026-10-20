@@ -231,6 +231,8 @@ function applyPipeFilter(){
   const q=(document.getElementById('pipe-q')||{value:''}).value.trim().toLowerCase();
   const est=(document.getElementById('pipe-f-est')||{value:''}).value;
   const resp=(document.getElementById('pipe-f-resp')||{value:''}).value;
+  const quotesById=new Map(D.cotizaciones.map(c=>[c.id,c]));
+  const clientsById=new Map(D.clientes.map(c=>[c.id,c.nombre||'']));
   document.querySelectorAll('.k-col').forEach(col=>{
     const colEst=col.querySelector('.k-body')?.dataset.estado||'';
     col.style.display=(!est||colEst===est)?'':'none';
@@ -239,10 +241,13 @@ function applyPipeFilter(){
   document.querySelectorAll('.k-card').forEach(card=>{
     const col=card.closest('.k-col');
     if(col&&col.style.display==='none'){card.style.display='none';return;}
-    const idT=(card.querySelector('.k-id')?.textContent||'').toLowerCase();
-    const cliT=(card.querySelector('.k-client')?.textContent||'').toLowerCase();
-    const descT=(card.querySelector('.k-desc')?.textContent||'').toLowerCase();
-    const respT=(card.lastElementChild?.textContent||'').trim();
+    // Filtrar por los datos completos, no por el texto recortado de la tarjeta.
+    const quote=quotesById.get(card.dataset.id);
+    if(!quote){card.style.display='none';return;}
+    const idT=quote.id.toLowerCase();
+    const cliT=(clientsById.get(quote.clienteId)||'').toLowerCase();
+    const descT=(quote.descripcion||'').toLowerCase();
+    const respT=quote.responsable||'';
     const ok=(!q||idT.includes(q)||cliT.includes(q)||descT.includes(q))&&(!resp||respT===resp);
     card.style.display=ok?'':'none';
     if(ok)n++;
