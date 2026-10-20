@@ -11,7 +11,7 @@
      principal: éste llama a loadData() y renderDashboard() de forma síncrona
      durante la inicialización -->
 <script src="js/utils.js"></script>
-<script src="js/storage.js?v=validated-recovery-20261019"></script>
+<script src="js/storage.js?v=branch-recovery-plan-20261020"></script>
 <script src="js/modules/dashboard.js"></script>
 <script src="js/modules/clientes.js?v=local-save-recovery-20261019"></script>
 <script src="js/modules/equipos.js?v=local-save-recovery-20261019"></script>
@@ -39,6 +39,13 @@
   <p><label><input id="storage-recovery-backed-up" type="checkbox"> Guardé y verifiqué una copia del original descargado.</label></p>
   <button id="storage-recovery-restore" class="btn btn-outline" type="button" onclick="document.getElementById('storage-recovery-file').click()">Restaurar copia validada…</button>
   <input id="storage-recovery-file" type="file" accept=".json,.txt,application/json,text/plain" hidden onchange="_importStorageRecovery(event)">
+  <details style="margin-top:16px">
+    <summary>Aplicar corrección revisada sin archivo nuevo</summary>
+    <p>Pegá el plan revisado para esta copia. Se comprobará su coincidencia antes de pedir confirmación. No se ejecuta código ni se eliminan fichas.</p>
+    <label for="storage-recovery-plan">Plan de corrección</label>
+    <textarea id="storage-recovery-plan" rows="5" spellcheck="false" style="box-sizing:border-box;width:100%;max-width:100%;color:#0f172a;background:#fff"></textarea>
+    <button id="storage-recovery-repair" class="btn btn-outline" type="button" onclick="_applyStorageBranchRepair()">Validar y aplicar corrección…</button>
+  </details>
   <p id="storage-recovery-status" role="status" style="margin-bottom:0"></p>
 </dialog>
 

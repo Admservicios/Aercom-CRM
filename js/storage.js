@@ -65,6 +65,7 @@ function _showStorageRecovery() {
         : 'El navegador no permite leer el almacenamiento local. No se cargaron datos de ejemplo. Revisá los permisos del sitio y reintentá; no borres los datos del navegador.';
     document.getElementById('storage-recovery-download').disabled = !readable;
     document.getElementById('storage-recovery-restore').disabled = !readable;
+    document.getElementById('storage-recovery-repair').disabled = !readable;
     document.getElementById('storage-recovery-detail').textContent = readable
         ? 'Detalle: ' + _storageLoadError.reason : '';
     dialog.addEventListener('cancel', event => event.preventDefault());
@@ -144,6 +145,97 @@ function _importStorageRecovery(ev) {
     reader.onabort = () => { status.textContent = 'Lectura cancelada. La copia local se conserva.'; finish(); };
     try { reader.readAsText(file); }
     catch { status.textContent = 'No se pudo leer el archivo. La copia local se conserva.'; finish(); }
+}
+
+/** Plan de datos revisado, nunca código: solo separar IDs duplicados y sus referencias. */
+async function _prepareStorageBranchRepair(raw, plan) {
+    if (!plan || Object.keys(plan).sort().join(',') !== 'clientes,referencias,sha256' ||
+        typeof plan.sha256 !== 'string' || !/^[a-f0-9]{64}$/.test(plan.sha256) || !Array.isArray(plan.clientes) ||
+        !plan.clientes.length || !Array.isArray(plan.referencias)) {
+        throw new Error('El plan de corrección no tiene el formato esperado.');
+    }
+    if (!globalThis.crypto?.subtle || typeof TextEncoder === 'undefined') {
+        throw new Error('El navegador no permite verificar la copia. Abrí el CRM mediante HTTPS en un navegador actualizado.');
+    }
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+    const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    if (hash !== plan.sha256) throw new Error('La copia no coincide con la revisada. No se aplicó el plan; hace falta revisar la copia actual.');
+    const data = JSON.parse(raw);
+    if (!data || !Array.isArray(data.clientes)) throw new Error('La copia no contiene una lista de clientes.');
+    const targets = new Map(), oldIds = new Set();
+    for (const row of plan.clientes) {
+        if (!Array.isArray(row) || row.length !== 2 || !Number.isInteger(row[0]) ||
+            row[0] < 0 || typeof row[1] !== 'string' || !/^[A-Z0-9][A-Z0-9_-]{0,63}$/.test(row[1]) || targets.has(row[0])) {
+            throw new Error('El plan contiene una sucursal o código incompatible.');
+        }
+        const client = data.clientes[row[0]];
+        if (!client || typeof client.id !== 'string' || row[1] === client.id ||
+            data.clientes.filter(c => c?.id === client.id).length < 2) {
+            throw new Error('El plan solo puede separar códigos de clientes duplicados.');
+        }
+        targets.set(row[0], { oldId: client.id, newId: row[1] });
+        oldIds.add(client.id);
+    }
+    data.clientes.forEach((client, index) => {
+        if (oldIds.has(client?.id) && !targets.has(index)) throw new Error('Falta indicar el código de alguna sucursal del grupo duplicado.');
+    });
+    if (data.facturacion_clientes?.length || Object.values(data.facturacion_estados || {}).some(states =>
+        states && Array.from(oldIds).some(id => Object.prototype.hasOwnProperty.call(states, id)))) {
+        throw new Error('Hay facturación asociada que requiere revisión antes de separar sucursales.');
+    }
+    const collections = ['equipos', 'cotizaciones', 'pedidos', 'recordatorios', 'eventos'];
+    const references = new Set();
+    for (const row of plan.referencias) {
+        if (!Array.isArray(row) || row.length !== 3 || !collections.includes(row[0]) ||
+            !Number.isInteger(row[1]) || row[1] < 0 || !targets.has(row[2])) {
+            throw new Error('El plan contiene una referencia incompatible.');
+        }
+        const key = `${row[0]}:${row[1]}`, record = data[row[0]]?.[row[1]], target = targets.get(row[2]);
+        if (references.has(key) || !record || record.clienteId !== target.oldId) {
+            throw new Error('Una referencia no pertenece al código duplicado o está repetida.');
+        }
+        references.add(key);
+        record.clienteId = target.newId;
+    }
+    for (const key of collections) {
+        if (data[key] != null && !Array.isArray(data[key])) throw new Error('La copia contiene una colección incompatible.');
+        (data[key] || []).forEach((record, index) => {
+            if (oldIds.has(record?.clienteId) && !references.has(`${key}:${index}`)) {
+                throw new Error('Falta asignar una referencia del código duplicado a su sucursal.');
+            }
+        });
+    }
+    for (const [index, target] of targets) data.clientes[index].id = target.newId;
+    const text = JSON.stringify(data);
+    _parseImportedData(text); // Validar otra copia; no normalizar silenciosamente el plan.
+    return { text, clients: targets.size, references: references.size };
+}
+
+async function _applyStorageBranchRepair() {
+    const status = document.getElementById('storage-recovery-status');
+    if (_storageRecoveryBusy) return;
+    if (!_storageRecoveryExported || !document.getElementById('storage-recovery-backed-up').checked) {
+        status.textContent = 'Primero descargá el original y confirmá que guardaste la copia.';
+        return;
+    }
+    const session = _storageLoadError;
+    if (!session || session.raw === null) return;
+    _storageRecoveryBusy = true;
+    let restored = false;
+    try {
+        const plan = JSON.parse(document.getElementById('storage-recovery-plan').value);
+        const prepared = await _prepareStorageBranchRepair(session.raw, plan);
+        if (!window.confirm(`Se cambiarán ${prepared.clients} códigos de sucursal y ${prepared.references} asignaciones a clientes, según el plan revisado. No se eliminarán fichas. ¿Aplicar la corrección y recargar?`)) return;
+        _restoreStorageBackup(prepared.text, session);
+        restored = true;
+        status.textContent = 'Corrección guardada. Recargando; Drive seguirá sin conexión automática en esta pestaña.';
+    } catch (error) {
+        status.textContent = 'No se aplicó la corrección: ' + error.message;
+    } finally { _storageRecoveryBusy = false; }
+    if (restored) {
+        try { location.reload(); }
+        catch { status.textContent = 'La corrección se guardó. Recargá manualmente; Drive seguirá sin conexión automática en esta pestaña.'; }
+    }
 }
 
 /** Normalización existente compartida por el arranque y los backups validados. */
