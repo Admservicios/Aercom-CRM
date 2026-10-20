@@ -18,14 +18,14 @@ function fixture(){
  function importText(text=JSON.stringify(valid()),options={}){const target={files:[{text,...options}],value:'selección'};c._importStorageRecovery({target});return target;}
  return{c,memory,sessionMemory,control,node,session,original,importText,exportOriginal:()=>c._downloadStorageOriginal(),status:()=>node('storage-recovery-status').textContent};
 }
-test('Restauración validada escribe una copia y pausa Drive sin activar memoria ni editar otros datos',()=>{
+test('Restauración validada escribe una copia sin depender de sesión ni activar memoria ni editar otros datos',()=>{
  const f=fixture();f.c._restoreStorageBackup(JSON.stringify(valid()),f.session());const saved=JSON.parse(f.memory.get('aercom-data'));
- assert.equal(saved.clientes.length,2);assert.equal(saved.clientes[0].extra.conservar,true);assert.equal(saved.equipos[1].clienteId,'C-SFE');assert.equal(f.control.writes,1);assert.equal(f.memory.get('aercom-drive-connected'),'1');assert.equal(f.sessionMemory.get('aercom-recovery-pause-drive'),'1');assert.equal(JSON.stringify(f.c.D),'{}');assert.equal(f.session().raw,f.original);
+ assert.equal(saved.clientes.length,2);assert.equal(saved.clientes[0].extra.conservar,true);assert.equal(saved.equipos[1].clienteId,'C-SFE');assert.equal(f.control.writes,1);assert.equal(f.memory.get('aercom-drive-connected'),'1');assert.equal(f.sessionMemory.size,0);assert.equal(JSON.stringify(f.c.D),'{}');assert.equal(f.session().raw,f.original);
 });
 for(const [name,text] of [['JSON truncado','{'],['IDs duplicados',JSON.stringify({...valid(),clientes:[{id:'C',nombre:'A'},{id:'C',nombre:'B'}]})],['fecha imposible',JSON.stringify({...valid(),lastSaved:'2026-02-30'})]])test(`Archivo rechazado (${name}) conserva original y no pide confirmación`,()=>{
  const f=fixture();f.exportOriginal();f.importText(text);assert.equal(f.memory.get('aercom-data'),f.original);assert.equal(f.control.writes,0);assert.equal(f.control.confirms,0);assert.equal(f.control.reloads,0);assert.match(f.status(),/No se restauró/);
 });
-for(const failure of ['quota','read','session'])test(`Restauración ante ${failure} conserva original y no recarga`,()=>{
+for(const failure of ['quota','read'])test(`Restauración ante ${failure} conserva original y no recarga`,()=>{
  const f=fixture();f.exportOriginal();f.control[failure]=true;const target=f.importText();assert.equal(f.memory.get('aercom-data'),f.original);assert.equal(f.control.writes,0);assert.equal(f.control.reloads,0);assert.equal(target.value,'');assert.match(f.status(),/No se restauró/);
 });
 test('No sobrescribe si otra pestaña cambió o eliminó la copia local',()=>{
@@ -51,4 +51,8 @@ test('Una recarga impedida no informa falsamente que la escritura falló',()=>{
 });
 test('Una copia inicialmente ilegible no puede reemplazarse desde esta recuperación',()=>{
  const f=fixture();f.control.read=true;f.c.loadData();assert.throws(()=>f.c._restoreStorageBackup(JSON.stringify(valid()),f.session()),/ya no corresponde/);assert.equal(f.control.writes,0);assert.equal(f.memory.get('aercom-data'),f.original);
+});
+
+test('Restauración local funciona aunque sessionStorage esté bloqueado',async()=>{
+ const f=fixture();f.control.session=true;f.exportOriginal();f.importText();assert.equal(f.control.writes,1);assert.equal(f.control.reloads,1);assert.equal(f.sessionMemory.size,0);
 });

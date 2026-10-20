@@ -103,9 +103,6 @@ function _restoreStorageBackup(text, session) {
     if (localStorage.getItem(STORAGE_KEY) !== session.raw) {
         throw new Error('La copia local cambió desde otra pestaña. No se reemplazó; reintentá la carga.');
     }
-    // Pausar la reconexión automática de esta pestaña tras recargar.
-    // La restauración no debe iniciar una sobrescritura remota sin revisión.
-    sessionStorage.setItem('aercom-recovery-pause-drive', '1');
     // setItem es atómico: si falla por cuota/permisos conserva la cadena anterior.
     localStorage.setItem(STORAGE_KEY, serialized);
 }
@@ -132,13 +129,13 @@ function _importStorageRecovery(ev) {
             if (!window.confirm(`La copia seleccionada contiene ${counts}. Se reemplazará toda la copia local, no se fusionarán registros. ¿Restaurar y recargar el CRM?`)) return;
             _restoreStorageBackup(event.target.result, session);
             restored = true;
-            status.textContent = 'Copia restaurada. Recargando; Drive quedará desconectado hasta que lo conectes manualmente.';
+            status.textContent = 'Copia restaurada. Recargando el CRM con los datos locales.';
         } catch (error) {
             status.textContent = 'No se restauró la copia: ' + error.message;
         } finally { finish(); }
         if (restored) {
             try { location.reload(); }
-            catch { status.textContent = 'La copia se restauró. Recargá el CRM manualmente; Drive seguirá sin conexión automática en esta pestaña.'; }
+            catch { status.textContent = 'La copia se restauró. Recargá el CRM manualmente para cargar los datos.'; }
         }
     };
     reader.onerror = () => { status.textContent = 'No se pudo leer el archivo. La copia local se conserva.'; finish(); };
@@ -228,13 +225,13 @@ async function _applyStorageBranchRepair() {
         if (!window.confirm(`Se cambiarán ${prepared.clients} códigos de sucursal y ${prepared.references} asignaciones a clientes, según el plan revisado. No se eliminarán fichas. ¿Aplicar la corrección y recargar?`)) return;
         _restoreStorageBackup(prepared.text, session);
         restored = true;
-        status.textContent = 'Corrección guardada. Recargando; Drive seguirá sin conexión automática en esta pestaña.';
+        status.textContent = 'Corrección guardada. Recargando el CRM con los datos locales.';
     } catch (error) {
         status.textContent = 'No se aplicó la corrección: ' + error.message;
     } finally { _storageRecoveryBusy = false; }
     if (restored) {
         try { location.reload(); }
-        catch { status.textContent = 'La corrección se guardó. Recargá manualmente; Drive seguirá sin conexión automática en esta pestaña.'; }
+        catch { status.textContent = 'La corrección se guardó. Recargá el CRM manualmente para cargar los datos.'; }
     }
 }
 
@@ -432,7 +429,7 @@ function _applyImportedData(candidate, save) {
  * con ninguna función declarada en el bloque inline, `_persistBase`
  * queda inmune a ese hoisting: `_origPersist` ahora captura
  * correctamente esta función. index.html sigue "decorando" el guardado
- * (undo/redo + sincronización con Drive) sobre `_persistBase` — esa
+ * (undo/redo) sobre `_persistBase` — esa
  * decoración no es responsabilidad de Storage y permanece donde está.
  * La API pública sigue siendo `persist()` (la función decorada).
  */

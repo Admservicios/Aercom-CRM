@@ -51,7 +51,7 @@ Estas reglas se aplicaron de forma consistente durante toda la modularización (
 
 Ejemplo real: [`js/modules/recordatorios.js`](js/modules/recordatorios.js).
 
-**Estructura**: `index.html` contiene solo infraestructura compartida (sin lógica de dominio). Los 13 módulos de dominio viven en `js/modules/`. El detalle completo está en [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md).
+**Estructura**: `index.html` contiene solo infraestructura compartida (sin lógica de dominio). Los 12 módulos de dominio viven en `js/modules/`. El detalle completo está en [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md).
 
 ---
 
@@ -66,7 +66,7 @@ Ejemplo real: [`js/modules/recordatorios.js`](js/modules/recordatorios.js).
 ## Antes de crear un módulo nuevo
 
 **Corresponde crear un módulo nuevo cuando:**
-- El dominio de negocio es nuevo y no es sub-funcionalidad de un dominio existente (así se crearon los 13 módulos actuales).
+- El dominio de negocio es nuevo y no es sub-funcionalidad de un dominio existente (así se crearon los 12 módulos actuales).
 - La función tiene una responsabilidad clara y propia, aún si depende de leer datos de otros dominios (como hace Calendario, que solo lee).
 
 **No corresponde crear un módulo nuevo cuando:**
