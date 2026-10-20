@@ -17,7 +17,7 @@ Guía de entrada al código actual; no pretende enumerar todos los globals. Para
 | _applyTableImport | [storage.js](../js/storage.js) | Construye/valida el lote CSV/Excel sobre una copia antes de aplicarlo |
 | parseCsv / confirmCsvImport | [csv.js](../js/modules/csv.js) | Parseo y lote con elección de conflictos |
 | xlsImport / _xlsDate / xlsExport | [excel.js](../js/modules/excel.js) | Importación, fechas Excel y reportes |
-| _gdriveLoadData / _gdriveSaveData / _scheduleDriveSave | [drive.js](../js/modules/drive.js) | Backup remoto actual; los conflictos del PR #3 aún no están integrados |
+| _gdriveLoadData / _gdriveSaveData / _scheduleDriveSave | [drive.js](../js/modules/drive.js) | Revisión previa por contenido; pausa ante diferencias/errores/duplicados y guardado habilitado tras revisión. Resolución completa del PR #3 pendiente |
 
 applyCliFilter filtra filas existentes; no llama a renderClientes. Las referencias antiguas a saveCliente/deleteCliente en este índice no correspondían a las funciones reales y se corrigieron.
 

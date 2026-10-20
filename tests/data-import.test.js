@@ -217,7 +217,7 @@ test('Drive: JSON inválido no reemplaza el local ni dispara subida', async () =
   assert.equal(control.writes, 0);
   assert.equal(control.uploads, 0);
   assert.equal(vm.runInContext('_gdriveDataFileId', c), null);
-  assert.match(messages.at(-1), /No se cargaron/);
+  assert.match(messages.at(-1), /No se pudo verificar/);
 });
 
 test('Drive: tampoco se sube la copia local si el backup inválido parece más antiguo', async () => {
@@ -228,14 +228,16 @@ test('Drive: tampoco se sube la copia local si el backup inválido parece más a
   assert.equal(control.uploads, 0);
 });
 
-test('Drive: backup válido más reciente reemplaza y normaliza sin subir datos', async () => {
-  const { c, memory, control, remote } = fixture();
+test('Drive: backup válido más reciente y distinto pausa sin reemplazar ni subir', async () => {
+  const { c, old, memory, control, remote } = fixture();
+  const stored=memory.get('aercom-data');
   remote(JSON.stringify(valid()));
   await c._gdriveLoadData();
-  assert.equal(c.D.clientes[0].id, 'C1');
-  assert.deepEqual(copy(c.D.pedidos), []);
-  assert.equal(JSON.parse(memory.get('aercom-data')).lastSaved, '2099-01-01');
-  assert.equal(control.uploads, 0);
+  assert.equal(c.D,old);
+  assert.equal(memory.get('aercom-data'),stored);
+  assert.equal(control.writes,0);
+  assert.equal(control.uploads,0);
+  assert.equal(vm.runInContext('_gdriveSyncChecked',c),false);
 });
 
 test('Drive: errores HTTP de búsqueda o descarga no se confunden con backup ausente', async () => {
@@ -250,7 +252,7 @@ test('Drive: errores HTTP de búsqueda o descarga no se confunden con backup aus
   }
 });
 
-test('Drive: render fallido conserva la copia local', async () => {
+test('Drive: copia distinta no requiere renderizarla y conserva la local', async () => {
   const { c, old, control, memory, remote } = fixture();
   const stored = memory.get('aercom-data');
   remote(JSON.stringify(valid()));

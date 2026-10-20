@@ -6,6 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+// Estas pruebas de escritura parten de una revisión ya completada.
 function fixture() {
   const nodes = new Map();
   const node = id => {
@@ -35,7 +36,7 @@ function fixture() {
     }
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../js/modules/drive.js'), 'utf8'), c);
-  vm.runInContext("_gdriveReady=true; _gdriveToken='test-only'; _folderRootId='root'; _gdriveDataFileId='data-file'", c);
+  vm.runInContext("_gdriveReady=true; _gdriveSyncChecked=true; _gdriveToken='test-only'; _folderRootId='root'; _gdriveDataFileId='data-file'", c);
   const response = (status, data) => ({ ok: status >= 200 && status < 300, status,
     json: async () => data });
   return { c, node, memory, calls, messages, state, responses, response };
