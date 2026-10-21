@@ -4,6 +4,16 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Facturación — alcance mensual compartido y filtros por ID
+
+getFactMonthSummary(mStr), en facturacion.js, es una consulta sin escritura usada por la pantalla de Facturación y el Dashboard. Conserva la regla existente de mesesFacturacion: lista vacía/ausente aplica todos los meses; lista no vacía debe incluir el nombre del mes. Solo las fichas aplicables participan del resumen; Excluido no integra el denominador y Facturado/Cobrado integran el numerador. Estados de clientes ausentes/no aplicables no se borran ni contabilizan. El gráfico mantiene Excluido como categoría separada y explica su diferencia respecto del progreso. Mes y año explícitos en el Dashboard, conservando curMonth como período compartido.
+
+Las filas llevan data-client-id escapado; applyFactFilter() busca por ID en los clientes del período en lugar del índice de D.clientes, que era incorrecto tras el filtrado mensual. La cantidad de resultados se compara con las filas del mes (incluidos los excluidos si el filtro los permite), sin alterar el progreso general cuando se busca. Cada render reaplica los filtros y limpia contadores en listas vacías. No se cambian mutaciones, persistencia, historial ni esquema.
+
+Verificación: 290 pruebas Node aprobadas, 9 nuevas: población mensual, estados fuera del mes/huérfanos, filtros combinados e identidad, mes siguiente, no aplicables, todos excluidos, base vacía, lectura sin persistencia y escape del nuevo atributo. Chromium aislado a 375/1440 px verificó cálculos, gráfico real, etiquetas, búsqueda, filtros, cambios de mes, limpieza y ausencia de desborde general. Navegar/filtrar conservó D y aercom-data sin escrituras; acciones de estado/excluir/restablecer y deshacer/rehacer se ejecutaron únicamente sobre datos ficticios, preservando otros estados. Cero errores JS; sin datos privados versionados ni dependencias instaladas.
+
+Límites: los reportes Excel/PDF no se modifican. Como antes, la configuración vigente de meses del cliente se aplica también al consultar períodos anteriores: no se crea una fotografía histórica de dicha configuración. Los estados guardados se preservan aunque una ficha no aplique al período. El gráfico incluye excluidos en su distribución y los identifica; el progreso los omite. La tabla móvil conserva desplazamiento horizontal y las pruebas de navegador son Chromium, no una certificación de Firefox/Safari. Accesibilidad de modales y mejoras visuales de tablas quedan para pasos separados.
+
 ## Calendario — navegación sin desborde de mes
 
 calPrev()/calNext() usan _calShiftMonth() únicamente en vista mensual: guardan el día, fijan el primero antes de cambiar de mes y limitan el día al último del destino. Evita que setMonth() lleve el 31 de enero a marzo o que retroceder desde marzo permanezca en marzo. La vista semanal mantiene setDate(±7); no se altera el feed, los datos ni la persistencia. El helper addMonths() compartido trabaja con cadenas YYYY-MM y no resuelve el ajuste de una fecha local con día; no se cambia su contrato.

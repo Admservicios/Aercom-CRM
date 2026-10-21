@@ -7,15 +7,15 @@
 <link rel="stylesheet" href="css/style.css?v=calendar-cells-20261019">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- utils.js, storage.js y modules/dashboard.js deben cargar antes del script
+<!-- utils.js, storage.js y modules/dashboard.js/facturacion.js deben cargar antes del script
      principal: éste llama a loadData() y renderDashboard() de forma síncrona
      durante la inicialización -->
 <script src="js/utils.js"></script>
 <script src="js/storage.js?v=local-only-20261020"></script>
-<script src="js/modules/dashboard.js"></script>
+<script src="js/modules/dashboard.js?v=billing-summary-20261021"></script>
 <script src="js/modules/clientes.js?v=local-save-recovery-20261019"></script>
 <script src="js/modules/equipos.js?v=local-save-recovery-20261019"></script>
-<script src="js/modules/facturacion.js?v=local-save-recovery-20261019"></script>
+<script src="js/modules/facturacion.js?v=billing-summary-20261021"></script>
 <script src="js/modules/cotizaciones.js?v=quote-filters-20261020"></script>
 <script src="js/modules/pedidos.js?v=local-save-recovery-20261019"></script>
 <script src="js/modules/calendario.js?v=month-navigation-20261020"></script>
@@ -150,7 +150,8 @@
             <div id="chart-equip-wrap" style="position:relative;height:240px"></div>
           </div>
           <div class="card">
-            <div class="card-header">Estado de facturación del mes</div>
+            <div class="card-header" id="dash-fact-title">Estado de facturación</div>
+            <div id="dash-fact-scope" class="page-header-sub" style="margin-bottom:10px"></div>
             <div id="chart3-legend" class="chart-legend-wrap"></div>
             <div id="chart-fact-wrap" style="position:relative;height:240px"></div>
           </div>

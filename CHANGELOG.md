@@ -4,6 +4,12 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — contadores de facturación coherentes por mes
+
+- Resumen, progreso, KPI y gráfico del Dashboard consultan el mismo cálculo mensual: clientes cuya configuración aplica al período; Facturado y Cobrado completan el progreso y Excluido queda fuera del denominador. No aplicables/excluidos y mes seleccionado quedan explícitos. El gráfico conserva la categoría Excluido, identificada como fuera del progreso.
+- Filtros vinculados al ID escapado de cada fila, evitando confundir clientes al omitir los no aplicables. Conteo de resultados sobre las filas del mes; los filtros se reaplican al cambiar de mes o estado. Scripts de Dashboard/Facturación versionados.
+- Validación: 290 pruebas Node aprobadas, 9 nuevas; reproducción previa de resumen, Dashboard y filtros. Chromium aislado a 375/1440 px con bibliotecas reales y datos ficticios: contadores/gráfico, filtros combinados, meses, limpieza y acciones Facturado/Cobrado/Excluir/Restablecer, deshacer/rehacer. Lectura y navegación sin escrituras ni cambios en D/storage; acciones solo en la copia ficticia. Cero errores JS; estados de otros períodos/no aplicables conservados. No hay migración ni modificación de datos de usuario.
+
 ## Sin publicar — navegación mensual del calendario
 
 - Corregido el salto de meses al avanzar o retroceder desde el día 29, 30 o 31: se visita el mes contiguo y se ajusta el día al último disponible. Ejemplo: 31/01/2026 → 28/02/2026; en 2024, → 29/02/2024.
