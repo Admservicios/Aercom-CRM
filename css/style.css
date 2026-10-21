@@ -2404,6 +2404,8 @@ th { border-bottom:2px solid var(--border) !important; }
   .srch-wrap { min-width: 0; flex-basis: 100%; }
   .srch-select { max-width: 100%; }
   .ficha-head, .ficha-body { padding: 18px 14px; }
+  .ficha-head > div { flex: 1; min-width: 0; }
+  .ficha-head > .modal-close { flex-shrink: 0; }
   .ficha-tabs { padding: 0 14px; }
   .modal-body, .modal-head, .modal-foot { padding: 14px; }
 }

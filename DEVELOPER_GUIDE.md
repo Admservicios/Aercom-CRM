@@ -73,6 +73,7 @@ Todos viven en `index.html` o `js/utils.js`, y los usan 2 o más módulos — no
 | `confirmDel()` / `closeConf()` / `doConf()` | `index.html` | Diálogo de confirmación de borrado genérico |
 | `closeModal()` | `index.html` | Cierre del modal genérico |
 | `requestCloseModal()` / `initializeModals()` | `js/modal.js` | Cierre solicitado con advertencia de borrador; foco, tabulación y fondo inerte sobre los diálogos existentes, sin persistencia |
+| `closeFicha()` / `fichaTab()` | `js/modules/clientes.js` | Comprueban cambios en la configuración editable antes de cerrar/reemplazar la ficha. closeFicha() devuelve false si se rechaza el descarte; las acciones posteriores deben respetarlo |
 | `updateSidebarBadges()` | `index.html` | Contadores del sidebar (Equipos, Cotizaciones, Recordatorios, Pedidos) |
 | `today()`, `daysDiff()`, `addDays()`, `fmtDate()`, `fmtDateTime()`, `fmtMoney()`, `toTitleCase()` | `js/utils.js` | Fecha y formato, sin estado |
 | `_esc(s)` | `js/utils.js` | Escapado HTML — obligatorio antes de interpolar datos de usuario en `innerHTML` |

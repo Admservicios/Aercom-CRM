@@ -53,6 +53,7 @@ Nada de esto pertenece a un módulo — lo usan 2 o más:
 | `confirmDel()` / `closeConf()` / `doConf()` | Diálogo de confirmación de borrado genérico |
 | `closeModal()` | Cierre del modal genérico (`#modal-overlay`) — única implementación real tras PR-007.2 |
 | `requestCloseModal()` / `initializeModals()` | Cierre solicitado con advertencia de borrador; foco, tabulación y fondo inerte sobre los diálogos existentes, sin persistencia |
+| `closeFicha()` / `fichaTab()` | Comprueban cambios en la configuración editable antes de cerrar/reemplazar la ficha. closeFicha() devuelve false si se rechaza el descarte; las acciones posteriores deben respetarlo |
 | `updateSidebarBadges()` | Lee de Equipos, Cotizaciones, Recordatorios y Pedidos para pintar los contadores del sidebar |
 | Atajos de teclado | Escape, Ctrl+Z/Y, Ctrl+S, `N` (nuevo registro) — todos despachan a funciones de distintos módulos |
 | `_history`/`_future`/`_restoreHistory()`/`undoAction()`/`redoAction()` | Undo/redo global sobre D; `_snapshot()` se conserva sin llamadas de producción |

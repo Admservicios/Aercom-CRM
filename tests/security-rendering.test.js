@@ -15,7 +15,7 @@ function fixture() {
   const node = id => {
     if (!nodes.has(id)) nodes.set(id, {
       innerHTML: '', textContent: '', style: {},
-      classList: { add() {}, remove() {} }
+      classList: { add() {}, remove() {} }, querySelectorAll: () => []
     });
     return nodes.get(id);
   };
@@ -31,7 +31,7 @@ function fixture() {
     FileReader: class { readAsText(text) { this.onload({ target: { result: text } }); } },
     toast() {}, updateSidebarBadges() {}
   });
-  for (const file of ['js/utils.js', 'js/modules/equipos.js',
+  for (const file of ['js/utils.js', 'js/modal.js', 'js/modules/equipos.js',
     'js/modules/clientes.js', 'js/modules/csv.js', 'js/modules/reportes.js']) {
     vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
   }

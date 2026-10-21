@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aercom SA — Gestión Operativa</title>
-<link rel="stylesheet" href="css/style.css?v=calendar-cells-20261019">
+<link rel="stylesheet" href="css/style.css?v=sheet-close-20261021">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <!-- utils.js, storage.js y modules/dashboard.js/facturacion.js deben cargar antes del script
@@ -13,7 +13,7 @@
 <script src="js/utils.js"></script>
 <script src="js/storage.js?v=local-only-20261020"></script>
 <script src="js/modules/dashboard.js?v=billing-summary-20261021"></script>
-<script src="js/modules/clientes.js?v=modal-drafts-20261021"></script>
+<script src="js/modules/clientes.js?v=sheet-drafts-20261021"></script>
 <script src="js/modules/equipos.js?v=modal-drafts-20261021"></script>
 <script src="js/modules/facturacion.js?v=billing-summary-20261021"></script>
 <script src="js/modules/cotizaciones.js?v=modal-drafts-20261021"></script>
@@ -581,7 +581,7 @@
         </div>
         <div id="ficha-subtitle" style="font-size:12px;color:var(--t2);margin-top:3px"></div>
       </div>
-      <button class="modal-close" onclick="closeFicha()">×</button>
+      <button class="modal-close" aria-label="Cerrar ficha del cliente" onclick="closeFicha()">×</button>
     </div>
     <div class="ficha-tabs" id="ficha-tabs"></div>
     <div class="ficha-body" id="ficha-body"></div>

@@ -26,6 +26,7 @@
  *   eqDateCell(), E_COLOR, curMonth, openEquipModal(), openQuoteModal(),
  *   openPedidoModal(), fmtMoney(), fmtDate(), fmtDateTime(), daysDiff(),
  *   monthLabel(), nowMonthStr(), _esc() (js/utils.js)
+ *   _modalSnapshot() (js/modal.js, comparación de campos sin escritura)
  *
  *   (*) clientName()/clientCritical() siguen en index.html porque las usan
  *   también Dashboard y Pipeline — son helpers de dominio compartidos.
@@ -363,10 +364,18 @@ function delClientConfirm(id){
    FICHA CLIENTE
 ========================= */
 
+let _fichaDraft=null;
+
+function _confirmFichaDiscard(){
+  return !_fichaDraft||_modalSnapshot(document.getElementById('ficha-body'))===_fichaDraft.baseline||
+    window.confirm('Tenés cambios sin guardar en la configuración del cliente. ¿Querés descartarlos y continuar?');
+}
+
 function openFicha(id){
-  fichaClientId=id;
   const c=D.clientes.find(x=>x.id===id);
-  if(!c) return;
+  if(!c||!_confirmFichaDiscard()) return false;
+  _fichaDraft=null;
+  fichaClientId=id;
 
   const equipos    = D.equipos.filter(e=>e.clienteId===id);
   const equipN     = equipos.length;
@@ -466,20 +475,26 @@ function openFicha(id){
 }
 
 function closeFicha(){
+  if(!_confirmFichaDiscard())return false;
+  _fichaDraft=null;
   document.getElementById('ficha-overlay').classList.remove('open');
   fichaClientId=null;
+  return true;
 }
 
 function fichaTab(tab){
+  if(fichaRenderTab(tab)===false)return false;
   document.querySelectorAll('.ficha-tab').forEach(b=>b.classList.remove('active'));
   const btn=document.getElementById('ftab-'+tab);
   if(btn) btn.classList.add('active');
-  fichaRenderTab(tab);
+  return true;
 }
 
 function fichaRenderTab(tab){
+  if(!['general','equipos','cotizaciones','facturacion','recordatorios','pedidos'].includes(tab))return false;
   const c=D.clientes.find(x=>x.id===fichaClientId);
-  if(!c) return;
+  if(!c||!_confirmFichaDiscard()) return false;
+  _fichaDraft=null;
   const body=document.getElementById('ficha-body');
   if(tab==='general')       body.innerHTML=fichaGeneral(c);
   else if(tab==='equipos')  body.innerHTML=fichaEquipos(c);
@@ -487,6 +502,7 @@ function fichaRenderTab(tab){
   else if(tab==='facturacion')  body.innerHTML=fichaFacturacion(c);
   else if(tab==='recordatorios') body.innerHTML=fichaRecordatorios(c);
   else if(tab==='pedidos')       body.innerHTML=fichaPedidos(c);
+  return true;
 }
 
 function _ff(label,val){
@@ -702,7 +718,7 @@ function fichaFacturacion(c){
 
 function fichaFacturacionEditMode(){
   const c=D.clientes.find(x=>x.id===fichaClientId);
-  if(!c) return;
+  if(!c||!_confirmFichaDiscard()) return false;
   const moneda=c.monedaAbono||(c.ajuste==='Dólar billete'?'Dólar billete':c.ajuste==='Dólar divisa'?'Dólar divisa':'Pesos');
   const meses=c.mesesFacturacion||[];
   const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -809,6 +825,7 @@ function fichaFacturacionEditMode(){
       <button class="btn btn-outline" onclick="fichaTab('facturacion')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveFichaFacturacion()">Guardar configuración</button>
     </div>`;
+  _fichaDraft={baseline:_modalSnapshot(document.getElementById('ficha-body'))};
 }
 
 function saveFichaFacturacion(){
@@ -859,6 +876,7 @@ function saveFichaFacturacion(){
     incluyeOtro:        ((document.getElementById('ff-inc-otro')||{value:''}).value||'').trim(),
   });
   if(persist()===false) return;
+  _fichaDraft=null;
   fichaTab('facturacion');
 }
 
@@ -889,12 +907,12 @@ function fichaPedidos(c){
   const BADG={'Pendiente':'b-warn','En ejecución':'b-info','Realizado':'b-ok'};
   return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <span style="font-size:13px;color:var(--t2)">${list.length} pedido${list.length!==1?'s':''}</span>
-    <button class="btn btn-primary btn-sm" data-cliid="${_esc(c.id)}" onclick="closeFicha();openPedidoModal(null,null,this.dataset.cliid)">+ Generar pedido</button>
+    <button class="btn btn-primary btn-sm" data-cliid="${_esc(c.id)}" onclick="if(closeFicha())openPedidoModal(null,null,this.dataset.cliid)">+ Generar pedido</button>
   </div>
   ${list.length?`<div class="tbl-wrap"><table>
     <thead><tr><th>N° Pedido</th><th>Fecha solicitud</th><th>Equipo</th><th>Detalle</th><th>Técnico</th><th>Estado</th></tr></thead>
     <tbody>${list.map(p=>`<tr>
-      <td style="font-size:12px;font-weight:600;cursor:pointer;color:var(--info)" data-pedid="${_esc(p.id)}" onclick="closeFicha();openPedidoModal(this.dataset.pedid,null,null)">${_esc(p.id)}</td>
+      <td style="font-size:12px;font-weight:600;cursor:pointer;color:var(--info)" data-pedid="${_esc(p.id)}" onclick="if(closeFicha())openPedidoModal(this.dataset.pedid,null,null)">${_esc(p.id)}</td>
       <td style="font-size:12px">${_esc(fmtDate(p.fechaSolicitud))||'—'}</td>
       <td style="font-size:12px">${_esc(p.equipoId)||'—'}</td>
       <td style="font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${_esc(p.detalle)}">${p.detalle?_esc(p.detalle.slice(0,50))+(p.detalle.length>50?'…':''):'—'}</td>

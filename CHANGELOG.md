@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — borradores en la ficha del cliente
+
+- La edición de configuración de facturación en la ficha compara los campos con sus valores iniciales antes de cerrar, Cancelar, cambiar de pestaña, reabrir la edición o mostrar otro cliente. Rechazar conserva cliente/pestaña/campos; aceptar descarta sin persistir. Volver a los valores originales no pregunta.
+- El guardado exitoso limpia la protección antes de volver a la vista de lectura; un fallo conserva el borrador y permite reintento. Se reutiliza la comparación de campos del gestor de modales, sin alterar el modelo ni la persistencia. Los enlaces de Pedidos continúan solo si closeFicha() permite cerrar.
+- Corregida la cruz de la ficha fuera de la pantalla móvil mediante dos reglas de flex, con nombre accesible. URLs de Clientes/CSS versionadas; no se rediseñan las estadísticas de la cabecera.
+- Validación: 317 pruebas Node aprobadas (12 nuevas), incluida cuota con recuperación real de D/storage/historial; prueba XSS adaptada al helper compartido. Chromium aislado a 375/1440 px: Cancelar/pestaña/cruz/Escape/otro cliente, rechazo/aceptación, cambios de texto/radio/meses/inclusiones, restaurar valor, guardar/cuota/reintento, modal superior y generar pedido. Bibliotecas reales y datos ficticios; navegación/descarte sin escrituras ni cambios de D/storage, acciones de guardado solo en la copia aislada; cero errores JS. Recarga/cierre del navegador permanece fuera del alcance.
+
 ## Sin publicar — borradores y teclado en formularios modales
 
 - Cierre con Cancelar, cruz, Escape o fondo pide confirmación si los valores difieren de los iniciales. Rechazar conserva el borrador; restaurar los valores originales permite cerrar sin advertencia. Guardado/eliminación/importación exitosos conservan su cierre interno directo.
