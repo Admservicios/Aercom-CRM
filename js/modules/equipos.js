@@ -12,7 +12,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
- *   D, persist(), toast(), closeModal(), confirmDel(), canDeleteRecord(), toggleClear(),
+ *   D, persist(), toast(), closeModal(), requestCloseModal(), confirmDel(), canDeleteRecord(), toggleClear(),
  *   equipStatus()*, clientCritical()*, clientName()*, fichaTab()**,
  *   fmtDate(), daysDiff(), addDays(), _esc() (js/utils.js — PR-014.1,
  *   hardening XSS)
@@ -231,7 +231,7 @@ function openEquipModal(eid){
   `;
   document.getElementById('modal-foot').innerHTML=`
     ${eq?`<button class="btn" style="background:#fef2f2;color:var(--err);border:1px solid #fecaca" data-id="${_esc(eid)}" onclick="deleteEquip(this.dataset.id)">Eliminar</button>`:''}
-    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-outline" onclick="requestCloseModal()">Cancelar</button>
     <button class="btn btn-primary" onclick="saveEquip()">Guardar equipo</button>
   `;
   document.getElementById('modal-overlay').classList.add('open');

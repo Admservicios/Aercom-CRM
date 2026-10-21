@@ -14,7 +14,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
- *   D, ESTADOS, E_COLOR*, persist(), toast(), closeModal(), confirmDel(), canDeleteRecord(),
+ *   D, ESTADOS, E_COLOR*, persist(), toast(), closeModal(), requestCloseModal(), confirmDel(), canDeleteRecord(),
  *   toggleClear(), renderModule(), clientName()*, toTitleCase(),
  *   openPedidoModal()**, today(), fmtMoney(), fmtDate(), daysDiff(),
  *   _esc() (js/utils.js — PR-014.1, hardening XSS)
@@ -200,7 +200,7 @@ function confirmFacturacion(cotId){
       <div class="fg"><label class="fl">Fecha de factura</label><input class="fc" type="date" id="fact-fecha" value="${_esc(cot.fechaFactura||today())}"></div>
     </div>`;
   document.getElementById('modal-foot').innerHTML=`
-    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-outline" onclick="requestCloseModal()">Cancelar</button>
     <button class="btn btn-primary" style="background:#8b5cf6;border-color:#8b5cf6" data-id="${_esc(cotId)}" onclick="doFacturar(this.dataset.id)">Confirmar facturación</button>`;
   document.getElementById('modal-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('fact-nro')?.focus(),80);
@@ -320,7 +320,7 @@ function openQuoteModal(qid,prefillEquip){
   `;
   document.getElementById('modal-foot').innerHTML=`
     ${q?`<button class="btn" style="background:#fef2f2;color:var(--err);border:1px solid #fecaca" data-id="${_esc(qid)}" onclick="deleteQuote(this.dataset.id)">Eliminar</button>`:''}
-    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-outline" onclick="requestCloseModal()">Cancelar</button>
     <button class="btn btn-primary" onclick="saveQuote()">Guardar cotización</button>
   `;
   document.getElementById('modal-overlay').classList.add('open');

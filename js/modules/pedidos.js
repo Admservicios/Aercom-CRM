@@ -15,7 +15,7 @@
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
  *   D, curModule, persist(), toast(), toggleClear(), confirmDel(),
- *   closeModal(), clientName(), today(), daysDiff(), fmtDate(),
+ *   closeModal(), requestCloseModal(), clientName(), today(), daysDiff(), fmtDate(),
  *   _esc() (js/utils.js — PR-014.1, hardening XSS)
  *
  * Decisiones de límite de módulo:
@@ -191,7 +191,7 @@ function openPedidoModal(pid, cotId, preCliId){
     </div>`;
   document.getElementById('modal-foot').innerHTML=`
     ${p?`<button class="btn" style="background:#fef2f2;color:var(--err);border:1px solid #fecaca" data-id="${_esc(pid)}" onclick="delPedidoConfirm(this.dataset.id)">Eliminar</button>`:''}
-    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-outline" onclick="requestCloseModal()">Cancelar</button>
     <button class="btn btn-primary" data-id="${_esc(p?p.id:'')}" data-newid="${_esc(newId)}" onclick="savePedido(this.dataset.id,this.dataset.newid)">Guardar pedido</button>`;
   document.getElementById('modal-overlay').classList.add('open');
   if(cotId||preCliId) setTimeout(()=>{const f=document.getElementById('ped-m-freal');if(f)f.focus();},120);

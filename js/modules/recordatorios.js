@@ -12,7 +12,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
- *   D, persist(), toast(), closeModal(), confirmDel(), toggleClear(),
+ *   D, persist(), toast(), closeModal(), requestCloseModal(), confirmDel(), toggleClear(),
  *   clientName(), critBadge() (index.html — comparten lectura de
  *   D.clientes con otros módulos), daysDiff(), fmtDateTime(), _esc()
  *   (js/utils.js)
@@ -120,7 +120,7 @@ function openRemModal(id){
     </div>
     <div class="fg"><label class="fl">Notas</label><textarea class="fc" id="rem-notas" rows="3" placeholder="Detalles adicionales...">${r?_esc(r.notas):''}</textarea></div>`;
   document.getElementById('modal-foot').innerHTML=`
-    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-outline" onclick="requestCloseModal()">Cancelar</button>
     <button class="btn btn-primary" data-id="${_esc(id||'')}" onclick="saveRem(this.dataset.id)">Guardar</button>`;
   document.getElementById('modal-overlay').classList.add('open');
 }

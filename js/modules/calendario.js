@@ -16,7 +16,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
- *   D, persist(), toast(), closeModal(), clientName(), today(),
+ *   D, persist(), toast(), closeModal(), requestCloseModal(), clientName(), today(),
  *   daysDiff(), addDays(), _localDateString(), toTitleCase(), _esc() (js/utils.js —
  *   PR-014.1, hardening XSS)
  *
@@ -363,7 +363,7 @@ function openCalEventModal(fechaPrefill, eventoId){
     <div class="fg"><label class="fl">Descripción</label>
       <textarea class="fc" id="cal-ev-desc" rows="2" placeholder="Notas del evento...">${ev?_esc(ev.descripcion):''}</textarea></div>`;
   document.getElementById('modal-foot').innerHTML = `
-    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-outline" onclick="requestCloseModal()">Cancelar</button>
     <button class="btn btn-primary" data-id="${ev?_esc(ev.id):''}" onclick="saveCalEvento(this.dataset.id)">Guardar evento</button>`;
   document.getElementById('modal-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('cal-ev-titulo')?.focus(), 80);
