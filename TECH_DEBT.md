@@ -4,6 +4,14 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Calendario — navegación sin desborde de mes
+
+calPrev()/calNext() usan _calShiftMonth() únicamente en vista mensual: guardan el día, fijan el primero antes de cambiar de mes y limitan el día al último del destino. Evita que setMonth() lleve el 31 de enero a marzo o que retroceder desde marzo permanezca en marzo. La vista semanal mantiene setDate(±7); no se altera el feed, los datos ni la persistencia. El helper addMonths() compartido trabaja con cadenas YYYY-MM y no resuelve el ajuste de una fecha local con día; no se cambia su contrato.
+
+Verificación: 281 pruebas Node aprobadas, 8 nuevas en UTC, Buenos Aires, Nueva York y Berlín. Casos de días 29/30/31, febrero bisiesto/no bisiesto, año nuevo, doce meses consecutivos en ambos sentidos, semana y cambio de vista; se comprueba render único y conservación de datos/hora local. Chromium aislado a 375/1440 px con bibliotecas reales y datos ficticios comprobó flechas, títulos, evento de febrero y su detalle, Hoy, semana/mes y celdas de igual ancho y 120 px de alto. Sin errores JS ni escrituras de aercom-data; D/almacenamiento intactos.
+
+Límites: el día ajustado pasa a ser el ancla actual; 31 de enero → 28 de febrero → 28 de marzo. No se guarda un día preferido ni se implementa una recurrencia de eventos. La grilla mensual sigue teniendo 42 celdas y el mismo diseño; no es un rediseño móvil ni certifica Firefox/Safari. El alcance de facturación y la accesibilidad de modales quedan para pasos separados.
+
 ## Cotizaciones — filtros sobre los datos completos
 
 applyPipeFilter() consulta cotizaciones/clientes mediante mapas por ID; ya no obtiene responsable del contenido completo de la tarjeta ni descripción del resumen de 60 caracteres. Comparación exacta de responsable y búsqueda sin distinguir mayúsculas por ID, nombre de cliente y descripción completa. Se conserva el comportamiento de columnas y contadores y se ofrece A facturar en el selector. No se modifica D ni se llama a persistencia. Una tarjeta sin registro se oculta.
