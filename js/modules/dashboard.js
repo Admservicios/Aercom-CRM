@@ -12,7 +12,8 @@
  * sin mover — no son responsabilidad de este módulo):
  *   D, curMonth, ESTADOS, equipStatus(), clientCritical(), clientName(),
  *   updateSidebarBadges(), closeModal(), Chart (CDN),
- *   fmtMoney(), daysDiff(), nowMonthStr(), _esc() (js/utils.js —
+ *   getFactMonthSummary() (js/modules/facturacion.js, cargado antes del inicio),
+ *   fmtMoney(), daysDiff(), nowMonthStr(), monthLabel(), _esc() (js/utils.js —
  *   PR-014.1, hardening XSS)
  *
  * `renderDashboard()` se invoca de forma síncrona durante el arranque
@@ -87,9 +88,7 @@ function renderDashboard(){
   const cotActivas=D.cotizaciones.filter(c=>!['Facturada','Ejecutada','Rechazada'].includes(c.estado));
   const cotFollowVenc=cotActivas.filter(c=>c.fechaFollowup&&daysDiff(c.fechaFollowup)<0);
   const mStr=curMonth||nowMonthStr();
-  const facEst=D.facturacion_estados[mStr]||{};
-  const facturadoN=D.clientes.filter(c=>{const s=facEst[c.id]||'Pendiente';return s==='Facturado'||s==='Cobrado';}).length;
-  const visibleN=D.clientes.filter(c=>(facEst[c.id]||'Pendiente')!=='Excluido').length;
+  const {completados:facturadoN,total:visibleN}=getFactMonthSummary(mStr);
   const remAlerta=D.recordatorios.filter(r=>r.estado==='Pendiente'&&r.fechaHora&&daysDiff(r.fechaHora.split('T')[0])<=0);
   const pedActivos=(D.pedidos||[]).filter(p=>p.estado==='Pendiente'||p.estado==='En ejecución');
   const pedVenc=pedActivos.filter(p=>p.fechaARealizar&&daysDiff(p.fechaARealizar)<0);
@@ -201,7 +200,7 @@ function renderDashboard(){
       <div class="stat-card c-ok">
         <span class="stat-icon">✅</span>
         <div class="stat-val" style="color:var(--ok)">${facturadoN}/${visibleN}</div>
-        <div class="stat-lbl">Facturado este mes</div>
+        <div class="stat-lbl">Facturados o cobrados · ${monthLabel(mStr)}</div>
       </div>
     </div>
     ${montoAFacturar>0?`<div style="text-align:right;font-size:13.5px;color:#d9730d;font-weight:700;margin-top:12px;padding:0 2px">💰 A facturar: ${fmtMoney(montoAFacturar)}</div>`:''}
@@ -291,15 +290,10 @@ function renderDashboardCharts(){
 
   // ── Gráfico 3: Facturación del mes (dona) ──────────────────────────────────
   const mStr=curMonth||nowMonthStr();
-  const facEst=D.facturacion_estados[mStr]||{};
-  let cobr=0,factN=0,pend=0,excl=0;
-  D.clientes.forEach(c=>{
-    const st=facEst[c.id]||'Pendiente';
-    if(st==='Cobrado')cobr++;
-    else if(st==='Facturado')factN++;
-    else if(st==='Excluido')excl++;
-    else pend++; // Pendiente (y cualquier otro estado)
-  });
+  const {clientes,cobrados:cobr,facturados:factN,pendientes:pend,excluidos:excl,noAplican}=getFactMonthSummary(mStr);
+  document.getElementById('dash-fact-title').textContent=`Estado de facturación · ${monthLabel(mStr)}`;
+  document.getElementById('dash-fact-scope').textContent=
+    `${clientes.length} clientes del mes · ${excl} excluido${excl===1?'':'s'} del progreso · ${noAplican} no aplica${noAplican===1?'':'n'} al mes`;
 
   const leg3=document.getElementById('chart3-legend');
   const w3=document.getElementById('chart-fact-wrap');

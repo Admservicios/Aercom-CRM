@@ -104,6 +104,7 @@ Theme: sin acoplamiento a datos de dominio — solo toca localStorage['theme'] y
 - **Calendario** es puramente de lectura sobre 4 dominios ajenos (Equipos, Cotizaciones, Recordatorios, Pedidos) — no los muta, solo arma un feed unificado. Su único dominio propio es `D.eventos`.
 - **CSV Import** mantiene acoplamiento con los modelos de dominio: `CSV_SCHEMAS` escribe directamente en `D.clientes`/`D.equipos`/`D.cotizaciones` desde fuera de sus módulos propios — conocido y documentado, no corregido (ver TECH_DEBT.md).
 - **Dashboard** y **Reportes PDF** son consumidores puros: leen de todos los dominios relevantes, no escriben en ninguno.
+- **Dashboard → Facturación**: `getFactMonthSummary(mStr)` consulta clientes aplicables y estados del período sin escribir. Resumen/progreso/KPI/gráfico comparten el cálculo; excluidos fuera del progreso y no aplicables se identifican. Ambos scripts deben cargar antes de la inicialización del Dashboard. Filtros de Facturación identifican filas por ID, no por posición.
 
 ---
 

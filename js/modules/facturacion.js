@@ -8,6 +8,7 @@
  * Responsabilidad: pantalla "Facturación Mensual" — listado de
  * clientes con su estado de facturación del mes (Pendiente/
  * Facturado/Cobrado/Excluido), navegación entre meses y filtros.
+ * Expone getFactMonthSummary() al Dashboard como consulta sin escritura.
  * Trabaja sobre D.facturacion_estados (estado por mes y por
  * cliente), un dominio de datos propio y distinto al de Pipeline.
  *
@@ -30,6 +31,30 @@
  *     dispara y qué refresca, no por qué colección toca.
  */
 
+const MESES_FACTURACION=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function getFactMonthSummary(mStr){
+  const estados=D.facturacion_estados[mStr]||{};
+  const mes=MESES_FACTURACION[Number(mStr.split('-')[1])-1];
+  const clientes=D.clientes.filter(c=>{
+    const meses=c.mesesFacturacion;
+    return !Array.isArray(meses)||!meses.length||meses.includes(mes);
+  });
+  let pendientes=0,facturados=0,cobrados=0,excluidos=0;
+  clientes.forEach(c=>{
+    const st=estados[c.id]||'Pendiente';
+    if(st==='Excluido')excluidos++;
+    else if(st==='Facturado')facturados++;
+    else if(st==='Cobrado')cobrados++;
+    else pendientes++;
+  });
+  const total=clientes.length-excluidos;
+  const completados=facturados+cobrados;
+  return {clientes,estados,total,pendientes,facturados,cobrados,excluidos,completados,
+    noAplican:D.clientes.length-clientes.length,
+    porcentaje:total?Math.round(completados/total*100):0};
+}
+
 function applyFactFilter(){
   const q=(document.getElementById('fact-q')||{value:''}).value.trim().toLowerCase();
   const ajuste=(document.getElementById('fact-f-ajuste')||{value:''}).value;
@@ -37,10 +62,11 @@ function applyFactFilter(){
   const tipo=(document.getElementById('fact-f-tipo')||{value:''}).value;
   const modo=(document.getElementById('fact-f-modo')||{value:''}).value;
   const mStr=curMonth||nowMonthStr();
-  const estados=D.facturacion_estados[mStr]||{};
+  const {clientes,estados}=getFactMonthSummary(mStr);
+  const clientsById=new Map(clientes.map(c=>[c.id,c]));
   let n=0;
-  document.querySelectorAll('#fact-list .cl-item').forEach((div,i)=>{
-    const c=D.clientes[i];
+  document.querySelectorAll('#fact-list .cl-item').forEach(div=>{
+    const c=clientsById.get(div.dataset.clientId);
     if(!c){div.style.display='none';return;}
     const st=estados[c.id]||'Pendiente';
     const tOk=!tipo||(tipo==='Sanatorio/Clínica'?c.tipo==='Sanatorio'||c.tipo==='Clínica':c.tipo===tipo);
@@ -50,7 +76,7 @@ function applyFactFilter(){
     if(ok)n++;
   });
   const el=document.getElementById('fact-count');
-  if(el)el.textContent=(q||ajuste||est||tipo||modo)&&n<D.clientes.length?`Mostrando ${n} de ${D.clientes.length} clientes`:'';
+  if(el)el.textContent=(q||ajuste||est||tipo||modo)&&n<clientes.length?`Mostrando ${n} de ${clientes.length} clientes del mes`:'';
   toggleClear('fact',q||ajuste||est||tipo||modo);
 }
 function clearFactFilter(){
@@ -63,59 +89,41 @@ function renderFacturacion(){
   document.getElementById('fact-month-lbl').textContent=monthLabel(curMonth);
 
   const mStr=curMonth||nowMonthStr();
-  const facEst=D.facturacion_estados[mStr]||{};
-  const facN=D.clientes.filter(c=>{
-    const s=facEst[c.id]||'Pendiente';
-    return s==='Facturado'||s==='Cobrado';
-  }).length;
+  const {clientes:cl,estados,total,pendientes:pend,facturados:fact,cobrados:cobr,
+    excluidos:excl,noAplican,completados,porcentaje:pct}=getFactMonthSummary(mStr);
   document.getElementById('facturacion-sub').textContent=
-    `${D.clientes.length} clientes · ${facN} facturados este mes`;
+    `${total} clientes incluidos · ${completados} facturados o cobrados`;
 
-  const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const MESES=MESES_FACTURACION;
   const ABREV=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  const [,mesIdx]=(curMonth||nowMonthStr()).split('-');
-  const nombreMesActual=MESES[parseInt(mesIdx)-1];
-
-  const cl=D.clientes.filter(c=>{
-    const m=c.mesesFacturacion;
-    if(!m||!Array.isArray(m)||!m.length) return true;
-    return m.includes(nombreMesActual);
-  });
-  const noAplican=D.clientes.length-cl.length;
 
   const infoEl=document.getElementById('fact-month-info');
-  if(infoEl) infoEl.textContent=noAplican>0
-    ?`${cl.length} cliente${cl.length!==1?'s':''} factura${cl.length===1?'':'n'} este mes · ${noAplican} no aplica${noAplican===1?'':'n'}`
-    :'';
+  if(infoEl) infoEl.textContent=[
+    excl?`${excl} excluido${excl===1?'':'s'} del progreso`:'',
+    noAplican?`${noAplican} no aplica${noAplican===1?'':'n'} al mes`:''
+  ].filter(Boolean).join(' · ');
 
   if(!D.clientes.length){
     document.getElementById('fact-prog-bar').style.width='0%';
     document.getElementById('fact-prog-txt').textContent='Sin clientes';
     document.getElementById('fact-stats').innerHTML='';
     document.getElementById('fact-list').innerHTML='<div class="empty">No hay clientes registrados</div>';
+    applyFactFilter();
     return;
   }
-
-  const estados=D.facturacion_estados[curMonth]||{};
 
   if(!cl.length){
     document.getElementById('fact-prog-bar').style.width='0%';
     document.getElementById('fact-prog-txt').textContent=`${noAplican} cliente${noAplican!==1?'s':''} no factura${noAplican===1?'':'n'} en este mes`;
     document.getElementById('fact-stats').innerHTML='';
     document.getElementById('fact-list').innerHTML='<div class="empty">Ningún cliente factura en este mes según su configuración</div>';
+    applyFactFilter();
     return;
   }
 
-  const visible=cl.filter(c=>(estados[c.id]||'Pendiente')!=='Excluido');
-  const excl=cl.length-visible.length;
-  const pend=visible.filter(c=>(estados[c.id]||'Pendiente')==='Pendiente').length;
-  const fact=visible.filter(c=>(estados[c.id]||'')==='Facturado').length;
-  const cobr=visible.filter(c=>(estados[c.id]||'')==='Cobrado').length;
-  const pct=visible.length?Math.round((fact+cobr)/visible.length*100):0;
-
   document.getElementById('fact-prog-bar').style.width=pct+'%';
   document.getElementById('fact-prog-txt').textContent=
-    `${fact+cobr} de ${visible.length} clientes (${pct}%)${noAplican?` · ${noAplican} no factura${noAplican===1?'':'n'} este mes`:''}`;
+    `${completados} de ${total} clientes (${pct}%)`;
   document.getElementById('fact-stats').innerHTML=`
     <span class="badge b-warn">Pendientes: ${pend}</span>
     <span class="badge b-info">Facturados: ${fact}</span>
@@ -130,7 +138,7 @@ function renderFacturacion(){
     const mesesBadge=(c.mesesFacturacion&&c.mesesFacturacion.length)
       ?`<div style="font-size:10px;color:var(--t3);margin-top:2px">${c.mesesFacturacion.map(m=>ABREV[MESES.indexOf(m)]||m).join(' · ')}</div>`
       :'';
-    return `<div class="cl-item ${rowCls}" style="${excluded?'opacity:.4;':''}">
+    return `<div class="cl-item ${rowCls}" data-client-id="${_esc(c.id)}" style="${excluded?'opacity:.4;':''}">
       <div style="font-weight:500;${excluded?'text-decoration:line-through;color:var(--t3);':''}">
         ${_esc(c.nombre)}
         ${mesesBadge}
@@ -168,6 +176,7 @@ function renderFacturacion(){
       </div>
     </div>`;
   }).join('');
+  applyFactFilter();
 }
 
 function changeMonth(n){
