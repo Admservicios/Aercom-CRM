@@ -21,7 +21,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js /
  * js/storage.js, sin mover — no son responsabilidad de este módulo):
- *   D, persist(), toast(), closeModal(), confirmDel(), canDeleteRecord(), updateSidebarBadges(),
+ *   D, persist(), toast(), closeModal(), requestCloseModal(), confirmDel(), canDeleteRecord(), updateSidebarBadges(),
  *   toggleClear(), equipStatus(), clientCritical()*, clientName()*,
  *   eqDateCell(), E_COLOR, curMonth, openEquipModal(), openQuoteModal(),
  *   openPedidoModal(), fmtMoney(), fmtDate(), fmtDateTime(), daysDiff(),
@@ -268,7 +268,7 @@ function openClientModal(id){
       <div style="font-size:12px;color:var(--t3)">💡 Los servicios incluidos en el abono (NS, Preventivo, Combustible, etc.) se configuran en la pestaña <strong>Facturación</strong> de la ficha del cliente.</div>
     </div>`;
   document.getElementById('modal-foot').innerHTML=`
-    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-outline" onclick="requestCloseModal()">Cancelar</button>
     <button class="btn btn-primary" data-id="${_esc(id||'')}" data-nextid="${_esc(nextId)}" onclick="saveClient(this.dataset.id,this.dataset.nextid)">Guardar</button>`;
   document.getElementById('modal-overlay').classList.add('open');
 }

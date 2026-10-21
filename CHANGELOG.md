@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Sin publicar — borradores y teclado en formularios modales
+
+- Cierre con Cancelar, cruz, Escape o fondo pide confirmación si los valores difieren de los iniciales. Rechazar conserva el borrador; restaurar los valores originales permite cerrar sin advertencia. Guardado/eliminación/importación exitosos conservan su cierre interno directo.
+- Diálogos con semántica accesible, nombre y foco inicial; Tab/Shift+Tab quedan dentro, el fondo es inerte y al cerrar se devuelve el foco al origen o al buscador si la fila se reemplazó. Etiquetas con un único control identificado se vinculan por for/ID. La confirmación de eliminación toma prioridad y Escape no cierra la ficha subyacente.
+- Gestor compartido inicializado una sola vez, sin almacenamiento de borradores ni cambios de persistencia. Cambios limitados a UI y botones Cancelar; scripts versionados. La ficha lateral y abandonar/recargar el navegador quedan fuera de esta protección.
+- Validación: 305 pruebas Node aprobadas, 15 nuevas. Chromium aislado a 375/1440 px: cuatro cierres, rechazo/aceptación, foco/etiquetas/retorno, seis formularios más CSV, confirmación anidada, guardar sin aviso extra, cuota y reintento, deshacer nativo, ficha conservada, detalle→edición y cambio de ancho con diálogo abierto. Datos ficticios, bibliotecas reales, cero errores JS; navegación/descarte sin escrituras ni cambios en D/storage, guardado solo en la copia aislada.
+
 ## Sin publicar — contadores de facturación coherentes por mes
 
 - Resumen, progreso, KPI y gráfico del Dashboard consultan el mismo cálculo mensual: clientes cuya configuración aplica al período; Facturado y Cobrado completan el progreso y Excluido queda fuera del denominador. No aplicables/excluidos y mes seleccionado quedan explícitos. El gráfico conserva la categoría Excluido, identificada como fuera del progreso.

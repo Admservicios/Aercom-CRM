@@ -15,7 +15,7 @@
  *
  * Dependencias externas (definidas en index.html, sin mover —
  * no son responsabilidad de este módulo):
- *   D, persist(), closeModal(), renderModule(), toast(), _esc()
+ *   D, persist(), closeModal(), requestCloseModal(), renderModule(), toast(), _esc()
  *   _applyTableImport(), _importNumber(), _importBoolean() (js/storage.js)
  *
  * Integración con Clientes / Equipos / Cotizaciones:
@@ -132,7 +132,7 @@ function openCsvModal(mod){
     <div id="csv-preview"></div>
     <div id="csv-conflict"></div>`;
   document.getElementById('modal-foot').innerHTML=`
-    <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-outline" onclick="requestCloseModal()">Cancelar</button>
     <button class="btn btn-primary" id="csv-confirm-btn" onclick="confirmCsvImport()" style="display:none">Importar</button>`;
   document.getElementById('modal-overlay').classList.add('open');
 }
