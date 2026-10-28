@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Windows sin Python — 2026-10-28
+
+- INICIAR_CRM.cmd usa Windows PowerShell de System32, incluido en Windows 10/11. No requiere Python, permisos de administrador, descargas ni instalación de programas en la PC. El iniciador Python se conserva como opción para otros sistemas.
+- Nuevo servidor iniciar_crm_windows.ps1 con TcpListener de .NET, solo 127.0.0.1:8000; conserva el origen de localStorage. Sirve archivos permitidos y tipos MIME, GET/HEAD, sin caché, sin listar directorios ni aceptar escrituras. Deniega rutas privadas/traversal/enlaces; límites de cabeceras y tiempos de conexión. Informa puerto ocupado, sin elegir otro. Script UTF-8 con BOM y CMD CRLF para Windows.
+- Guías y LEEME.html actualizados. ExecutionPolicy Bypass se limita al proceso del script: no cambia políticas persistentes ni directivas corporativas. Si la empresa bloquea PowerShell, se debe revisar ese mensaje con soporte.
+- Verificación: 8 pruebas nuevas del servidor real (incluidas rutas con espacios/Unicode, MIME/HEAD, enlaces, escrituras, traversal, cabeceras y puerto ocupado) y recorrido completo del CRM con PowerShell: nueve módulos, Chart/SheetJS reales, cuatro reportes/tres plantillas XLSX, importación Excel, JSON en otro perfil y recarga, edición/undo/redo y reporte/PDF. Cero solicitudes externas y errores JS; datos ficticios. PowerShell 7.4.13 portátil oficial validado por SHA-256 en Linux, no incluido ni instalado en el paquete; sintaxis/API compatibles con Windows PowerShell 5.1, sin ejecutar el CMD en la PC del usuario.
+
 ## Local de escritorio — 2026-10-28
 
 - Preparación acumulativa que incluye la mejora pendiente de borradores de la ficha, además de los cambios de este paquete. La versión móvil queda fuera del alcance.

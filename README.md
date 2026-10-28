@@ -108,14 +108,14 @@ Aercom-CRM-v2/
 
 ## Instalación
 
-Para la copia de escritorio sin CDN, seguí [GUIA_LOCAL.md](GUIA_LOCAL.md). En Windows abrí `INICIAR_CRM.cmd`; requiere Python 3.10 o posterior. La dirección fija es `http://127.0.0.1:8000/`. El ZIP contiene el programa, no los datos de tu navegador.
+Para la copia de escritorio sin CDN, seguí [GUIA_LOCAL.md](GUIA_LOCAL.md). En Windows abrí `INICIAR_CRM.cmd`; usa PowerShell incluido en Windows, sin Python ni instalaciones. La dirección fija es `http://127.0.0.1:8000/`. El ZIP contiene el programa, no los datos de tu navegador.
 
 No requiere Node.js, ni gestor de paquetes, ni proceso de build. Es HTML/CSS/JS estático servido tal cual.
 
-Para ejecutarlo localmente basta con levantar cualquier servidor de archivos estáticos apuntando a la raíz del proyecto y abrir `index.html` en el navegador, por ejemplo:
+Para ejecutarlo localmente basta con levantar cualquier servidor de archivos estáticos apuntando a la raíz del proyecto y abrir `index.html` en el navegador, en Windows:
 
-```bash
-python iniciar_crm.py
+```bat
+INICIAR_CRM.cmd
 ```
 
 o cualquier otro servidor estático equivalente (Live Server de VS Code, `npx serve`, IIS, etc.). También es compatible con GitHub Pages, sirviendo la raíz del repositorio directamente.
@@ -162,7 +162,7 @@ La aplicación no requiere Node. Para ejecutar las pruebas de desarrollo desde l
 node --test tests/*.test.js
 ```
 
-La preparación de escritorio verifica 322 pruebas Node y 5 de servidor Python. Históricamente se retiraron 54 casos exclusivos de Drive y se adaptaron las pruebas locales relacionadas. Usan módulos nativos, datos ficticios y dobles de DOM/SheetJS. Las comprobaciones adicionales de Chromium y bibliotecas CDN reales se describen en [TECH_DEBT.md](TECH_DEBT.md); los scripts temporales de esas sesiones no forman parte de la suite del repositorio. Consultá [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) para repetir la revisión manual y [docs/BUGS.md](docs/BUGS.md) para pendientes.
+La preparación de escritorio conserva 322 pruebas Node, 5 de servidor Python opcional y agrega 8 del nuevo servidor PowerShell. Históricamente se retiraron 54 casos exclusivos de Drive y se adaptaron las pruebas locales relacionadas. Usan módulos nativos, datos ficticios y dobles de DOM/SheetJS. Las comprobaciones adicionales de Chromium y bibliotecas CDN reales se describen en [TECH_DEBT.md](TECH_DEBT.md); los scripts temporales de esas sesiones no forman parte de la suite del repositorio. Consultá [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) para repetir la revisión manual y [docs/BUGS.md](docs/BUGS.md) para pendientes.
 
 Para verificar el iniciador local sin instalar paquetes:
 

@@ -136,7 +136,7 @@ Implementado en `index.html`, no en ningún módulo — es infraestructura trans
 - Guardar JSON descarga D completo para respaldo/traslado; Importar JSON valida y restaura. No se escriben automáticamente las carpetas data/ o backups/ del repositorio. Mantener una copia fuera del navegador y exportarla antes de borrar almacenamiento/cambiar de equipo.
 - La recuperación conserva su validación, confirmación y protección ante fallos de cuota/copia cambiada. Ya no depende de sessionStorage. Las preferencias antiguas de Drive quedan ignoradas, sin limpiar datos ni acceder a archivos remotos.
 - Excel exporta solo a descarga local. Se retiraron el módulo Drive, sus controles, callbacks y pruebas exclusivas. El PR #3 y los trabajos históricos de Drive quedan fuera del alcance actual; no reintroducirlos como si fueran pendientes del CRM local.
-- Las bibliotecas Chart.js/SheetJS están incluidas en js/vendor, con licencias/origen documentados. El iniciador Python limita el servidor a 127.0.0.1:8000 y no almacena datos: localStorage sigue perteneciendo al navegador y origen. Ver GUIA_LOCAL.md.
+- Las bibliotecas Chart.js/SheetJS están incluidas en js/vendor, con licencias/origen documentados. El iniciador Windows usa PowerShell del sistema; Python queda como alternativa opcional para otros sistemas. Ambos limitan el servidor a 127.0.0.1:8000 y no almacenan datos: localStorage sigue perteneciendo al navegador y origen. Ver GUIA_LOCAL.md.
 
 ---
 

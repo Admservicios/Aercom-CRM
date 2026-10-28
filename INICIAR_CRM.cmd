@@ -1,16 +1,12 @@
 @echo off
 setlocal
-where py >nul 2>&1
-if not errorlevel 1 (
-  py -3 "%~dp0iniciar_crm.py"
-  goto fin
+set "AERCOM_PWSH=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+if not exist "%AERCOM_PWSH%" (
+  echo No se encontro Windows PowerShell. No se instalo ningun programa.
+  echo Consulta GUIA_LOCAL.md o avisa el mensaje que aparece.
+  pause
+  exit /b 1
 )
-where python >nul 2>&1
-if not errorlevel 1 (
-  python "%~dp0iniciar_crm.py"
-  goto fin
-)
-echo Se necesita Python 3.10 o posterior para iniciar el servidor local.
-echo No se instalo ningun programa. Consulta GUIA_LOCAL.md.
-:fin
+"%AERCOM_PWSH%" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0iniciar_crm_windows.ps1"
+if errorlevel 1 echo No se pudo iniciar el CRM. Revisa el mensaje anterior.
 pause

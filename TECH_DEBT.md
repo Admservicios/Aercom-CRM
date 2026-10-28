@@ -4,6 +4,16 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Iniciador Windows sin instalación de Python
+
+El usuario no dispone de Python ni puede descargarlo en su PC. INICIAR_CRM.cmd ahora invoca el Windows PowerShell de System32, con ruta absoluta para evitar depender de PATH o ejecutar un binario homónimo de la carpeta. Usa NoProfile y ExecutionPolicy Bypass solo en el proceso; no cambia políticas persistentes ni el registro y las directivas corporativas prevalecen. No usa privilegios de administrador ni HttpListener/URLACL: un TcpListener .NET en puerto no privilegiado sirve el contenido estático en 127.0.0.1:8000. El origen no cambia respecto de la versión anterior.
+
+iniciar_crm_windows.ps1 usa APIs/sintaxis de PowerShell 5.1, BOM UTF-8 y líneas CRLF. Soporta GET/HEAD, Content-Length/MIME, cierre de conexión y no-store/nosniff. Solo index/js/css/img, sin listado, rutas ocultas, traversal decodificado, backslash/ADS, NUL ni enlaces/junctions dentro de recursos. POST/PUT/DELETE se rechazan; no escribe datos ni carpetas. Cliente con lectura/escritura atascada tiene timeout; cabeceras limitadas. Puerto ocupado falla explícitamente y no abre otro origen. El protocolo es deliberadamente un servidor estático de escritorio, no un backend ni un servidor para exponer a la red.
+
+Verificación: 8 pruebas HTTP contra PowerShell real, con script copiado a una ruta con espacios/Unicode; GET/HEAD y MIME, directorios/404, rutas privadas/traversal/backslash/ADS/NUL, enlaces, rechazo de escritura, recuperación tras error, cabeceras grandes y puerto ocupado. Recorrido Chromium de escritorio con el servidor PowerShell y proxy externo inoperante: nueve módulos, bibliotecas reales, cuatro reportes/tres plantillas XLSX, Excel importado, JSON descargado/restaurado en otro perfil y recarga, edición/undo/redo y reporte/PDF. Cero solicitudes externas y errores JS, solo datos ficticios. CRM y formato de datos no cambian.
+
+Para validar se extrajo temporalmente PowerShell oficial 7.4.13 Linux en /tmp, verificado con SHA-256 de la publicación. No se instaló en el sistema ni se distribuye en el ZIP. Sus cachés de prueba también quedan en /tmp. No se ejecutó Windows PowerShell 5.1 ni el CMD en la PC del usuario: esa comprobación final debe hacerse allí. Un bloqueo corporativo de PowerShell requiere revisar la directiva con soporte, no instalar Python ni cambiar políticas desde el CRM. El iniciador Python sigue siendo opcional para otras plataformas. Se mantienen respaldos JSON, una pestaña y mismo navegador/perfil/origen; los datos no están en el ZIP.
+
 ## Paquete local de escritorio — 2026-10-28
 
 La rama de preparación incluye el cambio pendiente de ficha (3a9cad0) y los arreglos puntuales confirmados en la revisión. saveFichaFacturacion() ya no escribe la descripción del servicio en facturacion: conserva modalidad/día y usa descripcionServicio. El cambio previene futuras sobrescrituras, no deduce ni repara modalidades históricas dañadas. La salida HTML de Facturación escapa ajuste, nombres de meses desconocidos y el día; no cambia los datos ni sustituye una revisión completa de todos los renderizadores.

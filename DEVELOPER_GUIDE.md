@@ -141,7 +141,7 @@ Desde la raíz, con Node 24 verificado, ejecutar `node --test tests/*.test.js`: 
 | referential-integrity.test.js | Borrados con asociaciones y revalidación al confirmar |
 | undo-redo.test.js / calendar-dates.test.js | Historial, fallos, atajos, zonas horarias y DST |
 
-Para una comprobación manual, usar un perfil temporal del navegador y datos ficticios. Servir la raíz con `python3 -m http.server 8000 --bind 127.0.0.1` y abrir la aplicación localmente. Chart.js 4.4.1 y SheetJS CE 0.20.3 se cargan desde js/vendor; no se necesita CDN ni credenciales. El iniciador recomendado es python iniciar_crm.py (Python 3.10+), en 127.0.0.1:8000. Ver GUIA_LOCAL.md y js/vendor/NOTICES.md. El CMD de Windows no se ejecutó en este entorno Linux.
+Para una comprobación manual, usar un perfil temporal del navegador y datos ficticios. Servir la raíz con `python3 -m http.server 8000 --bind 127.0.0.1` y abrir la aplicación localmente. Chart.js 4.4.1 y SheetJS CE 0.20.3 se cargan desde js/vendor; no se necesita CDN ni credenciales. En Windows el iniciador INICIAR_CRM.cmd usa iniciar_crm_windows.ps1 (PowerShell 5.1+ incluido, sin Python). iniciar_crm.py queda como alternativa opcional para Python 3.10+. Ambos usan 127.0.0.1:8000. Ver GUIA_LOCAL.md y js/vendor/NOTICES.md. El servidor PowerShell fue probado con PowerShell 7.4.13 portátil en Linux; el CMD/PowerShell 5.1 de la PC del usuario requiere verificación allí.
 
 1. Editar y recargar un cliente con campos adicionales/facturación; comprobar conservación y renombrado de referencias.
 2. Intentar borrar registros con asociaciones y comprobar el bloqueo; eliminar uno independiente y comprobar persistencia.
@@ -156,3 +156,11 @@ Los scripts de Chromium/benchmarks de las sesiones anteriores vivían en /tmp y 
 Los controles referenciales de importación tabular revisan registros nuevos/modificados; JSON y formularios no tienen todavía la misma cobertura. No se reparan huérfanos históricos automáticamente. Antes de agregar un campo, revisar también `_parseImportedData()` y la política de conservación del lote, además de formularios, plantillas y exportaciones.
 
 `quoteFromEquip()`, `delFactConfirm()`, `_snapshot()`, `openModal()` y `_closeModalById()` se revisaron por referencias. No se encontraron llamadas de producción para esos helpers, pero existen referencias en comentarios/documentación y, para `delFactConfirm`, pruebas compartidas. Se conservan. `initializeModals()` sí se invoca desde initializeUI(); no debe confundirse con un helper sin uso.
+
+Pruebas opcionales del servidor Windows con PowerShell disponible (AERCOM_PWSH permite indicar el ejecutable):
+
+```bash
+python -B -m unittest discover -s tests -p test_powershell_launcher.py -v
+```
+
+PowerShell de validación no se distribuye ni instala en el paquete del CRM.
