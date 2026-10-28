@@ -865,7 +865,7 @@ function saveFichaFacturacion(){
     adjOtros:(document.getElementById('ff-adjOtros').value||'').trim(),
     ajuste,
     requiereOC:nroOC.length>0,
-    facturacion:descSrv||D.clientes[idx].facturacion,
+    facturacion:D.clientes[idx].facturacion||'Manual',
     facturacionDia: D.clientes[idx].facturacionDia||null,
     // Incluidos en abono (editados desde esta pantalla)
     incluyeNS:          (document.getElementById('ff-inc-ns')  ||{checked:false}).checked,

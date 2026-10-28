@@ -5,23 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Aercom SA — Gestión Operativa</title>
 <link rel="stylesheet" href="css/style.css?v=sheet-close-20261021">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/vendor/chart.umd-4.4.1.js"></script>
+<script src="js/vendor/xlsx.full.min-0.20.3.js"></script>
 <!-- utils.js, storage.js y modules/dashboard.js/facturacion.js deben cargar antes del script
      principal: éste llama a loadData() y renderDashboard() de forma síncrona
      durante la inicialización -->
 <script src="js/utils.js"></script>
-<script src="js/storage.js?v=local-only-20261020"></script>
+<script src="js/storage.js?v=local-desktop-20261028"></script>
 <script src="js/modules/dashboard.js?v=billing-summary-20261021"></script>
-<script src="js/modules/clientes.js?v=sheet-drafts-20261021"></script>
+<script src="js/modules/clientes.js?v=local-desktop-20261028"></script>
 <script src="js/modules/equipos.js?v=modal-drafts-20261021"></script>
-<script src="js/modules/facturacion.js?v=billing-summary-20261021"></script>
+<script src="js/modules/facturacion.js?v=local-desktop-20261028"></script>
 <script src="js/modules/cotizaciones.js?v=modal-drafts-20261021"></script>
 <script src="js/modules/pedidos.js?v=modal-drafts-20261021"></script>
 <script src="js/modules/calendario.js?v=modal-drafts-20261021"></script>
 <script src="js/modules/recordatorios.js?v=modal-drafts-20261021"></script>
 <script src="js/modules/theme.js?v=safe-startup-20261019"></script>
-<script src="js/modules/reportes.js"></script>
+<script src="js/modules/reportes.js?v=local-desktop-20261028"></script>
 <script src="js/modules/excel.js?v=local-only-20261020"></script>
 <script src="js/modules/csv.js?v=modal-drafts-20261021"></script>
 </head>
@@ -695,13 +695,13 @@ function _updateSaveBtn(){
   const btn=document.getElementById('btn-guardar');
   const txt=document.getElementById('btn-guardar-text');
   if(!btn||!txt) return;
-  if(_unsaved){
-    btn.classList.remove('save-saved'); btn.classList.add('save-unsaved');
-    txt.innerHTML='<span style="color:var(--warn)">● </span>Guardar JSON';
-  } else {
-    btn.classList.remove('save-unsaved'); btn.classList.add('save-saved');
-    txt.textContent='✓ Guardado';
-  }
+  btn.classList.toggle('save-unsaved',_unsaved);
+  btn.classList.toggle('save-saved',!_unsaved);
+  txt.textContent='Exportar respaldo JSON';
+  btn.title='Descargar una copia de los datos; verificá el archivo en Descargas';
+  document.getElementById('sb-saved').textContent=_unsaved
+    ?'Guardado en este navegador · respaldo pendiente'
+    :'Datos en este navegador';
 }
 function markUnsaved(){
   _unsaved=true;
@@ -717,7 +717,6 @@ function markSaved(){
 function saveDataAndMark(){
   exportData();
   markSaved();
-  toast('✓ Datos guardados correctamente');
 }
 // persist() (base), exportData() e importData() migradas a js/storage.js
 // (Sprint 3). persist() se re-declara más abajo como decorador (undo/redo)

@@ -91,3 +91,10 @@ test('el ID de la fila se escapa como atributo y se busca como texto literal', (
   const rows=f.setRows([id]);f.node('fact-q').value='literal';f.c.applyFactFilter();
   assert.equal(rows[0].style.display,'');
 });
+test('ajuste, meses personalizados y día se muestran como texto sin insertar HTML',()=>{
+  const f=fixture(),payload='<img src=x onerror="globalThis.injected=1">';
+  f.c.D.clientes=[{id:'C1',nombre:'Prueba',ajuste:payload,mesesFacturacion:['Octubre',payload],facturacion:'Por fecha',facturacionDia:payload}];
+  const before=JSON.stringify(f.c.D);f.c.renderFacturacion();
+  assert.ok(!f.node('fact-list').innerHTML.includes('<img'));assert.ok(f.node('fact-list').innerHTML.includes('&lt;img'));
+  assert.equal(JSON.stringify(f.c.D),before);
+});

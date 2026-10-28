@@ -136,13 +136,13 @@ Implementado en `index.html`, no en ningún módulo — es infraestructura trans
 - Guardar JSON descarga D completo para respaldo/traslado; Importar JSON valida y restaura. No se escriben automáticamente las carpetas data/ o backups/ del repositorio. Mantener una copia fuera del navegador y exportarla antes de borrar almacenamiento/cambiar de equipo.
 - La recuperación conserva su validación, confirmación y protección ante fallos de cuota/copia cambiada. Ya no depende de sessionStorage. Las preferencias antiguas de Drive quedan ignoradas, sin limpiar datos ni acceder a archivos remotos.
 - Excel exporta solo a descarga local. Se retiraron el módulo Drive, sus controles, callbacks y pruebas exclusivas. El PR #3 y los trabajos históricos de Drive quedan fuera del alcance actual; no reintroducirlos como si fueran pendientes del CRM local.
-- El guardado local no implica una aplicación offline: Chart.js/SheetJS siguen cargando desde CDN. No se garantiza arranque completo sin conexión ni se cambia el origen del sitio o instala un backend.
+- Las bibliotecas Chart.js/SheetJS están incluidas en js/vendor, con licencias/origen documentados. El iniciador Python limita el servidor a 127.0.0.1:8000 y no almacena datos: localStorage sigue perteneciendo al navegador y origen. Ver GUIA_LOCAL.md.
 
 ---
 
 ## 8. Excel
 
-- Librería externa: SheetJS (`xlsx.full.min.js`, CDN, sin Subresource Integrity).
+- Librería externa: SheetJS CE 0.20.3 (`js/vendor/xlsx.full.min-0.20.3.js`, copia local con licencia y huella en NOTICES.md).
 - Plantillas de descarga (`xlsDownloadPlantilla`) para Clientes/Equipos/Cotizaciones, con hoja de instrucciones y hoja de referencia de IDs.
 - Importación (`xlsImport`) por ID o nombre exacto único de cliente; equipos/cotizaciones requieren ID explícito. El lote se prepara y valida sobre una copia, preserva campos adicionales y se rechaza completo ante error. No usa coincidencia parcial/fuzzy. Las celdas vacías conservan valores existentes; se rechazan fechas inválidas y libros 1904.
 - Exportación de reportes (`xlsExport`) para Clientes/Equipos/Cotizaciones/Facturación, a descarga local.

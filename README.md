@@ -108,12 +108,14 @@ Aercom-CRM-v2/
 
 ## Instalación
 
+Para la copia de escritorio sin CDN, seguí [GUIA_LOCAL.md](GUIA_LOCAL.md). En Windows abrí `INICIAR_CRM.cmd`; requiere Python 3.10 o posterior. La dirección fija es `http://127.0.0.1:8000/`. El ZIP contiene el programa, no los datos de tu navegador.
+
 No requiere Node.js, ni gestor de paquetes, ni proceso de build. Es HTML/CSS/JS estático servido tal cual.
 
 Para ejecutarlo localmente basta con levantar cualquier servidor de archivos estáticos apuntando a la raíz del proyecto y abrir `index.html` en el navegador, por ejemplo:
 
 ```bash
-python -m http.server 8000
+python iniciar_crm.py
 ```
 
 o cualquier otro servidor estático equivalente (Live Server de VS Code, `npx serve`, IIS, etc.). También es compatible con GitHub Pages, sirviendo la raíz del repositorio directamente.
@@ -124,7 +126,7 @@ o cualquier otro servidor estático equivalente (Live Server de VS Code, `npx se
 
 - **LocalStorage** — toda la información del CRM (clientes, equipos, cotizaciones, pedidos, recordatorios, eventos, facturación) se guarda como un único objeto JSON en `localStorage['aercom-data']`. No requiere backend ni base de datos.
 - **Respaldo y traslado** — usá Guardar JSON para descargar todos los datos y conservá copias periódicas fuera del navegador. Importar JSON restaura una copia validada en otra computadora/navegador. No hay sincronización entre dispositivos ni escritura automática de respaldos en las carpetas del repositorio. Los archivos que ya existan en Google Drive no se modifican.
-- **Acceso a bibliotecas** — los datos permanecen locales, pero Chart.js y SheetJS todavía se cargan desde un CDN. No se garantiza un arranque completo sin conexión; esta modificación no instala una aplicación de escritorio ni un modo offline.
+- **Bibliotecas incluidas** — Chart.js 4.4.1 y SheetJS CE 0.20.3 se cargan desde js/vendor, con licencias y origen documentados. El CRM y sus reportes no requieren CDN. Se usa un servidor de archivos local, no una base de datos ni una aplicación instalada.
 
 ---
 
@@ -160,4 +162,10 @@ La aplicación no requiere Node. Para ejecutar las pruebas de desarrollo desde l
 node --test tests/*.test.js
 ```
 
-265 pruebas aprobadas del funcionamiento local. Se retiraron 54 casos exclusivos de Drive y se adaptaron las pruebas locales relacionadas. Usan módulos nativos, datos ficticios y dobles de DOM/SheetJS. Las comprobaciones adicionales de Chromium y bibliotecas CDN reales se describen en [TECH_DEBT.md](TECH_DEBT.md); los scripts temporales de esas sesiones no forman parte de la suite del repositorio. Consultá [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) para repetir la revisión manual y [docs/BUGS.md](docs/BUGS.md) para pendientes.
+La preparación de escritorio verifica 322 pruebas Node y 5 de servidor Python. Históricamente se retiraron 54 casos exclusivos de Drive y se adaptaron las pruebas locales relacionadas. Usan módulos nativos, datos ficticios y dobles de DOM/SheetJS. Las comprobaciones adicionales de Chromium y bibliotecas CDN reales se describen en [TECH_DEBT.md](TECH_DEBT.md); los scripts temporales de esas sesiones no forman parte de la suite del repositorio. Consultá [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) para repetir la revisión manual y [docs/BUGS.md](docs/BUGS.md) para pendientes.
+
+Para verificar el iniciador local sin instalar paquetes:
+
+```bash
+python -B -m unittest discover -s tests -p test_local_launcher.py -v
+```

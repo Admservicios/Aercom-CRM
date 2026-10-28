@@ -141,7 +141,7 @@ Desde la raíz, con Node 24 verificado, ejecutar `node --test tests/*.test.js`: 
 | referential-integrity.test.js | Borrados con asociaciones y revalidación al confirmar |
 | undo-redo.test.js / calendar-dates.test.js | Historial, fallos, atajos, zonas horarias y DST |
 
-Para una comprobación manual, usar un perfil temporal del navegador y datos ficticios. Servir la raíz con `python3 -m http.server 8000 --bind 127.0.0.1` y abrir la aplicación localmente. Chart.js 4.4.1 y SheetJS 0.18.5 se cargan desde cdnjs.cloudflare.com. No se necesita configurar credenciales. El guardado local no elimina esa dependencia de CDN ni garantiza funcionamiento completo sin conexión.
+Para una comprobación manual, usar un perfil temporal del navegador y datos ficticios. Servir la raíz con `python3 -m http.server 8000 --bind 127.0.0.1` y abrir la aplicación localmente. Chart.js 4.4.1 y SheetJS CE 0.20.3 se cargan desde js/vendor; no se necesita CDN ni credenciales. El iniciador recomendado es python iniciar_crm.py (Python 3.10+), en 127.0.0.1:8000. Ver GUIA_LOCAL.md y js/vendor/NOTICES.md. El CMD de Windows no se ejecutó en este entorno Linux.
 
 1. Editar y recargar un cliente con campos adicionales/facturación; comprobar conservación y renombrado de referencias.
 2. Intentar borrar registros con asociaciones y comprobar el bloqueo; eliminar uno independiente y comprobar persistencia.

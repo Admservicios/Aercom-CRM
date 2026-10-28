@@ -74,3 +74,9 @@ test('Una pestaña inexistente no elimina la protección ni cambia la pestaña a
   assert.equal(f.control.prompts,0);assert.notEqual(vm.runInContext('_fichaDraft',f.c),null);
   assert.equal(f.node('ftab-facturacion').classList.contains('active'),true);
 });
+for(const mode of ['Manual','Por fecha','Automática','Modalidad histórica'])test(`Cambiar descripción conserva modalidad ${mode} y día`,()=>{
+  const f=fixture();f.c.D.clientes[0].facturacion=mode;f.c.D.clientes[0].facturacionDia=15;
+  f.node('ff-descSrv').value='Mantenimiento mensual';f.c.saveFichaFacturacion();
+  assert.equal(f.c.D.clientes[0].facturacion,mode);assert.equal(f.c.D.clientes[0].facturacionDia,15);
+  assert.equal(f.c.D.clientes[0].descripcionServicio,'Mantenimiento mensual');
+});

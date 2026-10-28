@@ -4,6 +4,15 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Local de escritorio — 2026-10-28
+
+- Preparación acumulativa que incluye la mejora pendiente de borradores de la ficha, además de los cambios de este paquete. La versión móvil queda fuera del alcance.
+- Guardar la descripción del servicio conserva la modalidad de facturación y su día. Se escapan ajuste, meses personalizados y día al mostrar Facturación. No hay migraciones ni reparación inferida de datos históricos.
+- Chart.js 4.4.1 y SheetJS CE 0.20.3 incluidos localmente, con licencias y procedencia/huellas en js/vendor/NOTICES.md. SheetJS se actualiza desde 0.18.5; se usó la redistribución pública @e965/xlsx con integridad SHA-512 verificada porque el CDN oficial devolvió 403. No se ejecutó un instalador ni scripts de paquetes.
+- Reportes cargan el gráfico local de forma asíncrona y muestran un aviso si falla su carga. Exportar respaldo JSON queda siempre identificado como descarga, separado del estado de datos en el navegador; se solicita verificar el archivo.
+- Iniciador Windows CMD + servidor Python estándar (3.10+), dirección fija 127.0.0.1:8000, solo recursos estáticos permitidos, sin listado de directorios ni acceso a rutas privadas, sin caché ni endpoints de escritura. Puerto ocupado se informa, sin cambiar el origen. LEEME.html y GUIA_LOCAL.md explican instalación, traslado y respaldos.
+- Validación: 322 pruebas Node y 5 de servidor Python aprobadas. Chromium de escritorio aislado, proxy externo inoperante: nueve módulos, gráficos reales, cuatro reportes y tres plantillas XLSX, importación real SheetJS, JSON descargado/restaurado en otro perfil, recarga, edición/undo/redo, modalidad conservada, HTML escapado y reporte/PDF. Cero solicitudes externas y errores JavaScript. Datos ficticios; no se modifica información del usuario. Servidor probado en Linux; CMD no ejecutado en Windows/PC del usuario.
+
 ## Sin publicar — borradores en la ficha del cliente
 
 - La edición de configuración de facturación en la ficha compara los campos con sus valores iniciales antes de cerrar, Cancelar, cambiar de pestaña, reabrir la edición o mostrar otro cliente. Rechazar conserva cliente/pestaña/campos; aceptar descarta sin persistir. Volver a los valores originales no pregunta.

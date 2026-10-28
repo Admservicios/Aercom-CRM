@@ -136,14 +136,14 @@ function renderFacturacion(){
     const excluded=st==='Excluido';
     const rowCls=excluded?'':st==='Facturado'?'st-fact':st==='Cobrado'?'st-cobr':'';
     const mesesBadge=(c.mesesFacturacion&&c.mesesFacturacion.length)
-      ?`<div style="font-size:10px;color:var(--t3);margin-top:2px">${c.mesesFacturacion.map(m=>ABREV[MESES.indexOf(m)]||m).join(' · ')}</div>`
+      ?`<div style="font-size:10px;color:var(--t3);margin-top:2px">${c.mesesFacturacion.map(m=>_esc(ABREV[MESES.indexOf(m)]||m)).join(' · ')}</div>`
       :'';
     return `<div class="cl-item ${rowCls}" data-client-id="${_esc(c.id)}" style="${excluded?'opacity:.4;':''}">
       <div style="font-weight:500;${excluded?'text-decoration:line-through;color:var(--t3);':''}">
         ${_esc(c.nombre)}
         ${mesesBadge}
       </div>
-      <div><span class="badge b-gray" style="font-size:10.5px">${c.ajuste||'—'}</span></div>
+      <div><span class="badge b-gray" style="font-size:10.5px">${_esc(c.ajuste||'—')}</span></div>
       <div style="text-align:center">${c.requiereOC?'<span class="badge b-info" style="font-size:10px">OC</span>':'<span style="color:var(--t3)">—</span>'}</div>
       <div style="text-align:center">${c.requiereHES?'<span class="badge b-purple" style="font-size:10px">HES</span>':'<span style="color:var(--t3)">—</span>'}</div>
       <div style="font-size:12px">
@@ -153,7 +153,7 @@ function renderFacturacion(){
           if(f==='Por fecha'&&d){
             const hoy=new Date().getDate();
             const pasada=hoy>=d;
-            return `<span style="font-size:11.5px;font-weight:600;color:var(--info)">📅 Día ${d}</span>
+            return `<span style="font-size:11.5px;font-weight:600;color:var(--info)">📅 Día ${_esc(d)}</span>
                     <div style="font-size:10.5px;color:var(--t3);margin-top:1px">${pasada?'Ya pasó este mes':'Pendiente este mes'}</div>`;
           }
           if(f==='Automática') return '<span style="font-size:11.5px;font-weight:600;color:var(--ok)">⚡ Automática</span>';

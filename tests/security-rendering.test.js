@@ -24,7 +24,7 @@ function fixture() {
   const context = vm.createContext({
     D: { clientes: [client], equipos: [], cotizaciones: [], pedidos: [],
       recordatorios: [], facturacion_estados: {} },
-    document: { getElementById: node, querySelectorAll: () => [] },
+    document: { baseURI:'http://127.0.0.1:8000/index.html', getElementById: node, querySelectorAll: () => [] }, URL,
     curMonth: '2026-10', E_COLOR: {},
     equipStatus: () => ({ st: 'verde', nextAceite: null, nextBateria: null }),
     clientCritical: () => false, clientName: () => client.nombre,
@@ -117,7 +117,7 @@ test('Reporte: el tipo no cierra script; etiquetas del gráfico conservan el val
   assert.ok(!/<\/script/i.test(script));
   const charts = [];
   vm.runInNewContext(script, {
-    document: { getElementById: id => id },
+    document: { getElementById: id => id, createElement:()=>({}), head:{appendChild(script){assert.equal(script.src,'http://127.0.0.1:8000/js/vendor/chart.umd-4.4.1.js');script.onload();}} },
     Chart: function (canvas, config) { charts.push(config); }
   });
   assert.equal(charts.length, 2);

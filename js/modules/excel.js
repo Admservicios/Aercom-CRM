@@ -6,7 +6,7 @@
  * ============================================================
  *
  * Responsabilidad: importación/exportación de datos vía XLSX
- * (SheetJS, cargado por CDN en index.html) — descarga de
+ * (SheetJS local, cargado en index.html) — descarga de
  * plantillas prellenadas (Clientes/Equipos/Cotizaciones) con
  * hojas de instrucciones y referencia, importación con matching
  * por ID/nombre y merge no destructivo, exportación de reportes
@@ -14,7 +14,7 @@
  *
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
- *   XLSX (CDN SheetJS), D, curMonth, today(), clientName(),
+ *   XLSX (SheetJS local), D, curMonth, today(), clientName(),
  *   toast(), persist(), renderModule() (index.html)
  *   _applyTableImport(), _importNumber(), _importBoolean() (js/storage.js)
  *

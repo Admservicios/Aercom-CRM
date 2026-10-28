@@ -11,7 +11,7 @@
  * ventana nueva (`window.open` + `document.write`) pensado para
  * imprimir o guardar como PDF (Ctrl+P). Es un documento HTML
  * completo embebido en un template string — su propio `<style>`
- * y `<script>` (con la carga de Chart.js vía CDN e instanciación
+ * y `<script>` (con la carga de Chart.js local e instanciación
  * de los 2 gráficos) corren en el `document` de esa ventana nueva,
  * no en el de la app — por eso la referencia a Chart.js dentro del
  * template no es una segunda carga de la librería en la página
@@ -93,10 +93,11 @@ function generarReporteVencimientos(){
   const tLabels = JSON.stringify(Object.keys(tipoCount)).replace(/</g, '\\u003c');
   const tData   = JSON.stringify(Object.values(tipoCount));
 
+  const chartUrl=JSON.stringify(new URL('js/vendor/chart.umd-4.4.1.js',document.baseURI).href).replace(/</g, '\\u003c');
+
   const html = `<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
 <title>Reporte de Vencimientos — Aercom SA</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"><\/script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;background:#f8f8f7;color:#1a1916}
@@ -245,8 +246,14 @@ th { border-bottom: 2px solid var(--border-strong) !important; }
   </div>
 </div>
 <script>
+const chartScript=document.createElement('script');
+chartScript.src=${chartUrl};
+chartScript.onload=()=>{
 new Chart(document.getElementById('c1'),{type:'doughnut',data:{labels:['Vencidos','Próx.30d','Próx.60d','Al día'],datasets:[{data:[${vencidos.length},${prox30.length},${prox60.length},${alDia.length}],backgroundColor:['#c73030','#f59e0b','#1d6fa4','#0a7c5c'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12,padding:8}}}}});
 new Chart(document.getElementById('c2'),{type:'bar',data:{labels:${tLabels},datasets:[{data:${tData},backgroundColor:['#1d6fa4','#0a7c5c','#c4600a','#6d40c4','#c73030'],borderRadius:5,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{font:{size:10},precision:0},grid:{color:'#f0efeb'}}}}});
+};
+chartScript.onerror=()=>{const error=document.createElement('p');error.textContent='No se pudo cargar el gráfico local. Mantené el servidor abierto y generá el reporte otra vez.';document.body.prepend(error);};
+document.head.appendChild(chartScript);
 <\/script></body></html>`;
 
   const win = window.open('','_blank');

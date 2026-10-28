@@ -441,7 +441,7 @@ function _persistBase() {
 
     localStorage.setItem(STORAGE_KEY, serialized);
 
-    document.getElementById("sb-saved").textContent = "Guardado en memoria ✓";
+    document.getElementById("sb-saved").textContent = "Guardado en este navegador ✓";
 
     markUnsaved();
 
@@ -469,7 +469,7 @@ function exportData() {
 
     URL.revokeObjectURL(url);
 
-    toast("aercom-data.json descargado correctamente");
+    toast("Se solicitó el respaldo JSON. Verificá el archivo en Descargas.");
 
 }
 
