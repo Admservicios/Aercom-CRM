@@ -4,6 +4,18 @@ Registro de bugs preexistentes, código muerto y duplicaciones detectados durant
 
 ---
 
+## Equipos — formulario y planillas actuales
+
+El rótulo Equipo conserva D.equipos[].id y todas las referencias. El formulario deja de leer/escribir ultimoRefrigerante (gas) y horometro; el spread del registro conserva los valores existentes en JSON sin borrarlos. No se exportan en planillas nuevas. El gas deja de contar en las fechas que determinan st; se mantiene el valor derivado nextRefrig por compatibilidad, sin consumidores activos. No se reinterpretan fechas de gas como fechas de refrigerante.
+
+El refrigerante mostrado por el CRM conserva sus campos históricos ultimoAceite/proximoAceite, ahora identificados en Excel como Ultimo Cambio Refrigerante/Proximo Refrigerante. Próximo cambio de batería usa proximoBateria y addYears(fecha,2), con aritmética UTC y ajuste del 29/02 al último día de febrero. Cambiar la última fecha recalcula; una próxima fecha escrita explícitamente se respeta. Una próxima batería sin última fecha participa del estado/calendario. No hay recálculo masivo de próximas fechas guardadas ni cambio de otras periodicidades.
+
+Plantilla/reporte XLSX comparten 15 columnas alineadas: Equipo, cliente, tipo/marca/ubicación, preventivo, refrigerante, batería, visitas y observaciones. La importación mapea Equipo→ID y Ultimo Cambio Refrigerante→Ultimo Aceite; ID/Ultimo Aceite/gas/horómetro siguen aceptados para planillas antiguas, con validación previa. Alias contradictorios rechazan el lote. Próxima batería no indicada calcula dos años si cambia la última fecha; si no cambia conserva una próxima personalizada. Fechas explícitas predominan. Celdas vacías mantienen la semántica anterior de conservar valores; para limpiar, usar el formulario. Los datos retirados se conservan al reimportar una plantilla nueva sin esas columnas.
+
+Verificación: 350 pruebas Node aprobadas; casos agregados/ampliados de preservación de metadatos, campos retirados, alta/edición, años bisiestos y cinco zonas horarias, próximos explícitos, ausencia de alarma por gas, calendario y XLSX reales (plantilla/reporte serializados y reimportados). Chromium a 1366x768 con bibliotecas reales, API File System Access nativa OPFS y picker simulado: alta/edición, cálculo automático y manual, persistencia en archivo, inline/calendario, XLSX descargados/reimportados y recarga, cero errores JS. El ZIP se prueba extraído. La política del entorno sigue bloqueando file://; no se cambió y no se certifica el selector real de Windows.
+
+Límites: el CSV no cambia de formato en este paso, pero recalcula la próxima batería si cambia/se vacía la última fecha; los respaldos JSON conservan gas/horómetro históricos. Las próximas fechas explícitas ya guardadas se preservan aunque hayan sido calculadas con la regla anterior de 730 días: no se infiere si eran personalizadas. No se agregan fórmulas de recálculo en Excel; el cálculo se hace al importar cuando corresponda. No se modifican fechas/datos del usuario ni se cambia el esquema de identificadores. Regenerar plantillas y respaldar el JSON antes de reemplazar el programa.
+
 ## Copia física de datos mediante permiso de Chrome
 
 El usuario confirmó que index.html abre el CRM en su Chrome, evitando los iniciadores que fallaban en su PC. js/local-folder.js agrega un permiso de carpeta por sesión y una copia física opcional de los cambios confirmados. No recuerda handles ni permisos en IndexedDB: cada apertura requiere Conectar carpeta. Sin conexión, persiste el comportamiento previo del navegador/exportación manual. No se convierte la API de persistencia sincrónica a promesas ni se cambia su rollback.

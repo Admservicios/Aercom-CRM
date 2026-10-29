@@ -15,7 +15,7 @@
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
  *   XLSX (SheetJS local), D, curMonth, today(), clientName(),
- *   toast(), persist(), renderModule() (index.html)
+ *   toast(), persist(), renderModule() (index.html); addDays(), addYears() (utils.js)
  *   _applyTableImport(), _importNumber(), _importBoolean() (js/storage.js)
  *
  * Decisiones de límite de módulo:
@@ -27,7 +27,7 @@
 // ─── EXCEL: PLANTILLAS ────────────────────────────────────────────────────────
 const XLS_HEADERS = {
   clientes:     ['ID','Nombre','Tipo','Ciudad','Contacto','Telefono','Email','Frecuencia Visita','Presupuesto Mensual','Ajuste','Requiere OC','Requiere HES','Facturacion','Facturacion Dia','Estado','Incluye NS','Incluye Preventivo','Incluye Combustible','Incluye Plataforma','Incluye Bateria','Incluye Otro'],
-  equipos:      ['ID','Cliente ID','Cliente (nombre)','Tipo','Marca','Ubicacion','Ultimo Preventivo','Proximo Preventivo','Ultimo Aceite','Ultima Bateria','Ultimo Refrigerante','Horometro','Observaciones'],
+  equipos:      ['Equipo','Cliente ID','Cliente (nombre)','Tipo','Marca','Ubicacion','Ultimo Preventivo','Proximo Preventivo','Ultimo Cambio Refrigerante','Proximo Refrigerante','Ultima Bateria','Proximo Cambio Bateria','Ultima Visita','Proxima Visita','Observaciones'],
   cotizaciones: ['ID','Cliente ID','Cliente (nombre)','Descripcion','Monto','Fecha Envio','Fecha Followup','Responsable','Estado','Notas'],
   facturacion:  ['Cliente','Tipo','Ajuste','Requiere OC','Requiere HES','Facturacion','Estado Mes']
 };
@@ -67,8 +67,9 @@ function xlsDownloadPlantilla(tipo){
       e.id, e.clienteId, clientName(e.clienteId),
       e.tipo||'', e.marca||'', e.ubicacion||'',
       e.ultimoPreventivo||'', e.proximoPreventivo||'',
-      e.ultimoAceite||'', e.ultimoBateria||'',
-      e.ultimoRefrigerante||'', e.horometro||0, e.observaciones||''
+      e.ultimoAceite||'', e.proximoAceite||(e.ultimoAceite?addDays(e.ultimoAceite,730):''),
+      e.ultimoBateria||'', e.proximoBateria||(e.ultimoBateria?addYears(e.ultimoBateria,2):''),
+      e.ultimaVisita||'', e.proximaVisita||'', e.observaciones||''
     ]);
     const ws = XLSX.utils.aoa_to_sheet([XLS_HEADERS.equipos, ...rows]);
     ws['!cols'] = XLS_HEADERS.equipos.map(()=>({wch:22}));
@@ -82,8 +83,11 @@ function xlsDownloadPlantilla(tipo){
     const wi = XLSX.utils.aoa_to_sheet([
       ['INSTRUCCIONES'],[''],
       ['• Usá la hoja "IDs de Clientes" para copiar el Cliente ID correcto'],
-      ['• El ID del equipo identifica el registro — no lo cambies si ya existe'],
-      ['• Preventivo: +1 año · Batería y Refrigerante: +2 años'],[''],
+      ['• Equipo identifica el registro — no lo cambies si ya existe'],
+      ['• Batería: dos años calendario desde Ultima Bateria; 29/02 se ajusta al último día válido'],
+      ['• Próxima batería vacía: se calcula si cambia la última fecha; conserva personalizadas si no cambia'],
+      ['• Una próxima fecha explícita se respeta. Si cambiás la última fecha, dejá la próxima vacía para recalcular'],
+      ['• Ultimo Cambio Refrigerante reemplaza Ultimo Aceite; gas y horómetro no se exportan'],[''],
       [`Exportado el: ${hoy} · ${D.equipos.length} equipos`]
     ]);
     XLSX.utils.book_append_sheet(wb, wi, 'Instrucciones');
@@ -203,6 +207,10 @@ function xlsImport(ev, tipo){
           const existe=D.equipos&&D.equipos.find(e=>e.id===String(r['ID']||'').trim());
           const tipoRaw=(r['Tipo']||'').trim();
           const tipo=TIPO_MAP[tipoRaw.toUpperCase()]||tipoRaw||existe?.tipo||'Grupo Electrógeno';
+          const lastBattery=_xlsDate(r['Ultima Bateria'])||existe?.ultimoBateria||'';
+          const nextBattery=_xlsDate(r['Proximo Cambio Bateria'])||
+            ((lastBattery!==(existe?.ultimoBateria||'')||!existe?.proximoBateria)&&lastBattery
+              ?addYears(lastBattery,2):existe?.proximoBateria||null);
           const obj={
             ...existe,
             id: existe?existe.id:String(r['ID']).trim(),
@@ -212,11 +220,13 @@ function xlsImport(ev, tipo){
             ultimoPreventivo: _xlsDate(r['Ultimo Preventivo'])||existe?.ultimoPreventivo||'',
             proximoPreventivo: _xlsDate(r['Proximo Preventivo'])||existe?.proximoPreventivo||'',
             ultimoAceite: _xlsDate(r['Ultimo Aceite'])||existe?.ultimoAceite||'',
-            ultimoBateria: _xlsDate(r['Ultima Bateria'])||existe?.ultimoBateria||'',
-            ultimoRefrigerante: _xlsDate(r['Ultimo Refrigerante'])||existe?.ultimoRefrigerante||'',
-            horometro: r['Horometro']!==undefined ? Number(r['Horometro']) : existe?.horometro??0,
+            proximoAceite: _xlsDate(r['Proximo Refrigerante'])||existe?.proximoAceite||'',
+            ultimoBateria: lastBattery, proximoBateria: nextBattery,
+            // Retrocompatibilidad; estas columnas ya no se generan.
+            ...(r['Ultimo Refrigerante']!==undefined&&r['Ultimo Refrigerante']!==''&&r['Ultimo Refrigerante']!==null?{ultimoRefrigerante:_xlsDate(r['Ultimo Refrigerante'])}:{}),
+            ...(r['Horometro']!==undefined&&r['Horometro']!==''?{horometro:Number(r['Horometro'])}:{}),
             observaciones: r['Observaciones']||existe?.observaciones||'',
-            ultimaVisita: existe?.ultimaVisita||'', proximaVisita: existe?.proximaVisita||''
+            ultimaVisita: _xlsDate(r['Ultima Visita'])||existe?.ultimaVisita||'', proximaVisita: _xlsDate(r['Proxima Visita'])||existe?.proximaVisita||''
           };
           touch(obj);
           if(!D.equipos) D.equipos=[];
@@ -229,6 +239,10 @@ function xlsImport(ev, tipo){
           const cli=_xlsFindCliente(r);
           if(!cli) throw new Error('Cotización sin cliente identificable.');
           const existe=D.cotizaciones&&D.cotizaciones.find(c=>c.id===r['ID']);
+          const lastBattery=_xlsDate(r['Ultima Bateria'])||existe?.ultimoBateria||'';
+          const nextBattery=_xlsDate(r['Proximo Cambio Bateria'])||
+            ((lastBattery!==(existe?.ultimoBateria||'')||!existe?.proximoBateria)&&lastBattery
+              ?addYears(lastBattery,2):existe?.proximoBateria||null);
           const obj={
             ...existe,
             id: existe?existe.id:String(r['ID']).trim(),
@@ -292,12 +306,22 @@ function _xlsFindCliente(row){
 function _validateXlsRows(rows,tipo){
   const keys=new Set();
   rows.forEach((row,index)=>{
+    if(tipo==='equipos'){
+      for(const [current,legacy] of [['Equipo','ID'],['Ultimo Cambio Refrigerante','Ultimo Aceite']]){
+        if(Object.prototype.hasOwnProperty.call(row,current)){
+          const value=row[current],old=row[legacy];
+          if(old!==undefined&&old!==''&&value!==''&&String(old).trim()!==String(value).trim())throw new Error(`Fila ${index+2}: columnas ${current} y ${legacy} contradictorias.`);
+          row[legacy]=value!==''?value:(old??'');
+          delete row[current];
+        }
+      }
+    }
     for(const key of Object.keys(row)){
-      if(!XLS_HEADERS[tipo].includes(key) && !(tipo==='cotizaciones' && key==='Cliente ID') && !(tipo==='clientes' && key==='Prioridad')) throw new Error(`Columna desconocida: ${key}.`);
+      if(!XLS_HEADERS[tipo].includes(key) && !(tipo==='equipos'&&['ID','Ultimo Aceite','Ultimo Refrigerante','Horometro'].includes(key)) && !(tipo==='cotizaciones' && key==='Cliente ID') && !(tipo==='clientes' && key==='Prioridad')) throw new Error(`Columna desconocida: ${key}.`);
       if(typeof row[key]==='string') row[key]=row[key].trim();
     }
     const id=String(row.ID??'').trim(),name=row.Nombre;
-    if(tipo==='clientes' ? !name : !id) throw new Error(`Fila ${index+2}: falta ${tipo==='clientes'?'Nombre':'ID'}.`);
+    if(tipo==='clientes' ? !name : !id) throw new Error(`Fila ${index+2}: falta ${tipo==='clientes'?'Nombre':tipo==='equipos'?'Equipo':'ID'}.`);
     const key=id||name;
     if(keys.has(key)) throw new Error(`Fila ${index+2}: clave repetida.`);
     keys.add(key);
@@ -309,7 +333,7 @@ function _validateXlsRows(rows,tipo){
     for(const field of ['Requiere OC','Requiere HES','Incluye NS','Incluye Preventivo','Incluye Combustible','Incluye Plataforma','Incluye Bateria']){
       if(row[field]!==undefined && row[field]!=='') row[field]=_importBoolean(row[field],field);
     }
-    for(const field of ['Ultimo Preventivo','Proximo Preventivo','Ultimo Aceite','Ultima Bateria','Ultimo Refrigerante','Fecha Envio','Fecha Followup']){
+    for(const field of ['Ultimo Preventivo','Proximo Preventivo','Ultimo Aceite','Ultima Bateria','Ultimo Refrigerante','Proximo Refrigerante','Proximo Cambio Bateria','Ultima Visita','Proxima Visita','Fecha Envio','Fecha Followup']){
       if(row[field]!==undefined && row[field]!=='') _xlsDate(row[field]);
     }
     // Identificadores y datos de contacto de celdas numéricas se conservan como texto.
@@ -334,7 +358,9 @@ function xlsExport(tipo){
     const rows=(D.equipos||[]).map(e=>[
       e.id, e.clienteId, clientName(e.clienteId), e.tipo, e.marca||'', e.ubicacion||'',
       e.ultimoPreventivo, e.proximoPreventivo, e.ultimoAceite,
-      e.ultimoBateria, e.ultimoRefrigerante, e.horometro, e.observaciones
+      e.proximoAceite||(e.ultimoAceite?addDays(e.ultimoAceite,730):''),
+      e.ultimoBateria, e.proximoBateria||(e.ultimoBateria?addYears(e.ultimoBateria,2):''),
+      e.ultimaVisita||'', e.proximaVisita||'', e.observaciones
     ]);
     ws=XLSX.utils.aoa_to_sheet([XLS_HEADERS.equipos,...rows]);
   } else if(tipo==='cotizaciones'){

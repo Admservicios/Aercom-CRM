@@ -35,6 +35,17 @@ function addDays(dateString, days) {
     return date.toISOString().split('T')[0];
 }
 
+// Sumar años calendario, ajustando 29/02 al último día válido del destino.
+function addYears(dateString, years) {
+    const date = new Date(dateString + 'T00:00:00Z');
+    const day = date.getUTCDate();
+    date.setUTCDate(1);
+    date.setUTCFullYear(date.getUTCFullYear() + years);
+    const last = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+    date.setUTCDate(Math.min(day, last));
+    return date.toISOString().split('T')[0];
+}
+
 function addMonths(monthString, months) {
 
     let [year, month] = monthString.split("-").map(Number);

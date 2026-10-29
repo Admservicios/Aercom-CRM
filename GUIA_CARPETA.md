@@ -37,4 +37,13 @@ Las bibliotecas están incluidas en js/vendor con sus licencias. El reporte reut
 
 ## Alcance de las comprobaciones
 
-341 pruebas Node; pruebas de navegador con File System Access nativo en almacenamiento aislado OPFS y selector de carpeta simulado, sobre HTTP local de desarrollo. Se verifican creación, lectura/escritura/cierre, edición, historial/importación, cambios externos, conservación de ambas copias y reconexión. El entorno de pruebas bloquea file:// por política de administración; no se desactivó esa política. El usuario confirmó apertura directa del CRM en su Chrome, pero falta verificar el selector real y la escritura en su carpeta Windows. Si no está disponible, Exportar respaldo JSON sigue siendo la alternativa manual. No se certifica Firefox/Safari ni uso móvil.
+350 pruebas Node; pruebas de navegador con File System Access nativo en almacenamiento aislado OPFS y selector de carpeta simulado, sobre HTTP local de desarrollo. Se verifican creación, lectura/escritura/cierre, edición, historial/importación, cambios externos, conservación de ambas copias y reconexión. El entorno de pruebas bloquea file:// por política de administración; no se desactivó esa política. El usuario confirmó apertura directa del CRM en su Chrome, pero falta verificar el selector real y la escritura en su carpeta Windows. Si no está disponible, Exportar respaldo JSON sigue siendo la alternativa manual. No se certifica Firefox/Safari ni uso móvil.
+
+
+## Equipos y Excel actualizados (29/10/2026)
+
+El formulario muestra Equipo y Próximo cambio de batería; ya no muestra gas ni horómetro. La próxima batería se propone a dos años calendario desde el último cambio (29/02 se ajusta a 28/02 si corresponde). Se puede indicar otra fecha explícita; las fechas guardadas anteriormente no se recalculan al abrir.
+
+Volvé a descargar las plantillas de Equipos. Incluyen Equipo, último/próximo refrigerante, última/próxima batería y visitas; gas/horómetro no se exportan. Las planillas anteriores siguen siendo aceptadas: Ultimo Aceite corresponde al refrigerante actual, mientras Ultimo Refrigerante era el gas histórico. La importación preserva los históricos sin mostrarlos en la nueva plantilla. Una próxima batería explícita se conserva; si cambiás la última fecha y dejás vacía la próxima, el CRM calcula los dos años al importar. El CSV mantiene el formato anterior, con recálculo de próxima batería si cambia la última fecha.
+
+Antes de cambiar la carpeta del programa, exportá/verificá un JSON actual y conservá la carpeta de datos separada. Abrí el nuevo index.html y conectá esa misma carpeta; no se elimina información histórica del JSON.

@@ -17,7 +17,7 @@
  * Dependencias externas (definidas en index.html / js/utils.js,
  * sin mover — no son responsabilidad de este módulo):
  *   D, persist(), toast(), closeModal(), requestCloseModal(), clientName(), today(),
- *   daysDiff(), addDays(), _localDateString(), toTitleCase(), _esc() (js/utils.js —
+ *   daysDiff(), addDays(), addYears(), _localDateString(), toTitleCase(), _esc() (js/utils.js —
  *   PR-014.1, hardening XSS)
  *
  * Decisiones de límite de módulo:
@@ -96,7 +96,7 @@ function _calGetEventos(){
     const label = `${e.id} · ${cn.split(' ')[0]}`;
     const checks = [
       { date: e.proximoPreventivo, tipo: 'Prev.' },
-      { date: e.proximoBateria || (e.ultimoBateria ? addDays(e.ultimoBateria,730) : null), tipo: 'Bat.' },
+      { date: e.proximoBateria || (e.ultimoBateria ? addYears(e.ultimoBateria,2) : null), tipo: 'Bat.' },
       { date: e.proximoAceite   || (e.ultimoAceite  ? addDays(e.ultimoAceite,730)  : null), tipo: 'Ref.' },
       { date: e.proximaVisita   || (()=>{
           if(!e.ultimaVisita) return null;

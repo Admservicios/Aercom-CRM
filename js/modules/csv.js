@@ -16,7 +16,7 @@
  * Dependencias externas (definidas en index.html, sin mover —
  * no son responsabilidad de este módulo):
  *   D, persist(), closeModal(), requestCloseModal(), renderModule(), toast(), _esc()
- *   _applyTableImport(), _importNumber(), _importBoolean() (js/storage.js)
+ *   addYears() (utils.js), _applyTableImport(), _importNumber(), _importBoolean() (js/storage.js)
  *
  * Integración con Clientes / Equipos / Cotizaciones:
  *   `CSV_SCHEMAS` es el único punto del proyecto que escribe
@@ -257,6 +257,10 @@ function confirmCsvImport(){
     const obj=existing ? {...existing,id:existing.id} : raw;
     for(const key of s.cols){
       if(Object.prototype.hasOwnProperty.call(row,key)) obj[key]=raw[key];
+    }
+    if(csvModule==='equipos'&&Object.prototype.hasOwnProperty.call(row,'ultimoBateria')&&
+       (obj.ultimoBateria||'')!==(existing?.ultimoBateria||'')){
+      obj.proximoBateria=obj.ultimoBateria?addYears(obj.ultimoBateria,2):null;
     }
     for(const field of ['requiereOC','requiereHES']){
       if(row[field]) obj[field]=_importBoolean(row[field],field);

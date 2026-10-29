@@ -133,3 +133,43 @@ test('Seleccionar otro CSV restablece Saltar existentes en estado y radios',()=>
  f.c.csvFileSelected({target:{files:[{text:'nombre,email\nUno,no-guardar@example.com'}]}});
  const before=f.snapshot();f.c.confirmCsvImport();assert.equal(f.snapshot(),before);assert.match(f.messages.at(-1),/saltado/);
 });
+
+test('Excel equipos nuevo: acepta Equipo, fechas actuales y calcula batería a dos años',()=>{
+ const f=fixture();f.xls('equipos',[{Equipo:'E2','Cliente ID':'C1','Ultima Bateria':'2023-03-01','Ultimo Cambio Refrigerante':'2026-01-10','Proximo Refrigerante':'2028-01-10','Ultima Visita':'2026-10-01','Proxima Visita':'2026-11-01'}]);
+ const e=f.c.D.equipos.find(e=>e.id==='E2');assert.ok(e);assert.equal(e.proximoBateria,'2025-03-01');assert.equal(e.ultimoAceite,'2026-01-10');assert.equal(e.proximoAceite,'2028-01-10');assert.equal(e.ultimaVisita,'2026-10-01');assert.equal(e.proximaVisita,'2026-11-01');assert.equal(e.horometro,undefined);assert.equal(e.ultimoRefrigerante,undefined);
+});
+test('Excel batería bisiesta, fecha explícita y conservación/recalculo de personalizadas',()=>{
+ const f=fixture(),e=f.c.D.equipos[0];e.ultimoBateria='2024-02-29';e.proximoBateria='2029-06-01';e.ultimoRefrigerante='2020-01-01';
+ f.xls('equipos',[{Equipo:'E1','Cliente ID':'C1',Observaciones:'Otra'}]);assert.equal(f.c.D.equipos[0].proximoBateria,'2029-06-01');assert.equal(f.c.D.equipos[0].horometro,12);assert.equal(f.c.D.equipos[0].ultimoRefrigerante,'2020-01-01');
+ f.xls('equipos',[{Equipo:'E1','Cliente ID':'C1','Ultima Bateria':'2028-02-29'}]);assert.equal(f.c.D.equipos[0].proximoBateria,'2030-02-28');
+ f.xls('equipos',[{Equipo:'E1','Cliente ID':'C1','Ultima Bateria':'2029-03-01','Proximo Cambio Bateria':'2032-04-10'}]);assert.equal(f.c.D.equipos[0].proximoBateria,'2032-04-10');
+});
+test('Excel nuevo inválido o alias contradictorios rechazan el lote completo',()=>{
+ for(const invalid of [{'Proximo Cambio Bateria':'2027-02-30'},{ID:'OTRO'},{'Ultimo Aceite':'2025-01-01','Ultimo Cambio Refrigerante':'2026-01-01'}]){
+  const f=fixture(),before=f.snapshot();f.xls('equipos',[{Equipo:'E2','Cliente ID':'C1'},{Equipo:'E1','Cliente ID':'C1',...invalid}]);assert.equal(f.snapshot(),before);assert.match(f.messages.at(-1),/Error/);
+ }
+});
+test('Excel antiguo conserva interpretación: Aceite es refrigerante actual y Refrigerante es gas histórico',()=>{
+ const f=fixture();f.xls('equipos',[{ID:'E1','Cliente ID':'C1','Ultimo Aceite':'2025-02-01','Ultimo Refrigerante':'2024-03-01',Horometro:0}]);
+ assert.equal(f.c.D.equipos[0].ultimoAceite,'2025-02-01');assert.equal(f.c.D.equipos[0].ultimoRefrigerante,'2024-03-01');assert.equal(f.c.D.equipos[0].horometro,0);
+ const before=f.snapshot();f.xls('equipos',[{ID:'E1','Cliente ID':'C1','Ultimo Refrigerante':0}]);assert.equal(f.snapshot(),before);assert.match(f.messages.at(-1),/Fecha Excel inválida/);
+});
+test('Plantilla y reporte XLSX reales alinean encabezados/valores y se reimportan sin perder históricos',()=>{
+ const real=require('../js/vendor/xlsx.full.min-0.20.3.js'),f=fixture(),equipment=f.c.D.equipos[0],books=[];
+ Object.assign(equipment,{ultimoAceite:'2026-01-01',ultimoBateria:'2024-02-29',proximoBateria:'2028-03-10',ultimoRefrigerante:'2020-06-01',ultimaVisita:'2026-10-01',proximaVisita:'2026-11-01',observaciones:'Última columna'});
+ f.c.XLSX={...real,writeFile(wb,name){books.push({wb,name});}};f.c.clientName=id=>f.c.D.clientes.find(c=>c.id===id)?.nombre||'';
+ f.c.xlsDownloadPlantilla('equipos');f.c.xlsExport('equipos');assert.equal(books.length,2);
+ for(const {wb} of books){
+  const roundtrip=real.read(real.write(wb,{bookType:'xlsx',type:'buffer'}),{type:'buffer'}),ws=roundtrip.Sheets[roundtrip.SheetNames[0]];
+  const grid=real.utils.sheet_to_json(ws,{header:1,defval:''}),header=grid[0];assert.equal(header[0],'Equipo');assert.ok(!header.includes('Horometro'));assert.ok(!header.includes('Ultimo Refrigerante'));
+  assert.equal(grid[1].length,header.length);assert.equal(grid[1][header.indexOf('Proximo Cambio Bateria')],'2028-03-10');assert.equal(grid[1][header.indexOf('Ultimo Cambio Refrigerante')],'2026-01-01');assert.equal(grid[1][header.indexOf('Observaciones')],'Última columna');
+  const records=real.utils.sheet_to_json(ws,{defval:''});f.c.XLSX={read:file=>({SheetNames:['Datos'],Sheets:{Datos:file}}),utils:{sheet_to_json:sheet=>copy(sheet.rows)}};f.xls('equipos',records);
+  assert.equal(f.c.D.equipos[0].horometro,12);assert.equal(f.c.D.equipos[0].ultimoRefrigerante,'2020-06-01');assert.equal(f.c.D.equipos[0].proximoBateria,'2028-03-10');
+ }
+});
+test('CSV batería recalcula al cambiar/limpiar última fecha y conserva próxima si no se edita',()=>{
+ const f=fixture();Object.assign(f.c.D.equipos[0],{ultimoBateria:'2025-01-01',proximoBateria:'2029-01-01'});
+ f.csv('equipos','id,observaciones\nE1,Nota');assert.equal(f.c.D.equipos[0].proximoBateria,'2029-01-01');
+ f.csv('equipos','id,ultimoBateria\nE1,2028-02-29');assert.equal(f.c.D.equipos[0].proximoBateria,'2030-02-28');
+ f.csv('equipos','id,ultimoBateria\nE1,');assert.equal(f.c.D.equipos[0].proximoBateria,null);
+});

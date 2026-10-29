@@ -157,7 +157,7 @@ La aplicación no requiere Node. Para ejecutar las pruebas de desarrollo desde l
 node --test tests/*.test.js
 ```
 
-La preparación de escritorio conserva 322 pruebas Node, 5 de servidor Python opcional y agrega 8 del nuevo servidor PowerShell. Históricamente se retiraron 54 casos exclusivos de Drive y se adaptaron las pruebas locales relacionadas. Usan módulos nativos, datos ficticios y dobles de DOM/SheetJS. Las comprobaciones adicionales de Chromium y bibliotecas CDN reales se describen en [TECH_DEBT.md](TECH_DEBT.md); los scripts temporales de esas sesiones no forman parte de la suite del repositorio. Consultá [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) para repetir la revisión manual y [docs/BUGS.md](docs/BUGS.md) para pendientes.
+La preparación de escritorio conserva 350 pruebas Node, 5 de servidor Python opcional y agrega 8 del nuevo servidor PowerShell. Históricamente se retiraron 54 casos exclusivos de Drive y se adaptaron las pruebas locales relacionadas. Usan módulos nativos, datos ficticios y dobles de DOM/SheetJS. Las comprobaciones adicionales de Chromium y bibliotecas CDN reales se describen en [TECH_DEBT.md](TECH_DEBT.md); los scripts temporales de esas sesiones no forman parte de la suite del repositorio. Consultá [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) para repetir la revisión manual y [docs/BUGS.md](docs/BUGS.md) para pendientes.
 
 Para verificar el iniciador local sin instalar paquetes:
 

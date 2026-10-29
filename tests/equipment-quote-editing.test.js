@@ -10,7 +10,7 @@ function fixture(){
  const c=vm.createContext({D:{clientes:[{id:'C1',nombre:'Cliente',frecuenciaVisita:'Mensual'}],equipos:[equipment],cotizaciones:[quote]},ESTADOS:['Solicitud','Aprobada','Facturada'],document:{getElementById:node},persist(){saves.push(JSON.stringify(c.D));},closeModal(){},toast(){}});
  for(const file of ['js/utils.js','js/modules/equipos.js','js/modules/cotizaciones.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'..',file),'utf8'),c);
  c.renderEquipos=()=>{};c.renderModule=()=>{};
- const equipmentFields={'e-id':'id','e-cli':'clienteId','e-tipo':'tipo','e-uprev':'ultimoPreventivo','e-nprev':'proximoPreventivo','e-ace':'ultimoAceite','e-nace':'proximoAceite','e-bat':'ultimoBateria','e-ref':'ultimoRefrigerante','e-hor':'horometro','e-obs':'observaciones','e-uvisita':'ultimaVisita','e-nvisita':'proximaVisita'};
+ const equipmentFields={'e-id':'id','e-cli':'clienteId','e-tipo':'tipo','e-uprev':'ultimoPreventivo','e-nprev':'proximoPreventivo','e-ace':'ultimoAceite','e-nace':'proximoAceite','e-bat':'ultimoBateria','e-nbat':'proximoBateria','e-obs':'observaciones','e-uvisita':'ultimaVisita','e-nvisita':'proximaVisita'};
  const quoteFields={'f-id':'id','f-cli':'clienteId','f-eq':'equipoId','f-desc':'descripcion','f-monto':'monto','f-env':'fechaEnvio','f-fup':'fechaFollowup','f-resp':'responsable','f-est':'estado','f-notas':'notas'};
  for(const[id,key]of Object.entries(equipmentFields))node(id).value=String(equipment[key]??'');
  for(const[id,key]of Object.entries(quoteFields))node(id).value=String(quote[key]??'');
@@ -21,22 +21,22 @@ test('Editar observaciones del equipo conserva todos los campos ajenos al formul
  const {c,node,equipment,saves}=fixture(),expected={...copy(equipment),observaciones:'Nueva observación'};node('e-obs').value=' Nueva observación ';c.saveEquip();
  assert.deepEqual(copy(c.D.equipos[0]),expected);assert.deepEqual(JSON.parse(saves[0]).equipos[0],expected);assert.equal(saves.length,1);
 });
-test('Equipo permite vaciar campos editables y guardar horómetro cero sin perder metadatos',()=>{
- const {c,node}=fixture();node('e-obs').value='';node('e-nprev').value='';node('e-hor').value='0';c.saveEquip();
+test('Equipo permite vaciar campos actuales sin alterar horómetro histórico cero',()=>{
+ const {c,node,equipment}=fixture();equipment.horometro=0;node('e-obs').value='';node('e-nprev').value='';c.saveEquip();
  assert.equal(c.D.equipos[0].observaciones,'');assert.equal(c.D.equipos[0].proximoPreventivo,'');assert.equal(c.D.equipos[0].horometro,0);assert.equal(c.D.equipos[0].marca,'Marca');assert.equal(c.D.equipos[0].flagExtra,false);
 });
 test('Próxima batería personalizada se conserva cuando la última fecha no cambia',()=>{
  const {c,node}=fixture();node('e-obs').value='Otra';c.saveEquip();assert.equal(c.D.equipos[0].proximoBateria,'2028-02-01');
 });
 test('Cambio explícito de última batería recalcula la próxima como en edición inline',()=>{
- const {c,node}=fixture();node('e-bat').value='2026-10-19';c.saveEquip();assert.equal(c.D.equipos[0].proximoBateria,c.addDays('2026-10-19',730));
+ const {c,node}=fixture();node('e-bat').value='2026-10-19';c.autoNextBattery();c.saveEquip();assert.equal(c.D.equipos[0].proximoBateria,c.addYears('2026-10-19',2));
 });
 test('Vaciar última batería limpia la próxima personalizada sin borrar otros campos',()=>{
- const {c,node}=fixture();node('e-bat').value='';c.saveEquip();assert.equal(c.D.equipos[0].proximoBateria,null);assert.equal(c.D.equipos[0].ubicacion,'Nave A');
+ const {c,node}=fixture();node('e-bat').value='';c.autoNextBattery();c.saveEquip();assert.equal(c.D.equipos[0].proximoBateria,null);assert.equal(c.D.equipos[0].ubicacion,'Nave A');
 });
 test('Alta de equipo mantiene campos habituales sin copiar metadatos de otro equipo',()=>{
- const {c,node,saves}=fixture();node('e-id').value='E2';c.saveEquip();const added=c.D.equipos[1];
- assert.equal(added.id,'E2');assert.equal(added.marca,undefined);assert.equal(added.proximoBateria,undefined);assert.equal(added.campoImportado,undefined);assert.equal(saves.length,1);
+ const {c,node,saves}=fixture();node('e-id').value='E2';c.autoNextBattery();c.saveEquip();const added=c.D.equipos[1];
+ assert.equal(added.id,'E2');assert.equal(added.marca,undefined);assert.equal(added.proximoBateria,c.addYears('2025-02-01',2));assert.equal(added.campoImportado,undefined);assert.equal(saves.length,1);
 });
 test('Formulario de equipo conserva tipo histórico fuera del catálogo de forma escapada',()=>{
  const {c,equipment,node}=fixture();equipment.tipo='Tablero "especial" & <texto>';const before=JSON.stringify(c.D);c.openEquipModal('E1');
@@ -73,4 +73,24 @@ test('Última batería vacía/null/ausente sin edición conserva una próxima fe
  for(const last of ['',null,undefined]){
   const {c,equipment,node}=fixture();equipment.ultimoBateria=last;node('e-bat').value='';c.saveEquip();assert.equal(c.D.equipos[0].proximoBateria,'2028-02-01');
  }
+});
+
+test('Formulario Equipo muestra próxima batería y retira gas/horómetro sin mutar datos',()=>{
+ const {c,node}=fixture(),before=JSON.stringify(c.D);c.openEquipModal('E1');const html=node('modal-body').innerHTML;
+ assert.ok(html.includes('>Equipo</label>'));assert.ok(html.includes('Próximo cambio de batería'));assert.ok(html.includes('id="e-nbat"'));
+ assert.ok(!html.includes('id="e-ref"'));assert.ok(!html.includes('id="e-hor"'));assert.equal(JSON.stringify(c.D),before);
+});
+test('Batería suma dos años calendario y permite una próxima fecha explícita',()=>{
+ const {c,node}=fixture();node('e-bat').value='2023-03-01';c.autoNextBattery();assert.equal(node('e-nbat').value,'2025-03-01');
+ node('e-bat').value='2024-02-29';c.autoNextBattery();assert.equal(node('e-nbat').value,'2026-02-28');
+ node('e-nbat').value='2026-03-10';c.saveEquip();assert.equal(c.D.equipos[0].proximoBateria,'2026-03-10');
+});
+test('Estado y calendario usan la próxima batería y no generan vencimiento oculto por gas retirado',()=>{
+ const {c}=fixture();c.D.recordatorios=[];c.D.pedidos=[];c.D.eventos=[];c.clientName=()=> 'Cliente';
+ const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');vm.runInContext(html.slice(html.indexOf('function equipStatus(e){'),html.indexOf('function clientName(id){')),c);
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'..','js/modules/calendario.js'),'utf8'),c);
+ const e=c.D.equipos[0];Object.assign(e,{ultimoPreventivo:'',proximoPreventivo:'',ultimoAceite:'',proximoAceite:'',ultimoBateria:'',proximoBateria:'2099-03-01',ultimoRefrigerante:'2000-01-01',ultimaVisita:'',proximaVisita:''});
+ assert.equal(c.equipStatus(e).sinFechas,false);assert.equal(c.equipStatus(e).st,'verde');assert.equal(c.equipStatus(e).nextBateria,'2099-03-01');
+ delete e.proximoBateria;e.ultimoBateria='2023-03-01';assert.equal(c.equipStatus(e).nextBateria,'2025-03-01');
+ assert.ok(c._calGetEventos()['2025-03-01'].some(event=>event.label.startsWith('Bat.')));
 });

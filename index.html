@@ -10,21 +10,21 @@
 <!-- utils.js, storage.js y modules/dashboard.js/facturacion.js deben cargar antes del script
      principal: éste llama a loadData() y renderDashboard() de forma síncrona
      durante la inicialización -->
-<script src="js/utils.js"></script>
+<script src="js/utils.js?v=equipment-20261029"></script>
 <script src="js/storage.js?v=folder-data-20261029"></script>
 <script src="js/local-folder.js?v=folder-data-20261029"></script>
 <script src="js/modules/dashboard.js?v=billing-summary-20261021"></script>
 <script src="js/modules/clientes.js?v=local-desktop-20261028"></script>
-<script src="js/modules/equipos.js?v=modal-drafts-20261021"></script>
+<script src="js/modules/equipos.js?v=equipment-20261029"></script>
 <script src="js/modules/facturacion.js?v=local-desktop-20261028"></script>
 <script src="js/modules/cotizaciones.js?v=modal-drafts-20261021"></script>
 <script src="js/modules/pedidos.js?v=modal-drafts-20261021"></script>
-<script src="js/modules/calendario.js?v=modal-drafts-20261021"></script>
+<script src="js/modules/calendario.js?v=equipment-20261029"></script>
 <script src="js/modules/recordatorios.js?v=modal-drafts-20261021"></script>
 <script src="js/modules/theme.js?v=safe-startup-20261019"></script>
 <script src="js/modules/reportes.js?v=folder-data-20261029"></script>
-<script src="js/modules/excel.js?v=local-only-20261020"></script>
-<script src="js/modules/csv.js?v=modal-drafts-20261021"></script>
+<script src="js/modules/excel.js?v=equipment-20261029"></script>
+<script src="js/modules/csv.js?v=equipment-20261029"></script>
 </head>
 <body>
 <dialog id="storage-recovery" aria-labelledby="storage-recovery-title" aria-describedby="storage-recovery-message" style="--t1:#0f172a;--t2:#334155;--border:#cbd5e1;--hover:#f1f5f9;color-scheme:light;box-sizing:border-box;width:calc(100% - 32px);max-width:520px;max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #cbd5e1;border-radius:12px;padding:24px;background:#fff;color:#0f172a">
@@ -650,7 +650,7 @@ let _autosaveTimer = null;
 // ─── EQUIP STATUS ────────────────────────────────────────────────────────────
 function equipStatus(e){
   const nextAceite  = e.proximoAceite      || (e.ultimoAceite      ? addDays(e.ultimoAceite,730)      : null);
-  const nextBateria = e.proximoBateria || (e.ultimoBateria ? addDays(e.ultimoBateria,730) : null);
+  const nextBateria = e.proximoBateria || (e.ultimoBateria ? addYears(e.ultimoBateria,2) : null);
   const nextRefrig  = e.ultimoRefrigerante ? addDays(e.ultimoRefrigerante,730) : null;
   const nextVisita  = e.proximaVisita      || (()=>{
     if(!e.ultimaVisita) return null;
@@ -659,8 +659,8 @@ function equipStatus(e){
     const d=FDAYS[cli?.frecuenciaVisita||''];
     return d?addDays(e.ultimaVisita,d):null;
   })();
-  const dates=[e.proximoPreventivo,nextAceite,nextBateria,nextRefrig].filter(Boolean);
-  const sinFechas = !e.proximoPreventivo && !e.ultimoPreventivo && !e.ultimoBateria && !e.ultimoAceite;
+  const dates=[e.proximoPreventivo,nextAceite,nextBateria].filter(Boolean);
+  const sinFechas = !e.proximoPreventivo && !e.ultimoPreventivo && !e.ultimoBateria && !e.proximoBateria && !e.ultimoAceite;
   let st = sinFechas ? 'gris' : 'verde';
   if(!sinFechas){
     for(const d of dates){

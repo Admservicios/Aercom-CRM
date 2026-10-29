@@ -4,6 +4,13 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Equipos y Excel — campos y próxima batería (2026-10-29)
+
+- Etiqueta Equipo, sin cambiar el identificador interno ni referencias. Retirados del formulario gas y horómetro; se preservan los valores históricos en los datos/JSON. El gas retirado deja de intervenir en el estado global, evitando vencimientos ocultos.
+- Próximo cambio de batería visible y editable, calculado a dos años calendario al cambiar la última fecha. El 29/02 se ajusta al último día válido del destino. Mismo cálculo en edición inline, estado y calendario; se respetan próximas fechas explícitas guardadas.
+- Plantilla y reporte XLSX con Equipo, último/próximo refrigerante, última/próxima batería y visitas; sin columnas de gas/horómetro. Importación acepta la nueva estructura y los encabezados anteriores sin confundir gas con refrigerante. Alias contradictorios o fechas inválidas rechazan el lote completo. Datos históricos y columnas ausentes se conservan.
+- Verificación: 350 pruebas Node aprobadas; nuevos casos de formulario, años bisiestos/zonas horarias, estado/calendario, importación y XLSX reales de ida/vuelta. Chromium con carpeta nativa OPFS y selector simulado: alta/edición, fechas automáticas/personalizadas, inline/calendario, plantilla/reporte descargados y reimportados, históricos y recarga preservados. Cero errores JS. URLs de scripts versionadas; ZIP compacto regenerado. Sin cambios en datos reales; CSV conserva su formato anterior y recalcula la próxima batería si cambia la última fecha.
+
 ## Carpeta de datos, sin iniciador — 2026-10-29
 
 - Nuevo modo opcional: abrir index.html con Chrome y Conectar carpeta de datos con permiso de lectura/escritura. Se elige en cada sesión; mientras esté conectada los cambios confirmados se copian a aercom-data.json, manteniendo la copia del navegador. Sin Python, PowerShell ni servidor para el usuario.

@@ -14,7 +14,7 @@
  * sin mover — no son responsabilidad de este módulo):
  *   D, persist(), toast(), closeModal(), requestCloseModal(), confirmDel(), canDeleteRecord(), toggleClear(),
  *   equipStatus()*, clientCritical()*, clientName()*, fichaTab()**,
- *   fmtDate(), daysDiff(), addDays(), _esc() (js/utils.js — PR-014.1,
+ *   fmtDate(), daysDiff(), addDays(), addYears(), _esc() (js/utils.js — PR-014.1,
  *   hardening XSS)
  *
  *   (*) equipStatus()/clientCritical()/clientName() siguen en
@@ -60,7 +60,7 @@ function equipInlineDate(el, equipId, fieldKey){
     const FD={'Semanal':7,'Quincenal':15,'Mensual':30,'Bimestral':60,'Trimestral':90,'Semestral':180,'Anual':365};
     if(fieldKey==='ultimoPreventivo') eq.proximoPreventivo=v?addDays(v,365):null;
     else if(fieldKey==='ultimoAceite') eq.proximoAceite=v?addDays(v,730):null;
-    else if(fieldKey==='ultimoBateria') eq.proximoBateria=v?addDays(v,730):null;
+    else if(fieldKey==='ultimoBateria') eq.proximoBateria=v?addYears(v,2):null;
     else if(fieldKey==='ultimaVisita'){
       const cli=D.clientes.find(c=>c.id===eq.clienteId);
       const d=FD[cli?.frecuenciaVisita||''];
@@ -203,7 +203,7 @@ function openEquipModal(eid){
 
   document.getElementById('modal-body').innerHTML=`
     <div class="form-row">
-      <div class="fg"><label class="fl">ID Equipo *</label><input class="fc" id="e-id" value="${_esc(eq?.id)}" ${eq?'readonly':''} placeholder="ej: GE-009"></div>
+      <div class="fg"><label class="fl">Equipo</label><input class="fc" id="e-id" value="${_esc(eq?.id)}" ${eq?'readonly':''} placeholder="ej: GE-009"></div>
       <div class="fg"><label class="fl">Tipo de equipo</label><select class="fc" id="e-tipo">${tipoOpts}</select></div>
     </div>
     <div class="fg"><label class="fl">Cliente *</label><select class="fc" id="e-cli">${cliOpts}</select></div>
@@ -216,12 +216,8 @@ function openEquipModal(eid){
       <div class="fg"><label class="fl">Próximo refrigerante</label><input class="fc" type="date" id="e-nace" value="${_esc(eq?.proximoAceite||(eq?.ultimoAceite?addDays(eq.ultimoAceite,730):''))}" ></div>
     </div>
     <div class="form-row">
-      <div class="fg"><label class="fl">Fecha del último cambio de batería</label><input class="fc" type="date" id="e-bat" value="${_esc(eq?.ultimoBateria||'')}"></div>
-      <div class="fg"><label class="fl">Último refrigerante (gas)</label><input class="fc" type="date" id="e-ref" value="${_esc(eq?.ultimoRefrigerante||'')}"></div>
-    </div>
-    <div class="form-row">
-      <div class="fg"><label class="fl">Horómetro (hs)</label><input class="fc" type="number" id="e-hor" value="${_esc(eq?.horometro||'')}"></div>
-      <div class="fg"></div>
+      <div class="fg"><label class="fl">Fecha del último cambio de batería</label><input class="fc" type="date" id="e-bat" value="${_esc(eq?.ultimoBateria||'')}" oninput="autoNextBattery()"></div>
+      <div class="fg"><label class="fl">Próximo cambio de batería</label><input class="fc" type="date" id="e-nbat" value="${_esc(eq?.proximoBateria||(eq?.ultimoBateria?addYears(eq.ultimoBateria,2):''))}"></div>
     </div>
     <div class="form-row">
       <div class="fg"><label class="fl">Fecha de la última visita</label><input class="fc" type="date" id="e-uvisita" value="${_esc(eq?.ultimaVisita||'')}" oninput="autoNextVisita()"></div>
@@ -247,6 +243,11 @@ function autoNextAceite(){
   if(v) document.getElementById('e-nace').value=addDays(v,730);
 }
 
+function autoNextBattery(){
+  const value=document.getElementById('e-bat').value;
+  document.getElementById('e-nbat').value=value?addYears(value,2):'';
+}
+
 function autoNextVisita(){
   const v=document.getElementById('e-uvisita').value;
   if(!v) return;
@@ -265,17 +266,13 @@ function saveEquip(){
   const ace=document.getElementById('e-ace').value;
   const nace=document.getElementById('e-nace').value;
   const bat=document.getElementById('e-bat').value;
-  const ref=document.getElementById('e-ref').value;
-  const hor=parseInt(document.getElementById('e-hor').value)||0;
+  const nbat=document.getElementById('e-nbat').value;
   const obs=document.getElementById('e-obs').value.trim();
   const uvisita=(document.getElementById('e-uvisita')||{value:''}).value;
   const nvisita=(document.getElementById('e-nvisita')||{value:''}).value;
-  if(!id||!cliId){toast('⚠ Completá ID y cliente');return;}
+  if(!id||!cliId){toast('⚠ Completá equipo y cliente');return;}
   const existing=D.equipos.find(e=>e.id===id);
-  const obj={...existing,id,clienteId:cliId,tipo,ultimoPreventivo:uprev,proximoPreventivo:nprev,ultimoAceite:ace,proximoAceite:nace,ultimoBateria:bat,ultimoRefrigerante:ref,horometro:hor,observaciones:obs,ultimaVisita:uvisita,proximaVisita:nvisita};
-  if(existing && (existing.ultimoBateria||'')!==bat && Object.prototype.hasOwnProperty.call(existing,'proximoBateria')){
-    obj.proximoBateria=bat?addDays(bat,730):null;
-  }
+  const obj={...existing,id,clienteId:cliId,tipo,ultimoPreventivo:uprev,proximoPreventivo:nprev,ultimoAceite:ace,proximoAceite:nace,ultimoBateria:bat,proximoBateria:nbat||(bat?addYears(bat,2):null),observaciones:obs,ultimaVisita:uvisita,proximaVisita:nvisita};
   const i=D.equipos.findIndex(e=>e.id===id);
   if(i>-1) D.equipos[i]=obj; else D.equipos.push(obj);
   if(persist()===false) return; closeModal(); renderEquipos();
