@@ -108,17 +108,11 @@ Aercom-CRM-v2/
 
 ## Instalación
 
-Para la copia de escritorio sin CDN, seguí [GUIA_LOCAL.md](GUIA_LOCAL.md). En Windows abrí `INICIAR_CRM.cmd`; usa PowerShell incluido en Windows, sin Python ni instalaciones. La dirección fija es `http://127.0.0.1:8000/`. El ZIP contiene el programa, no los datos de tu navegador.
+Para Chrome de escritorio sin iniciadores, descargá [Aercom-CRM-Carpeta.zip](downloads/Aercom-CRM-Carpeta.zip), extraelo y abrí **index.html** con Chrome. Luego pulsá **Conectar carpeta de datos** y autorizá la carpeta que contiene tu aercom-data.json. La selección se hace cada vez que abrís el CRM; mientras esté conectada, los cambios guardados se copian al archivo. Ver [GUIA_CARPETA.md](GUIA_CARPETA.md).
 
-No requiere Node.js, ni gestor de paquetes, ni proceso de build. Es HTML/CSS/JS estático servido tal cual.
+El ZIP contiene el programa, no tus datos. Antes de trasladarte, exportá un JSON actual desde el CRM que usás y conservá una copia original. Si la carpeta tiene otra versión, se pide confirmación y se conserva antes la copia del navegador como un JSON adicional.
 
-Para ejecutarlo localmente basta con levantar cualquier servidor de archivos estáticos apuntando a la raíz del proyecto y abrir `index.html` en el navegador, en Windows:
-
-```bat
-INICIAR_CRM.cmd
-```
-
-o cualquier otro servidor estático equivalente (Live Server de VS Code, `npx serve`, IIS, etc.). También es compatible con GitHub Pages, sirviendo la raíz del repositorio directamente.
+No requiere Python, PowerShell, Node ni build. El navegador debe permitir File System Access y la apertura de archivos locales. Si esa función está bloqueada, Exportar respaldo JSON sigue disponible de forma manual. Los iniciadores con servidor se mantienen como alternativa en el repositorio, fuera del ZIP de uso directo; su guía es [GUIA_LOCAL.md](GUIA_LOCAL.md).
 
 ---
 
@@ -126,6 +120,7 @@ o cualquier otro servidor estático equivalente (Live Server de VS Code, `npx se
 
 - **LocalStorage** — toda la información del CRM (clientes, equipos, cotizaciones, pedidos, recordatorios, eventos, facturación) se guarda como un único objeto JSON en `localStorage['aercom-data']`. No requiere backend ni base de datos.
 - **Respaldo y traslado** — usá Guardar JSON para descargar todos los datos y conservá copias periódicas fuera del navegador. Importar JSON restaura una copia validada en otra computadora/navegador. No hay sincronización entre dispositivos ni escritura automática de respaldos en las carpetas del repositorio. Los archivos que ya existan en Google Drive no se modifican.
+- **Carpeta autorizada** — Chrome puede escribir una copia JSON mediante File System Access mientras esté conectada. El guardado del navegador mantiene su contrato; el archivo solo se confirma tras cerrar la escritura. Fallos o cambios externos pausan la copia y preservan los datos del navegador.
 - **Bibliotecas incluidas** — Chart.js 4.4.1 y SheetJS CE 0.20.3 se cargan desde js/vendor, con licencias y origen documentados. El CRM y sus reportes no requieren CDN. Se usa un servidor de archivos local, no una base de datos ni una aplicación instalada.
 
 ---
@@ -169,3 +164,5 @@ Para verificar el iniciador local sin instalar paquetes:
 ```bash
 python -B -m unittest discover -s tests -p test_local_launcher.py -v
 ```
+
+El ZIP compacto se genera con `python -B tools/build_folder_package.py`, usando solo recursos versionados y un manifiesto SHA-256. No incluye iniciadores ni datos privados.

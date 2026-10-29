@@ -1,4 +1,6 @@
-# Aercom CRM — uso local en esta PC
+# Aercom CRM — alternativa con servidor local
+
+La opción simple, sin iniciadores ni Python/PowerShell, está en GUIA_CARPETA.md: abrir index.html con Chrome y conectar la carpeta de datos. Esta guía conserva la alternativa con servidor.
 
 Paquete de escritorio local del 28/10/2026. Datos en el navegador, sin Google Drive ni CDN. La versión móvil no forma parte de esta preparación.
 

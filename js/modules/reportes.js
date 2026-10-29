@@ -246,18 +246,23 @@ th { border-bottom: 2px solid var(--border-strong) !important; }
   </div>
 </div>
 <script>
+const reportCharts=[];
 const chartScript=document.createElement('script');
 chartScript.src=${chartUrl};
 chartScript.onload=()=>{
-new Chart(document.getElementById('c1'),{type:'doughnut',data:{labels:['Vencidos','Próx.30d','Próx.60d','Al día'],datasets:[{data:[${vencidos.length},${prox30.length},${prox60.length},${alDia.length}],backgroundColor:['#c73030','#f59e0b','#1d6fa4','#0a7c5c'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12,padding:8}}}}});
-new Chart(document.getElementById('c2'),{type:'bar',data:{labels:${tLabels},datasets:[{data:${tData},backgroundColor:['#1d6fa4','#0a7c5c','#c4600a','#6d40c4','#c73030'],borderRadius:5,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{font:{size:10},precision:0},grid:{color:'#f0efeb'}}}}});
+reportCharts.push(new Chart(document.getElementById('c1'),{type:'doughnut',data:{labels:['Vencidos','Próx.30d','Próx.60d','Al día'],datasets:[{data:[${vencidos.length},${prox30.length},${prox60.length},${alDia.length}],backgroundColor:['#c73030','#f59e0b','#1d6fa4','#0a7c5c'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12,padding:8}}}}}));
+reportCharts.push(new Chart(document.getElementById('c2'),{type:'bar',data:{labels:${tLabels},datasets:[{data:${tData},backgroundColor:['#1d6fa4','#0a7c5c','#c4600a','#6d40c4','#c73030'],borderRadius:5,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{font:{size:10},precision:0},grid:{color:'#f0efeb'}}}}}));
 };
 chartScript.onerror=()=>{const error=document.createElement('p');error.textContent='No se pudo cargar el gráfico local. Mantené el servidor abierto y generá el reporte otra vez.';document.body.prepend(error);};
-document.head.appendChild(chartScript);
+const releaseCharts=()=>{reportCharts.splice(0).forEach(chart=>chart.destroy());};
+globalThis.addEventListener?.('beforeunload',releaseCharts,{once:true});
+globalThis.addEventListener?.('pagehide',releaseCharts,{once:true});
+if(typeof Chart==='function')chartScript.onload();else document.head.appendChild(chartScript);
 <\/script></body></html>`;
 
   const win = window.open('','_blank');
   if(!win){ toast('⚠ El navegador bloqueó la ventana del reporte — habilitá las ventanas emergentes para este sitio'); return; }
+  win.Chart=window.Chart;
   win.document.write(html);
   win.document.close();
   win.focus();

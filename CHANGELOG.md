@@ -4,6 +4,14 @@ Historia de la modularización del proyecto, agrupada por PR. No detalla línea 
 
 ---
 
+## Carpeta de datos, sin iniciador — 2026-10-29
+
+- Nuevo modo opcional: abrir index.html con Chrome y Conectar carpeta de datos con permiso de lectura/escritura. Se elige en cada sesión; mientras esté conectada los cambios confirmados se copian a aercom-data.json, manteniendo la copia del navegador. Sin Python, PowerShell ni servidor para el usuario.
+- Escritura serial tras el guardado estable, confirmada solo al cerrar el stream. Fallos y cambios externos pausan sin sobrescribir el archivo detectado ni descartar la copia del navegador. Al cargar una versión distinta, se confirma y se respalda primero el navegador como otro JSON; no se reemplazan archivos vacíos/dañados. No se cargan datos sobre formularios abiertos.
+- Cierre de página considera escrituras pendientes. Los reportes reutilizan Chart del CRM al abrir un popup, con liberación de instancias al cerrarlo, para evitar otra carga de archivo local; se conserva fallback local para HTML independiente.
+- Entrega compacta downloads/Aercom-CRM-Carpeta.zip: programa, recursos, guías y licencias, sin iniciadores ni datos privados; generador reproducible y manifiesto SHA-256.
+- Verificación: 341 pruebas Node aprobadas (19 nuevas). Chromium con File System Access nativo OPFS y selector simulado: creación/escritura/cierre, edición/undo/redo/importación, cambios externos, ambas copias, desconexión/reconexión y reporte. El entorno bloquea file:// por política; no se alteró. El usuario confirmó apertura directa en su Chrome, pero selección y escritura de la carpeta real de Windows quedan para comprobación allí.
+
 ## Windows sin Python — 2026-10-28
 
 - INICIAR_CRM.cmd usa Windows PowerShell de System32, incluido en Windows 10/11. No requiere Python, permisos de administrador, descargas ni instalación de programas en la PC. El iniciador Python se conserva como opción para otros sistemas.

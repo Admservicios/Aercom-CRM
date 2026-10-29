@@ -222,3 +222,10 @@ CSV y Excel comparten `_applyTableImport(build)` en `js/storage.js`. `build` eje
 | Error de lote | Rechazo completo con mensaje | Rechazo completo con mensaje |
 
 Ambos preservan campos adicionales de registros existentes. No se asigna un cliente por coincidencia parcial. Se rechazan claves repetidas, columnas desconocidas, conversiones inválidas y asociaciones ambiguas. Los encabezados/valores de plantillas y reportes quedan alineados; cotizaciones incluye Cliente ID. Los libros Excel 1904 requieren conversión explícita y no se importan automáticamente. El formato de los backups JSON y la versión de SheetJS permanecen iguales.
+
+
+## Carpeta de datos opcional
+
+js/local-folder.js mantiene una copia física de la copia estable del navegador mediante File System Access autorizado por el usuario. Se integra al final de _persistBase(), sin convertir los guardados existentes a promesas ni alterar sus rollbacks. Es una cola serial en memoria, con confirmación tras close(), detección preventiva de cambios externos y pausa ante fallo. No es un backend ni persistencia automática de handles entre sesiones. Cargar otro aercom-data.json conserva primero la copia distinta del navegador como respaldo, con validación y confirmación explícitas. El navegador sigue siendo la copia de trabajo recuperable.
+
+El ZIP directo contiene index/css/js/img, guía y licencias; excluye servidores, herramientas y datos. El usuario abre index.html con Chrome y conecta la carpeta en cada sesión. La política de file:// del entorno de pruebas impide validar allí esa navegación; el usuario confirmó apertura en su Chrome. Tests de API nativa se hacen con OPFS y selector simulado, sin certificar el picker de Windows.

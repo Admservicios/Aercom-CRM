@@ -164,3 +164,12 @@ python -B -m unittest discover -s tests -p test_powershell_launcher.py -v
 ```
 
 PowerShell de validación no se distribuye ni instala en el paquete del CRM.
+
+
+## Edición directa con carpeta
+
+js/local-folder.js es infraestructura compartida opcional. File System Access se activa solo por click y permiso del usuario; no se recuerdan handles entre sesiones. _persistBase() agenda una microtarea después de confirmar su guardado; esta lee la copia estable del almacenamiento, no la mutación transitoria de un formulario. Las escrituras al archivo se serializan y se confirman solo después de close(). Ante error o cambio externo se pausan sin revertir el navegador. Al cargar otra versión se guarda primero un respaldo de la copia del navegador en la carpeta.
+
+El cierre de página también consulta pendientes de archivo. El reporte puede reutilizar Chart del CRM para evitar cargar un archivo adicional en un popup file://, y libera sus gráficos al cerrar. File System Access fue probado con OPFS nativo y selector simulado sobre HTTP local; file:// está bloqueado por política del entorno de pruebas. El usuario confirmó apertura directa en Chrome, pero la selección/escritura real en Windows requiere comprobarse allí. No se modificó la política del entorno.
+
+La entrega para el usuario es downloads/Aercom-CRM-Carpeta.zip, generada por tools/build_folder_package.py sin datos privados ni iniciadores. Ver GUIA_CARPETA.md.

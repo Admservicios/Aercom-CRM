@@ -448,6 +448,9 @@ function _persistBase() {
     updateSidebarBadges();
     _lastSavedSnapshot = serialized;
 
+    // Se ejecuta en una microtarea: ante rollback leerá la copia local recuperada.
+    if (typeof scheduleLocalFolderSave === 'function') scheduleLocalFolderSave();
+
 }
 
 /**
